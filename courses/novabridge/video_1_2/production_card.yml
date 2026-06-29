@@ -1,4 +1,4 @@
-# Production Card v4 — Full Instructor Narration
+# Production Card v4, Full Instructor Narration
 # Video 1.2: The Mapping Problem
 # 
 # Narration philosophy:
@@ -27,14 +27,14 @@ events:
     narration: >
       In the last lesson, we watched AI return three completely different
       revenue numbers for the exact same question.
-      That wasn't a glitch. That was the system working exactly as designed —
+      That wasn't a glitch. That was the system working exactly as designed ,
       just against the wrong table.
       And here is the thing: that problem doesn't only affect revenue.
       It affects every business question you ask against a schema
       that hasn't been documented properly.
       In this lesson I want to show you exactly what that looks like
       across two different business questions.
-      We're going to run each question twice — against two different tables —
+      We're going to run each question twice, against two different tables ,
       and you're going to see the numbers diverge every single time.
 
   - id: "e01_pause"
@@ -51,7 +51,7 @@ events:
       You can see eight tables in this database.
       Accounts, churn events, customers, monthly metrics,
       order details, order summary, orders, and subscriptions.
-      Now notice something — several of these table names overlap in meaning.
+      Now notice something, several of these table names overlap in meaning.
       Customers and accounts both sound like they store customer information.
       Monthly metrics and churn events both sound like they track churn.
       This is the mapping problem. When you ask a question in plain language,
@@ -117,8 +117,8 @@ events:
       This query went to the customers table and counted every row
       where status equals active.
       One hundred and fifty-eight. Remember that number.
-      Now I'm going to ask the exact same question —
-      word for word, same logic — but point it at the accounts table instead.
+      Now I'm going to ask the exact same question ,
+      word for word, same logic, but point it at the accounts table instead.
       Watch what happens.
 
   - id: "e06_pause"
@@ -157,12 +157,12 @@ events:
     narration: >
       One hundred and forty-three.
       Not one hundred and fifty-eight.
-      That is a difference of fifteen customers — for the exact same question.
+      That is a difference of fifteen customers, for the exact same question.
       So which one is right?
       Well, both queries are technically correct SQL.
       The issue is that these two tables contain different data.
       The customers table holds only paying customers.
-      The accounts table holds two hundred and ten total records —
+      The accounts table holds two hundred and ten total records ,
       customers, prospects, and leads combined.
       But only one hundred and forty-three of those have a status of active.
       The customers table, by contrast, holds only verified paying customers,
@@ -211,7 +211,7 @@ events:
       Now we're on our second business question: what was our churn rate in Q3?
       This result came from the monthly metrics table,
       which stores pre-calculated rates by month.
-      You're looking at three rows — one for each month in Q3 of 2024.
+      You're looking at three rows, one for each month in Q3 of 2024.
       July shows zero point zero five.
       August shows zero point zero two five.
       September shows zero point zero two.
@@ -262,16 +262,16 @@ events:
     narration: >
       Here's what the churn events table gives us for the same Q3 period.
       Five churn events recorded in Q3 total.
-      The calculated rate is zero point zero two five —
+      The calculated rate is zero point zero two five ,
       meaning roughly two and a half percent of our two hundred customers churned.
       Now compare that to the monthly metrics table.
-      July alone showed zero point zero five — roughly five percent.
+      July alone showed zero point zero five, roughly five percent.
       The churn events table gives a blended Q3 rate of about two point five percent,
       but the monthly metrics table shows higher rates for individual months.
       These are measuring different things.
       Monthly metrics may be calculating churn based on a different formula,
       a different customer base, or a different time window.
-      We genuinely don't know — because nothing is documented.
+      We genuinely don't know, because nothing is documented.
       This is exactly the situation your AI tool is navigating
       every time someone asks about churn.
       It picks a table. It runs a query. It returns a number.
@@ -305,15 +305,15 @@ events:
     narration: >
       There it is. Four queries. Two business questions.
       And every single one returns a different answer.
-      Query one and query two ask how many active customers we have —
+      Query one and query two ask how many active customers we have ,
       one hundred and fifty-eight versus one hundred and forty-three.
-      Query three and query four ask about Q3 churn —
+      Query three and query four ask about Q3 churn ,
       and they return numbers calculated from completely different sources.
       This is not a bug. This is what happens when you have
       a warehouse full of tables that overlap in meaning,
       with no documentation to explain what each one actually contains.
       AI doesn't know which answer you need.
-      It can't know — unless you tell it.
+      It can't know, unless you tell it.
       And the way you tell it is through proper data design,
       clear naming conventions, and documentation.
       That is what this course is about.
