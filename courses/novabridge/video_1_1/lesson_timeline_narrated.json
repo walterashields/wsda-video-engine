@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "lesson_id": "video_1_1",
+  "title": "Three Tables, One Question: Watch AI Pick the Wrong One",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/production_card.yml",
+  "total_duration_ms": 152000,
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 7837,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/assets/novabridge.db"
+      },
+      "narration": "This is the NovaBridge Analytics database. Three tables. One question. Let's see what happens when you ask AI to answer it.",
+      "intent": null
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 16827,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "You can see three tables here. Orders. Order summary. And order details. They sound related. They are related. But they are not interchangeable.",
+      "intent": null
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 22012,
+      "type": "open_file",
+      "target": "editor",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/assets/ambiguity_demo_queries.sql"
+      },
+      "narration": "Here are the queries we are going to run. Three versions of the same question. Watch which table each one touches.",
+      "intent": null
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 27550,
+      "type": "highlight_section",
+      "target": "editor",
+      "params": {
+        "section": "query_1"
+      },
+      "narration": "Query one. This asks for total revenue by region. It's going to the orders table.",
+      "intent": null
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 29597,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_1"
+      },
+      "narration": "Let's run it.",
+      "intent": null
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 35365,
+      "type": "highlight_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Result. Revenue by region. Looks reasonable. Remember this number.",
+      "intent": "show_output"
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 41482,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.5
+      },
+      "narration": null,
+      "intent": null
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 42947,
+      "type": "highlight_section",
+      "target": "editor",
+      "params": {
+        "section": "query_2"
+      },
+      "narration": "Same question. Different table. This one goes to order_summary.",
+      "intent": null
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 47019,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_2"
+      },
+      "narration": "Run it.",
+      "intent": null
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 52517,
+      "type": "highlight_section",
+      "target": "editor",
+      "params": {
+        "section": "query_3"
+      },
+      "narration": "Third query. Order details. A third number is coming.",
+      "intent": null
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 54092,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_3"
+      },
+      "narration": "Run it.",
+      "intent": null
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 66637,
+      "type": "set_layout",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Now let's look at all three results at once.",
+      "intent": null
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 74377,
+      "type": "compare_results",
+      "target": "sql_viewer",
+      "params": {
+        "targets": [
+          "query_1",
+          "query_2",
+          "query_3"
+        ]
+      },
+      "narration": "Three queries. Three numbers. One question. This is what AI returns when the schema is ambiguous. It picks one. It doesn't tell you it had a choice.",
+      "intent": "comparison"
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 130000,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Your job as a data practitioner is to know which number is right before you ask the question \u2014 not after you get the answer.",
+      "intent": "emphasis"
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 148000,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "intent": null
+    }
+  ],
+  "narration_locked": true
+}

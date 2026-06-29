@@ -1,0 +1,349 @@
+# Production Card v4 — Full Instructor Narration
+# Video 1.2: The Mapping Problem
+# 
+# Narration philosophy:
+#   BEFORE visual: set up what learner is about to see and why it matters
+#   AFTER visual: explain what they saw, what it means, what comes next
+#   Always over-explain. Never assume the learner sees what you see.
+#   Treat every result as if the learner has never seen SQL output before.
+
+schema_version: "3.0"
+lesson_id: "video_1_2"
+title: "The Mapping Problem: From Question to Table to Answer"
+course: "NovaBridge Analytics"
+
+assets:
+  database: "assets/novabridge.db"
+  sql_file: "assets/mapping_queries.sql"
+
+events:
+
+  # ── Opening ────────────────────────────────────────────────────
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/novabridge.db"
+    transition: "new_concept"
+    narration: >
+      In the last lesson, we watched AI return three completely different
+      revenue numbers for the exact same question.
+      That wasn't a glitch. That was the system working exactly as designed —
+      just against the wrong table.
+      And here is the thing: that problem doesn't only affect revenue.
+      It affects every business question you ask against a schema
+      that hasn't been documented properly.
+      In this lesson I want to show you exactly what that looks like
+      across two different business questions.
+      We're going to run each question twice — against two different tables —
+      and you're going to see the numbers diverge every single time.
+
+  - id: "e01_pause"
+    type: "pause"
+    duration: 43.0
+    transition: "continuation"
+
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Take a look at the schema panel on the left side of your screen.
+      You can see eight tables in this database.
+      Accounts, churn events, customers, monthly metrics,
+      order details, order summary, orders, and subscriptions.
+      Now notice something — several of these table names overlap in meaning.
+      Customers and accounts both sound like they store customer information.
+      Monthly metrics and churn events both sound like they track churn.
+      This is the mapping problem. When you ask a question in plain language,
+      AI has to choose which table to query.
+      And without documentation, that choice is essentially a guess.
+      Let me prove it to you right now.
+
+  - id: "e02_pause"
+    type: "pause"
+    duration: 45.0
+    transition: "continuation"
+
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/mapping_queries.sql"
+    transition: "new_concept"
+    narration: >
+      I've prepared four queries in this SQL file.
+      Two for our first business question, two for our second.
+      Each pair asks the identical question but targets a different table.
+      We're going to run them one at a time and watch what happens.
+      The first business question is this: how many active customers
+      do we have right now?
+      Sounds simple. But watch carefully.
+
+  - id: "e03_pause"
+    type: "pause"
+    duration: 24.0
+    transition: "continuation"
+
+  # ── Question 1a: customers table ────────────────────────────────
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_1"
+    transition: "new_concept"
+    clears: []
+
+  - id: "e04_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_1"
+    transition: "continuation"
+
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      There's our result. You can see the column is called active customers,
+      and the value is one hundred and fifty-eight.
+      This query went to the customers table and counted every row
+      where status equals active.
+      One hundred and fifty-eight. Remember that number.
+      Now I'm going to ask the exact same question —
+      word for word, same logic — but point it at the accounts table instead.
+      Watch what happens.
+
+  - id: "e06_pause"
+    type: "pause"
+    duration: 25.0
+    transition: "continuation"
+
+  # ── Question 1b: accounts table ─────────────────────────────────
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_2"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e07_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_2"
+    transition: "continuation"
+
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      One hundred and forty-three.
+      Not one hundred and fifty-eight.
+      That is a difference of fifteen customers — for the exact same question.
+      So which one is right?
+      Well, both queries are technically correct SQL.
+      The issue is that these two tables contain different data.
+      The customers table holds only paying customers.
+      The accounts table holds two hundred and ten total records —
+      customers, prospects, and leads combined.
+      But only one hundred and forty-three of those have a status of active.
+      The customers table, by contrast, holds only verified paying customers,
+      and one hundred and fifty-eight of them are active.
+      Neither table has a comment, a description, or any documentation
+      that explains this difference.
+      If AI picks accounts, you report one hundred and forty-three.
+      If AI picks customers, you report one hundred and fifty-eight.
+      Both answers look completely reasonable.
+      One of them is wrong for your use case.
+
+  - id: "e09_pause"
+    type: "pause"
+    duration: 60.0
+    transition: "continuation"
+
+  # ── Question 2a: monthly_metrics ────────────────────────────────
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_3"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e10_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_3"
+    transition: "continuation"
+
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e12"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Now we're on our second business question: what was our churn rate in Q3?
+      This result came from the monthly metrics table,
+      which stores pre-calculated rates by month.
+      You're looking at three rows — one for each month in Q3 of 2024.
+      July shows zero point zero five.
+      August shows zero point zero two five.
+      September shows zero point zero two.
+      These are decimal representations of percentages.
+      So July was roughly five percent churn, August three percent,
+      September two percent.
+      These numbers were calculated by whoever built this table
+      and stored here as a summary.
+      Now here's the question: is there another way to calculate churn
+      from this same database? There is.
+      There's a churn events table with individual records
+      for every customer who churned.
+      Let's run the same question against that table instead.
+
+  - id: "e12_pause"
+    type: "pause"
+    duration: 60.0
+    transition: "continuation"
+
+  # ── Question 2b: churn_events ───────────────────────────────────
+  - id: "e13"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_4"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e13_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e14"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_4"
+    transition: "continuation"
+
+  - id: "e14_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e15"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Here's what the churn events table gives us for the same Q3 period.
+      Five churn events recorded in Q3 total.
+      The calculated rate is zero point zero two five —
+      meaning roughly two and a half percent of our two hundred customers churned.
+      Now compare that to the monthly metrics table.
+      July alone showed zero point zero five — roughly five percent.
+      The churn events table gives a blended Q3 rate of about two point five percent,
+      but the monthly metrics table shows higher rates for individual months.
+      These are measuring different things.
+      Monthly metrics may be calculating churn based on a different formula,
+      a different customer base, or a different time window.
+      We genuinely don't know — because nothing is documented.
+      This is exactly the situation your AI tool is navigating
+      every time someone asks about churn.
+      It picks a table. It runs a query. It returns a number.
+      The number looks precise. It may be measuring the wrong thing entirely.
+
+  - id: "e15_pause"
+    type: "pause"
+    duration: 64.0
+    transition: "continuation"
+
+  # ── Compare all four ────────────────────────────────────────────
+  - id: "e16_layout"
+    type: "set_layout"
+    target: "sql_viewer"
+    transition: "new_concept"
+    clears: ["result"]
+    narration: >
+      Now let me bring all four results together so you can see
+      the full picture side by side.
+
+  - id: "e16_pause"
+    type: "pause"
+    duration: 23.0
+    transition: "continuation"
+
+  - id: "e16"
+    type: "compare_results"
+    target: "sql_viewer"
+    targets: ["query_1", "query_2", "query_3", "query_4"]
+    transition: "emphasis"
+    narration: >
+      There it is. Four queries. Two business questions.
+      And every single one returns a different answer.
+      Query one and query two ask how many active customers we have —
+      one hundred and fifty-eight versus one hundred and forty-three.
+      Query three and query four ask about Q3 churn —
+      and they return numbers calculated from completely different sources.
+      This is not a bug. This is what happens when you have
+      a warehouse full of tables that overlap in meaning,
+      with no documentation to explain what each one actually contains.
+      AI doesn't know which answer you need.
+      It can't know — unless you tell it.
+      And the way you tell it is through proper data design,
+      clear naming conventions, and documentation.
+      That is what this course is about.
+
+  - id: "e16b_pause"
+    type: "pause"
+    duration: 50.0
+    transition: "continuation"
+
+  # ── Closing ─────────────────────────────────────────────────────
+  - id: "e17"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      In the next lesson, we're going to trace one of these failures
+      all the way through a real workflow.
+      We'll follow a business question from the initial ask,
+      through the AI query, all the way to the number that lands
+      in a board presentation.
+      And you'll see exactly what the cost looks like
+      when this kind of ambiguity goes undetected.
+      I'll see you there.
+
+  - id: "e17_pause"
+    type: "pause"
+    duration: 28.0
+    transition: "continuation"
+
+  - id: "e18"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

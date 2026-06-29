@@ -1,0 +1,55 @@
+[e01 — open_database — new_concept]
+This is the NovaBridge Analytics database. Three tables. One question. Let's see what happens when you ask AI to answer it.
+  ↳ cue at 7.65s
+
+[e02 — show_schema — new_concept]
+Three tables. Orders. Order summary. And order details. They sound related. They are related. But they are not interchangeable.
+  ↳ cue at 16.68s
+
+[e03 — open_file — new_concept]
+Here are three versions of the same question. Watch which table each one touches.
+  ↳ cue at 21.86s
+
+[e04 — highlight_section — new_concept]
+Query one. Total revenue by region from the orders table. This includes tax.
+  ↳ cue at 27.69s
+
+[e05 — run_query — continuation]
+Let's run it.
+  ↳ cue at 29.31s
+
+[e06 — show_result — continuation]
+Five regions. Revenue by region. These numbers include tax. Hold that in mind.
+  ↳ cue at 35.03s
+
+[e07 — highlight_section — new_concept]
+Same question. Different table. This one goes to order summary. Order summary excludes returns.
+  ↳ cue at 41.63s
+
+[e08 — run_query — continuation]
+Run it.
+  ↳ cue at 42.95s
+
+[e09 — show_result — emphasis]
+Different numbers. Same question. That is the problem.
+  ↳ cue at 46.67s
+
+[e10 — highlight_section — new_concept]
+Third query. Order details. Line items. Pre-tax. A third number is coming.
+  ↳ cue at 52.47s
+
+[e11 — run_query — continuation]
+Run it.
+  ↳ cue at 53.80s
+
+[e12_layout — set_layout — new_concept]
+Now look at all three results at once.
+  ↳ cue at 56.40s
+
+[e12 — compare_results — emphasis]
+Three queries. Three numbers. One question. This is what AI returns when the schema is ambiguous. It picks one. It does not tell you it had a choice.
+  ↳ cue at 66.50s
+
+[e13 — zoom_result — emphasis]
+Your job as a data practitioner is to know which number is right before you ask the question. Not after you get the answer.
+  ↳ cue at 73.83s

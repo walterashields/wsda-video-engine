@@ -1,0 +1,386 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "Three Tables, One Question: Watch AI Pick the Wrong One",
+  "course": "NovaBridge Analytics",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/production_card.yml",
+  "total_duration_ms": 137850,
+  "narration_locked": false,
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 10300,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/assets/novabridge.db"
+      },
+      "narration": "Welcome to the NovaBridge Analytics database. We have three tables here, and I want to show you something important about how AI handles them.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 11200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 7.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 25183,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Take a look at these three tables on the left. Orders, order summary, and order details. They sound like they belong together \u2014 and they do \u2014 but they are not interchangeable.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 26083,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 8.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 34749,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/assets/ambiguity_demo_queries.sql"
+      },
+      "narration": "I'm going to run the same question three times, once against each table. Watch what happens to the numbers.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 35649,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 6.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 43699,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_1"
+      },
+      "narration": "Here's query one. We're asking for total revenue by region, and this one pulls from the orders table.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 44599,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 5.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 48783,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_1"
+      },
+      "narration": "Let's run it and see what we get.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 49233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 60900,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Five regions, ranked by revenue. Southwest is out front at just over seventy-nine thousand. Hold onto that number \u2014 we're going to see it change.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 61350,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 7.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 68983,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_2"
+      },
+      "narration": "Same question. But this time we're going to the order summary table instead of the orders table.",
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 69883,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 5.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 71566,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_2"
+      },
+      "narration": "Run it.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 72016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 80766,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Different numbers. Same question. Southwest dropped from seventy-nine thousand to seventy-five. That's the problem starting to show itself.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 81416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 7.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 89883,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_3"
+      },
+      "narration": "And here's the third version. This one hits the order details table \u2014 line items, pre-tax, completely different source.",
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 90783,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 6.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 92883,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_3"
+      },
+      "narration": "One more time.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 93333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_layout",
+      "time_offset_ms": 99083,
+      "type": "set_layout",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Now let me show you all three results at the same time.",
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 99983,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 5.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 116866,
+      "type": "compare_results",
+      "target": "sql_viewer",
+      "params": {
+        "targets": [
+          "query_1",
+          "query_2",
+          "query_3"
+        ]
+      },
+      "narration": "Three queries. Three different answers. One question. This is exactly what happens when you ask AI to analyze a schema like this. It picks a table and runs with it. It doesn't tell you there were other options.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12b_pause",
+      "time_offset_ms": 117516,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 9.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 130550,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Your job as a data practitioner is to already know which number is the right one before you ever ask the question. Not after you get an answer back.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 131200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 7.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 132850,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

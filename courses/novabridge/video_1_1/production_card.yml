@@ -1,0 +1,220 @@
+# Production Card v3 — Conversational Narration Rewrite
+# Video 1.1 — Three Tables, One Question: Watch AI Pick the Wrong One
+# WSDA / NovaBridge Analytics
+#
+# Narration written for natural instructor delivery — not bullet points.
+# Each segment is one complete thought, warm and direct.
+# Word budgets match pause windows at 145wpm.
+
+schema_version: "3.0"
+lesson_id: "video_1_1"
+title: "Three Tables, One Question: Watch AI Pick the Wrong One"
+course: "NovaBridge Analytics"
+
+assets:
+  database: "assets/novabridge.db"
+  sql_file: "assets/ambiguity_demo_queries.sql"
+
+events:
+
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/novabridge.db"
+    transition: "new_concept"
+    narration: >
+      Welcome to the NovaBridge Analytics database.
+      We have three tables here, and I want to show you
+      something important about how AI handles them.
+
+  - id: "e01_pause"
+    type: "pause"
+    duration: 7.0
+    transition: "continuation"
+
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Take a look at these three tables on the left.
+      Orders, order summary, and order details.
+      They sound like they belong together — and they do —
+      but they are not interchangeable.
+
+  - id: "e02_pause"
+    type: "pause"
+    duration: 8.0
+    transition: "continuation"
+
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/ambiguity_demo_queries.sql"
+    transition: "new_concept"
+    narration: >
+      I'm going to run the same question three times,
+      once against each table.
+      Watch what happens to the numbers.
+
+  - id: "e03_pause"
+    type: "pause"
+    duration: 6.0
+    transition: "continuation"
+
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_1"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Here's query one. We're asking for total revenue by region,
+      and this one pulls from the orders table.
+
+  - id: "e04_pause"
+    type: "pause"
+    duration: 5.0
+    transition: "continuation"
+
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_1"
+    transition: "continuation"
+    narration: "Let's run it and see what we get."
+
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Five regions, ranked by revenue.
+      Southwest is out front at just over seventy-nine thousand.
+      Hold onto that number — we're going to see it change.
+
+  - id: "e06_pause"
+    type: "pause"
+    duration: 7.0
+    transition: "continuation"
+
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_2"
+    transition: "new_concept"
+    clears: ["result"]
+    narration: >
+      Same question. But this time we're going to the order summary table
+      instead of the orders table.
+
+  - id: "e07_pause"
+    type: "pause"
+    duration: 5.0
+    transition: "continuation"
+
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_2"
+    transition: "continuation"
+    narration: "Run it."
+
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Different numbers. Same question.
+      Southwest dropped from seventy-nine thousand to seventy-five.
+      That's the problem starting to show itself.
+
+  - id: "e09_pause"
+    type: "pause"
+    duration: 7.0
+    transition: "continuation"
+
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_3"
+    transition: "new_concept"
+    clears: ["result"]
+    narration: >
+      And here's the third version.
+      This one hits the order details table —
+      line items, pre-tax, completely different source.
+
+  - id: "e10_pause"
+    type: "pause"
+    duration: 6.0
+    transition: "continuation"
+
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_3"
+    transition: "continuation"
+    narration: "One more time."
+
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e12_layout"
+    type: "set_layout"
+    target: "sql_viewer"
+    transition: "new_concept"
+    clears: ["result"]
+    narration: "Now let me show you all three results at the same time."
+
+  - id: "e12_pause"
+    type: "pause"
+    duration: 5.0
+    transition: "continuation"
+
+  - id: "e12"
+    type: "compare_results"
+    target: "sql_viewer"
+    targets: ["query_1", "query_2", "query_3"]
+    transition: "emphasis"
+    narration: >
+      Three queries. Three different answers. One question.
+      This is exactly what happens when you ask AI to analyze
+      a schema like this. It picks a table and runs with it.
+      It doesn't tell you there were other options.
+
+  - id: "e12b_pause"
+    type: "pause"
+    duration: 9.0
+    transition: "continuation"
+
+  - id: "e13"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Your job as a data practitioner is to already know
+      which number is the right one before you ever ask the question.
+      Not after you get an answer back.
+
+  - id: "e13_pause"
+    type: "pause"
+    duration: 7.0
+    transition: "continuation"
+
+  - id: "e14"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

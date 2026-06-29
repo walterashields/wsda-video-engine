@@ -1,0 +1,31 @@
+# WSDA Video Engine - Global Settings
+
+viewer:
+  host: "127.0.0.1"
+  port: 5050
+  startup_wait: 2.0          # seconds to wait for Flask to start
+
+browser:
+  headless: false             # false = visible window during recording
+  viewport_width: 1280
+  viewport_height: 720
+  slow_mo: 0                  # ms between actions (0 = full speed)
+
+recording:
+  output_dir: "output"
+  fps: 30
+  display: ":99"              # Xvfb virtual display number
+
+rehearsal:
+  speed_multiplier: 2.0       # Pauses run at this fraction of real time
+  verbose: true
+
+attention:
+  default_highlight_color: "#FFD700"
+  default_highlight_duration: 2.0    # seconds
+  zoom_level: 1.4
+  zoom_duration: 1.5
+
+timing:
+  default_pause: 1.0          # seconds between events if not specified
+  action_settle: 0.3          # settle time after each action
