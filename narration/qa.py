@@ -140,10 +140,13 @@ def check_number_accuracy(narration: str, query_results: dict, event_id: str) ->
         return issues
 
     actual_values = set()
+    display_values = set()  # values as they actually appear on screen
     for row in result['rows']:
         for val in row:
             if isinstance(val, (int, float)):
                 actual_values.add(float(val))
+                # Viewer formats all numbers to 2 decimal places (toLocaleString)
+                display_values.add(round(float(val), 2))
 
     if not actual_values:
         return issues
@@ -168,13 +171,17 @@ def check_number_accuracy(narration: str, query_results: dict, event_id: str) ->
         num = words_to_number(mention)
         if num is None or num < 1:
             continue
-        match = any(abs(num - av) < 0.01 or 
+        match_raw = any(abs(num - av) < 0.01 or 
                     (abs(av) > 0 and abs(num - av) / abs(av) < 0.05)
                     for av in actual_values)
-        if not match:
+        match_display = any(abs(num - dv) < 0.005 for dv in display_values)
+        if not (match_raw or match_display):
             issues.append(
                 f"Primary number '{mention}' ({num}) doesn't match "
-                f"query_{query_ref[-1]} result {sorted(actual_values)}"
+                f"query_{query_ref[-1]} — raw values {sorted(actual_values)}, "
+                f"displayed (rounded) values {sorted(display_values)}. "
+                f"Narration should describe what the VIEWER DISPLAYS, "
+                f"not the raw database value."
             )
         break  # Only check first number
 

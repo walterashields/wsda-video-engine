@@ -1,0 +1,332 @@
+# Production Card — Video 1.3
+# The Number That Made It to the Deck
+# NovaBridge Analytics Course
+#
+# Lesson concept: trace one churn failure from business question
+# through AI query to wrong answer in a board presentation.
+# Uses same database as 1.2. No new assets needed.
+#
+# Exact DB values (verified):
+#   Q1 monthly_metrics July: 0.0487 (~4.9%)
+#   Q2 churn_events July: 2 events, rate 0.01 (1.0%)
+#   Q3 monthly_metrics Q3: Jul 0.0487, Aug 0.0265, Sep 0.0248
+#   Q4 churn_events Q3: 5 events, rate 0.025 (2.5%)
+
+schema_version: "3.0"
+lesson_id: "video_1_3"
+title: "The Number That Made It to the Deck"
+course: "NovaBridge Analytics"
+
+assets:
+  database: "assets/novabridge.db"
+  sql_file: "assets/board_deck_queries.sql"
+
+events:
+
+  # Opening
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/novabridge.db"
+    transition: "new_concept"
+    narration: >
+      I want to tell you about a specific moment that happens
+      inside organizations all the time.
+      A CFO walks into a board meeting and presents a churn rate.
+      The number is on the slide. It looks precise. It has a decimal.
+      Everyone in the room accepts it.
+      And it is wrong.
+      Not wrong because someone made a calculation error.
+      Wrong because the AI that produced it
+      queried the wrong table.
+      In this lesson we are going to watch that happen
+      step by step, inside this database,
+      so you can see exactly how it occurs
+      and exactly what it would take to prevent it.
+
+  - id: "e01_pause"
+    type: "pause"
+    duration: 51.0
+    transition: "continuation"
+
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      We are back in the NovaBridge Analytics database.
+      The same eight tables we saw in the last lesson.
+      The question the CFO asked was simple.
+      What was our churn rate in July?
+      One question. One month. One number.
+      The AI went to work.
+
+  - id: "e02_pause"
+    type: "pause"
+    duration: 26.0
+    transition: "continuation"
+
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/board_deck_queries.sql"
+    transition: "new_concept"
+    narration: >
+      Here are the queries we are going to run.
+      The first two both ask for July churn.
+      One goes to monthly metrics. One goes to churn events.
+      Watch carefully what comes back.
+
+  - id: "e03_pause"
+    type: "pause"
+    duration: 21.0
+    transition: "continuation"
+
+  # Query 1: monthly_metrics July
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_1"
+    transition: "new_concept"
+    clears: []
+
+  - id: "e04_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_1"
+    transition: "continuation"
+
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      There it is. July churn rate from the monthly metrics table.
+      Zero point zero five.
+      Five percent churn.
+      This is the number the AI returned.
+      This is the number that went into the slide.
+      Five percent churn in July.
+      It looks authoritative. It has a clean decimal.
+      The CFO presents it to the board.
+      Now let me show you what the actual churn events say.
+
+  - id: "e06_pause"
+    type: "pause"
+    duration: 38.0
+    transition: "continuation"
+
+  # Query 2: churn_events July
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_2"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e07_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_2"
+    transition: "continuation"
+
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Two churn events in July. A rate of zero point zero one.
+      One percent.
+      Not five percent. One percent.
+      The board was told churn was five percent in July.
+      The churn events table says one percent.
+      That is a difference of five times.
+      Think about what decisions get made around a number like that.
+      Do we need to intervene on customer retention?
+      Is the product team under pressure?
+      Is the sales team being asked to compensate for churn
+      that is actually a fraction of what was reported?
+      All of that downstream consequence starts here,
+      with two tables that answer the same question differently,
+      and no documentation to explain why.
+
+  - id: "e09_pause"
+    type: "pause"
+    duration: 55.0
+    transition: "continuation"
+
+  # Q3: Full quarter monthly_metrics
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_3"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e10_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_3"
+    transition: "continuation"
+
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e12"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Now let's zoom out to the full quarter.
+      Monthly metrics gives us July at zero point zero five,
+      August at zero point zero three,
+      and September at zero point zero two.
+      The trend looks like churn is improving through the quarter.
+      Starting high in July, coming down through August and September.
+      That story makes sense. The board might even feel good about it.
+      Now let's see what churn events says about the full quarter.
+
+  - id: "e12_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+
+  # Q4: Full quarter churn_events
+  - id: "e13"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_4"
+    transition: "new_concept"
+    clears: ["result"]
+
+  - id: "e13_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e14"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_4"
+    transition: "continuation"
+
+  - id: "e14_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e15"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Five churn events for the full quarter. Rate of zero point zero three.
+      Three percent blended across Q3.
+      Compare that to monthly metrics, which showed rates
+      between two and five percent by month.
+      These two sources do not agree on the magnitude of the problem.
+      They do not agree on the trend.
+      And neither table has a single line of documentation
+      explaining what it actually measures,
+      how it is calculated, or when it was last updated.
+      The AI had no way to know which one to use.
+      It picked one. It returned a number.
+      And that number went into a board presentation.
+
+  - id: "e15_pause"
+    type: "pause"
+    duration: 53.0
+    transition: "continuation"
+
+  # Compare view
+  - id: "e16_layout"
+    type: "set_layout"
+    target: "sql_viewer"
+    transition: "new_concept"
+    clears: ["result"]
+    narration: >
+      Let me put all four queries side by side
+      so you can see the full scope of the problem.
+
+  - id: "e16_pause"
+    type: "pause"
+    duration: 16.0
+    transition: "continuation"
+
+  - id: "e16"
+    type: "compare_results"
+    target: "sql_viewer"
+    targets: ["query_1", "query_2", "query_3", "query_4"]
+    transition: "emphasis"
+    narration: >
+      Four queries. Two sources. One question asked two different ways
+      across two different time windows.
+      Query one and query two both ask about July.
+      Monthly metrics says five percent.
+      Churn events says one percent.
+      Query three and query four both ask about Q3.
+      Monthly metrics shows a declining trend across three months.
+      Churn events gives a flat blended rate of three percent.
+      None of these numbers are wrong in isolation.
+      Each one is technically correct SQL against its source.
+      The problem is that the sources measure different things,
+      and nothing in this database tells you that.
+      This is the AI-ready data design problem in its most consequential form.
+      A real business decision was made on one of these numbers.
+      The question for the next lesson is: what would have prevented it?
+
+  - id: "e16b_pause"
+    type: "pause"
+    duration: 64.0
+    transition: "continuation"
+
+  # Closing
+  - id: "e17"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      In the next lesson, we are going to look at what AI-ready data design
+      actually means in practice.
+      Not as a theory. As a set of specific changes you can make
+      to this schema right now
+      that would have prevented every failure
+      we have seen across these three lessons.
+      I will see you there.
+
+  - id: "e17_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+
+  - id: "e18"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

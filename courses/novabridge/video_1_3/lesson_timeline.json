@@ -1,0 +1,489 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_3",
+  "title": "The Number That Made It to the Deck",
+  "course": "NovaBridge Analytics",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_3/production_card.yml",
+  "total_duration_ms": 339199,
+  "narration_locked": false,
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 43216,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_3/assets/novabridge.db"
+      },
+      "narration": "I want to tell you about a specific moment that happens inside organizations all the time. A CFO walks into a board meeting and presents a churn rate. The number is on the slide. It looks precise. It has a decimal. Everyone in the room accepts it. And it is wrong. Not wrong because someone made a calculation error. Wrong because the AI that produced it queried the wrong table. In this lesson we are going to watch that happen step by step, inside this database, so you can see exactly how it occurs and exactly what it would take to prevent it.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 44116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 51.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 62683,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "We are back in the NovaBridge Analytics database. The same eight tables we saw in the last lesson. The question the CFO asked was simple. What was our churn rate in July? One question. One month. One number. The AI went to work.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 63583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 26.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 77666,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_3/assets/board_deck_queries.sql"
+      },
+      "narration": "Here are the queries we are going to run. The first two both ask for July churn. One goes to monthly metrics. One goes to churn events. Watch carefully what comes back.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 78566,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 21.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 79116,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_1"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 80016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 80866,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 81316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 109650,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There it is. July churn rate from the monthly metrics table. Zero point zero five. Five percent churn. This is the number the AI returned. This is the number that went into the slide. Five percent churn in July. It looks authoritative. It has a clean decimal. The CFO presents it to the board. Now let me show you what the actual churn events say.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 110100,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 38.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 110650,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_2"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 111550,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 112400,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 112850,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 159516,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Two churn events in July. A rate of zero point zero one. One percent. Not five percent. One percent. The board was told churn was five percent in July. The churn events table says one percent. That is a difference of five times. Think about what decisions get made around a number like that. Do we need to intervene on customer retention? Is the product team under pressure? Is the sales team being asked to compensate for churn that is actually a fraction of what was reported? All of that downstream consequence starts here, with two tables that answer the same question differently, and no documentation to explain why.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 160166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 55.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 160716,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_3"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 161616,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 162466,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_3"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 162916,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 195000,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Now let's zoom out to the full quarter. Monthly metrics gives us July at zero point zero five, August at zero point zero three, and September at zero point zero two. The trend looks like churn is improving through the quarter. Starting high in July, coming down through August and September. That story makes sense. The board might even feel good about it. Now let's see what churn events says about the full quarter.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 195450,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 41.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 196000,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_4"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 196900,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 197750,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_4"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 198200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 241950,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Five churn events for the full quarter. Rate of zero point zero three. Three percent blended across Q3. Compare that to monthly metrics, which showed rates between two and five percent by month. These two sources do not agree on the magnitude of the problem. They do not agree on the trend. And neither table has a single line of documentation explaining what it actually measures, how it is calculated, or when it was last updated. The AI had no way to know which one to use. It picked one. It returned a number. And that number went into a board presentation.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 242600,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 53.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16_layout",
+      "time_offset_ms": 251266,
+      "type": "set_layout",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Let me put all four queries side by side so you can see the full scope of the problem.",
+      "transition": "new_concept",
+      "clears": [
+        "result"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 252166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 16.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 307800,
+      "type": "compare_results",
+      "target": "sql_viewer",
+      "params": {
+        "targets": [
+          "query_1",
+          "query_2",
+          "query_3",
+          "query_4"
+        ]
+      },
+      "narration": "Four queries. Two sources. One question asked two different ways across two different time windows. Query one and query two both ask about July. Monthly metrics says five percent. Churn events says one percent. Query three and query four both ask about Q3. Monthly metrics shows a declining trend across three months. Churn events gives a flat blended rate of three percent. None of these numbers are wrong in isolation. Each one is technically correct SQL against its source. The problem is that the sources measure different things, and nothing in this database tells you that. This is the AI-ready data design problem in its most consequential form. A real business decision was made on one of these numbers. The question for the next lesson is: what would have prevented it?",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16b_pause",
+      "time_offset_ms": 308450,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 64.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17",
+      "time_offset_ms": 331900,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "In the next lesson, we are going to look at what AI-ready data design actually means in practice. Not as a theory. As a set of specific changes you can make to this schema right now that would have prevented every failure we have seen across these three lessons. I will see you there.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17_pause",
+      "time_offset_ms": 332549,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 30.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e18",
+      "time_offset_ms": 334199,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}
