@@ -1,0 +1,121 @@
+# ═══════════════════════════════════════════════════════════════════
+# WSDA Video Engine — Production Card Template
+# Copy this file, fill in your content, delete the comments.
+# Read AUTHORING_GUIDE.md before your first lesson.
+# ═══════════════════════════════════════════════════════════════════
+
+schema_version: "3.0"
+lesson_id: "video_X_Y"             # unique ID, no spaces, e.g. video_2_1
+title: "Your Lesson Title Here"
+course: "Your Course Name"
+
+assets:
+  database: "assets/your_lesson.db"
+  sql_file:  "assets/your_queries.sql"
+
+events:
+
+  # ── OPENING ─────────────────────────────────────────────────────
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/your_lesson.db"
+    transition: "new_concept"
+    narration: >
+      Your opening narration here.
+      Set up the lesson. Tell the learner what problem you are solving.
+      Be specific. Over-explain rather than under-explain.
+
+  - id: "e01_pause"
+    type: "pause"
+    duration: 20.0
+    transition: "continuation"
+
+  # ── SCHEMA INTRODUCTION (optional) ──────────────────────────────
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Describe the tables in the schema.
+      Tell the learner what each table contains.
+
+  - id: "e02_pause"
+    type: "pause"
+    duration: 20.0
+    transition: "continuation"
+
+  # ── OPEN SQL FILE ───────────────────────────────────────────────
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/your_queries.sql"
+    transition: "new_concept"
+    narration: >
+      Briefly describe what queries are in this file.
+
+  - id: "e03_pause"
+    type: "pause"
+    duration: 12.0
+    transition: "continuation"
+
+  # ── QUERY BLOCK (repeat for each query) ─────────────────────────
+  # Rule: highlight -> run -> show_result
+  # Narration on highlight (before) and show_result (after). Never on run_query.
+
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_1"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Describe this query before running it.
+      Tell the learner what table it queries and what it asks.
+
+  - id: "e04_pause"
+    type: "pause"
+    duration: 14.0
+    transition: "continuation"
+
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_1"
+
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Read the result out loud. Say the exact numbers on screen.
+      Explain what the result means and why it matters.
+
+  - id: "e06_pause"
+    type: "pause"
+    duration: 26.0
+    transition: "continuation"
+
+  # ── CLOSING ─────────────────────────────────────────────────────
+  - id: "e_close"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Summarize the lesson. State the key takeaway.
+      Bridge to the next lesson.
+
+  - id: "e_close_pause"
+    type: "pause"
+    duration: 18.0
+    transition: "continuation"
+
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"
