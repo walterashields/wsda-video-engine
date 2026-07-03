@@ -126,6 +126,22 @@
     .table-count { font-size: 10px; color: var(--text-muted); padding-left: 13px; }
     .col-list { padding: 3px 0 3px 13px; display: none; }
     .table-item.expanded .col-list { display: block; }
+    .view-item {
+      border-left: 2px solid var(--accent-blue);
+      background: rgba(100,160,255,0.04);
+    }
+    .view-badge {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+      color: var(--accent-blue); text-transform: uppercase;
+      padding: 1px 4px; border: 1px solid var(--accent-blue);
+      border-radius: 3px; margin-left: 6px; opacity: 0.8;
+    }
+    .view-definition {
+      display: block; font-family: monospace; font-size: 10px;
+      color: var(--text-muted); white-space: pre-wrap;
+      padding: 6px 8px; border-top: 1px solid var(--border);
+      max-height: 180px; overflow-y: auto; line-height: 1.6;
+    }
     .col-row {
       display: flex; gap: 6px; padding: 2px 0;
       font-family: var(--mono); font-size: 10px; color: var(--text-dim);
@@ -244,7 +260,9 @@
     .sql-pane {
       display: flex; flex-direction: column; overflow: hidden;
     }
-    .layout-single .sql-pane { height: 42%; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .layout-single .sql-pane { height: 42%; flex-shrink: 0; border-bottom: 1px solid var(--border); transition: height 0.4s ease; }
+    .layout-single.sql-expanded .sql-pane { height: 88%; }
+    .layout-single.sql-expanded .results-pane { display: none; }
     .split-sql .sql-pane     { flex: 1; }
     .compare-sql-strip       { }
 
@@ -260,7 +278,7 @@
       color: var(--text-muted); font-weight: 400;
       letter-spacing: 0; text-transform: none;
     }
-    .sql-scroll { flex: 1; overflow: auto; background: var(--navy); }
+    .sql-scroll { flex: 1; overflow: auto; background: var(--navy); scroll-padding-top: 24px; }
     .sql-content {
       padding: 14px 18px;
       font-family: var(--mono); font-size: 12px; line-height: 1.8;
@@ -561,9 +579,17 @@ function setLayout(mode, options = {}) {
 function renderSchema(schema) {
   const el = document.getElementById('schema-list');
   if (!schema || !Object.keys(schema).length) return;
-  el.innerHTML = Object.entries(schema).map(([table, info]) => `
+
+  // Separate tables and views
+  const tables = Object.entries(schema).filter(([_, i]) => !i.is_view);
+  const views  = Object.entries(schema).filter(([_, i]) => i.is_view);
+
+  const renderTable = ([table, info]) => `
     <div class="table-item" data-table="${table}" onclick="toggleTable('${table}')">
-      <div class="table-name">${table}</div>
+      <div class="table-name">
+        <span class="tbl-indicator" style="background:var(--green)"></span>
+        ${table}
+      </div>
       <div class="table-count">${info.row_count} rows</div>
       <div class="col-list">
         ${info.columns.map(c => `
@@ -571,11 +597,81 @@ function renderSchema(schema) {
             <span>${c.name}</span><span class="col-type">${c.type}</span>
           </div>`).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+
+  const renderView = ([name, info]) => `
+    <div class="table-item view-item" data-table="${name}" onclick="toggleTable('${name}')">
+      <div class="table-name" style="display:flex;align-items:center">
+        <span class="tbl-indicator" style="background:var(--accent-blue)"></span>
+        ${name}<span class="view-badge">VIEW</span>
+      </div>
+      <div class="table-count" style="color:var(--accent-blue);font-size:10px">canonical source</div>
+      <div class="col-list">
+        <div class="view-definition">${(info.definition||'').replace(/</g,'&lt;')}</div>
+      </div>
+    </div>`;
+
+  let html = '';
+  if (views.length) {
+    html += `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+      color:var(--accent-blue);padding:6px 10px 2px;opacity:.7">Canonical Views</div>`;
+    html += views.map(renderView).join('');
+    html += `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;
+      color:var(--text-muted);padding:8px 10px 2px;opacity:.7">Tables</div>`;
+  }
+  html += tables.map(renderTable).join('');
+  el.innerHTML = html;
+
+  // Views start collapsed — clicking loads definition into editor
 }
 
 function toggleTable(name) {
-  document.querySelector(`[data-table="${name}"]`)?.classList.toggle('expanded');
+  const el = document.querySelector(`[data-table="${name}"]`);
+  if (!el) return;
+  el.classList.toggle('expanded');
+
+  // If this is a view, also load its definition into the SQL window
+  if (el.classList.contains('view-item')) {
+    const defEl = el.querySelector('.view-definition');
+    if (defEl) {
+      const sql = defEl.textContent.replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+      if (sql) {
+        showViewDefinition(name, sql);
+      }
+    }
+  }
+}
+
+function expandSQLPane() {
+  // Collapse results pane so full SQL is visible — called on highlight_section
+  const layout = document.querySelector('.layout-single');
+  if (layout) layout.classList.add('sql-expanded');
+}
+
+function collapseSQLPane() {
+  // Restore results pane — called on show_result
+  const layout = document.querySelector('.layout-single');
+  if (layout) layout.classList.remove('sql-expanded');
+}
+
+function showViewDefinition(name, sql) {
+  // Determine current layout mode
+  const mode = window.currentLayout || 'single';
+
+  // Load into the active SQL editor pane
+  const editorEl = document.getElementById(`sql-content-${mode}`) ||
+                   document.getElementById('sql-content-single');
+  if (editorEl) {
+    editorEl.innerHTML = syntaxHL(sql);
+  }
+
+  // Update filename label
+  const labelEl = document.getElementById(`sql-filename-${mode}`) ||
+                  document.getElementById('sql-filename-single');
+  if (labelEl) labelEl.textContent = `view: ${name}`;
+
+  // Emit for adapter tracking
+  if (window.wsda && window.wsda.emit) wsda.emit('view_opened', {name, sql});
 }
 
 function activateTable(name) {
@@ -625,7 +721,7 @@ function highlightSection(section) {
   document.querySelectorAll('.sql-block').forEach(b => b.classList.remove('highlighted'));
   document.querySelectorAll(`#block-${section}`).forEach(el => {
     el.classList.add('highlighted');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
 
@@ -839,6 +935,8 @@ window.wsdaAudio = {
 window.wsda = {
   setLayout,
   renderSchema,
+  expandSQLPane,
+  collapseSQLPane,
   renderSQL,
   highlightSection,
   renderResults,

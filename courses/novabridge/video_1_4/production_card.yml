@@ -1,0 +1,217 @@
+# Production Card — Video 1.4 v4
+# What AI-Ready Data Design Actually Looks Like
+#
+# Uses highlight_section to show each view definition on screen.
+# No open_view action needed — view SQL is in the SQL file as sections.
+# The learner reads the definition in the editor window, highlighted.
+
+schema_version: "3.0"
+lesson_id: "video_1_4"
+title: "What AI-Ready Data Design Actually Looks Like"
+course: "NovaBridge Analytics"
+
+assets:
+  database: "assets/novabridge_fixed.db"
+  sql_file:  "assets/design_fixes.sql"
+
+events:
+
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/novabridge_fixed.db"
+    transition: "new_concept"
+    narration: >
+      Across the last three lessons we watched the same schema
+      produce wrong answers to every business question we asked it.
+      Revenue came back three different ways.
+      Churn rate came back from two sources that disagreed by a factor of five.
+      Active customer counts differed by fifteen depending on which table was chosen.
+      None of that was a bug. It was a design problem.
+      In this lesson I am going to show you the exact changes
+      that prevent every one of those failures.
+      You are going to read the actual S-Q-L on screen, line by line,
+      and see exactly what makes a schema AI-ready.
+
+  - id: "e01_pause"
+    type: "pause"
+    duration: 52.0
+    transition: "continuation"
+
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Look at the schema panel on the left.
+      At the top you will see three entries labeled VIEW in blue.
+      Canonical revenue. Canonical churn. Canonical customers.
+      These views are the fix.
+      Each one is a documented contract written directly in S-Q-L.
+      I am going to open the file that contains their definitions
+      so you can read every line on screen.
+
+  - id: "e02_pause"
+    type: "pause"
+    duration: 32.0
+    transition: "continuation"
+
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/design_fixes.sql"
+    transition: "new_concept"
+
+  - id: "e03_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  # ── View 1: canonical_revenue ──────────────────────────────────
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "view_revenue"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Read what is on screen now.
+      This is the canonical revenue view definition.
+      The header says: canonical source, use this for all revenue queries.
+      Below that: source is the orders table, includes tax, full order total.
+      Then two do not use instructions with reasons.
+      Do not use order summary — excludes returns, different scope.
+      Do not use order details — pre-tax line items, different granularity.
+      And at the bottom, an owner and a date.
+      This is not just S-Q-L. It is a contract.
+      AI reads this file. AI finds these comments.
+      AI knows which table to use and which ones to avoid.
+      In lesson one, revenue had three possible answers.
+      This view makes it one.
+
+  - id: "e04_pause"
+    type: "pause"
+    duration: 62.0
+    transition: "continuation"
+
+  # ── View 2: canonical_churn ────────────────────────────────────
+  - id: "e05"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "view_churn"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Now the canonical churn view.
+      Canonical source — use this for all churn rate queries.
+      The methodology line explains exactly how churn is calculated.
+      Distinct churned customers divided by total active at period start.
+      Source is the churn events table. Raw events. Exact date precision.
+      Then the critical instruction: do not use monthly metrics churn rate.
+      And it says why.
+      Pre-aggregated, rolling thirty-day window, different denominator.
+      That explanation is machine-readable.
+      In lesson three, monthly metrics returned five percent for July.
+      Churn events returned one percent.
+      A factor of five difference.
+      This view resolves that permanently.
+
+  - id: "e05_pause"
+    type: "pause"
+    duration: 62.0
+    transition: "continuation"
+
+  # ── View 3: canonical_customers ────────────────────────────────
+  - id: "e06"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "view_customers"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      And canonical customers.
+      Definition: paying customers with status equals active only.
+      Source: customers table.
+      Do not use: prospects table.
+      Reason: includes leads and trials, not paying customers.
+      You are reading the exact fix for the problem in lesson two.
+      In lesson two the table was called accounts.
+      That name told AI nothing about its scope.
+      It has been renamed to prospects in this schema.
+      And this view locks in the correct source permanently.
+      The fifteen-customer difference from lesson two
+      is now impossible to reproduce by accident.
+
+  - id: "e06_pause"
+    type: "pause"
+    duration: 58.0
+    transition: "continuation"
+
+  # ── Run canonical_revenue to prove it works ─────────────────────
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "query_revenue"
+    transition: "new_concept"
+    clears: []
+
+  - id: "e07_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "query_revenue"
+    transition: "continuation"
+
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Revenue by region from the canonical revenue view.
+      Southwest at seventy-nine thousand one hundred and thirty-nine.
+      One answer. One source. No ambiguity.
+      This is the same number the orders table returned in lesson one,
+      but now there is no order summary returning a different number,
+      and no order details returning a third.
+      The view made a decision, documented it,
+      and made it the single source of truth.
+
+  - id: "e09_pause"
+    type: "pause"
+    duration: 36.0
+    transition: "continuation"
+
+  # ── Closing ──────────────────────────────────────────────────────
+  - id: "e10"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Three views. Three decisions. Three problems solved.
+      No new data. No new tooling.
+      Clear naming, documentation written directly in the S-Q-L,
+      and canonical views that make the right answer explicit.
+      That is what AI-ready data design means in practice.
+      In the next lesson we are going to apply these same principles
+      to a schema you did not build yourself,
+      starting from no documentation at all.
+      I will see you there.
+
+  - id: "e10_pause"
+    type: "pause"
+    duration: 38.0
+    transition: "continuation"
+
+  - id: "e11"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

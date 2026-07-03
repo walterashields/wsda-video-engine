@@ -1,0 +1,276 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_4",
+  "title": "What AI-Ready Data Design Actually Looks Like",
+  "course": "NovaBridge Analytics",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_4/production_card.yml",
+  "total_duration_ms": 269983,
+  "narration_locked": false,
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 43216,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_4/assets/novabridge_fixed.db"
+      },
+      "narration": "Across the last three lessons we watched the same schema produce wrong answers to every business question we asked it. Revenue came back three different ways. Churn rate came back from two sources that disagreed by a factor of five. Active customer counts differed by fifteen depending on which table was chosen. None of that was a bug. It was a design problem. In this lesson I am going to show you the exact changes that prevent every one of those failures. You are going to read the actual S-Q-L on screen, line by line, and see exactly what makes a schema AI-ready.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 44116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 52.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 69766,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Look at the schema panel on the left. At the top you will see three entries labeled VIEW in blue. Canonical revenue. Canonical churn. Canonical customers. These views are the fix. Each one is a documented contract written directly in S-Q-L. I am going to open the file that contains their definitions so you can read every line on screen.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 70666,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 71416,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_4/assets/design_fixes.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 72316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 120783,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "view_revenue"
+      },
+      "narration": "Read what is on screen now. This is the canonical revenue view definition. The header says: canonical source, use this for all revenue queries. Below that: source is the orders table, includes tax, full order total. Then two do not use instructions with reasons. Do not use order summary \u2014 excludes returns, different scope. Do not use order details \u2014 pre-tax line items, different granularity. And at the bottom, an owner and a date. This is not just S-Q-L. It is a contract. AI reads this file. AI finds these comments. AI knows which table to use and which ones to avoid. In lesson one, revenue had three possible answers. This view makes it one.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 121683,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 62.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 161816,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "view_churn"
+      },
+      "narration": "Now the canonical churn view. Canonical source \u2014 use this for all churn rate queries. The methodology line explains exactly how churn is calculated. Distinct churned customers divided by total active at period start. Source is the churn events table. Raw events. Exact date precision. Then the critical instruction: do not use monthly metrics churn rate. And it says why. Pre-aggregated, rolling thirty-day window, different denominator. That explanation is machine-readable. In lesson three, monthly metrics returned five percent for July. Churn events returned one percent. A factor of five difference. This view resolves that permanently.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 162716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 62.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 199100,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "view_customers"
+      },
+      "narration": "And canonical customers. Definition: paying customers with status equals active only. Source: customers table. Do not use: prospects table. Reason: includes leads and trials, not paying customers. You are reading the exact fix for the problem in lesson two. In lesson two the table was called accounts. That name told AI nothing about its scope. It has been renamed to prospects in this schema. And this view locks in the correct source permanently. The fifteen-customer difference from lesson two is now impossible to reproduce by accident.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 200000,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 200550,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "query_revenue"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 201450,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 202300,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "query_revenue"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 202750,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 231916,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Revenue by region from the canonical revenue view. Southwest at seventy-nine thousand one hundred and thirty-nine. One answer. One source. No ambiguity. This is the same number the orders table returned in lesson one, but now there is no order summary returning a different number, and no order details returning a third. The view made a decision, documented it, and made it the single source of truth.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 232566,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 36.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 262683,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Three views. Three decisions. Three problems solved. No new data. No new tooling. Clear naming, documentation written directly in the S-Q-L, and canonical views that make the right answer explicit. That is what AI-ready data design means in practice. In the next lesson we are going to apply these same principles to a schema you did not build yourself, starting from no documentation at all. I will see you there.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 263333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 38.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 264983,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

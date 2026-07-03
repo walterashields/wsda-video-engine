@@ -303,7 +303,41 @@ class SQLViewerAdapter(BaseAdapter):
         elif event_type == "show_schema":
             result = await self._scan_schema()
 
+        elif event_type == "open_view":
+            # Fetch CREATE VIEW SQL from Flask, inject into SQL editor pane
+            import json as _json
+            view_name = params.get("view", "")
+            view_sql = ""
+            try:
+                result = await self._api("/api/get-view-sql", {"view": view_name})
+                view_sql = result.get("sql", "")
+            except Exception as e:
+                console.print(f"  [yellow]open_view warning: {e}[/yellow]")
+
+            if view_sql:
+                sql_json = _json.dumps(view_sql)
+                vn_json  = _json.dumps(view_name)
+                js = ("(function(){"
+                      f"var sql={sql_json}; var name={vn_json};"
+                      "if(window.showViewDefinition){window.showViewDefinition(name,sql);}"
+                      "else{"
+                      "  var el=document.getElementById('sql-content-single');"
+                      "  if(el) el.innerHTML=window.syntaxHL?window.syntaxHL(sql):sql;"
+                      "}"
+                      "document.querySelectorAll('.table-item')"
+                      "  .forEach(function(e){e.classList.remove('active');});"
+                      "var v=document.querySelector('[data-table="'+name+'"]');"
+                      "if(v){v.classList.add('active');}"
+                      "})();")
+                await self.page.evaluate(js)
+                console.print(f"  [green]✓[/green] View loaded: {view_name}")
+            else:
+                console.print(f"  [yellow]⚠[/yellow] No SQL found for view: {view_name}")
+            await asyncio.sleep(1.0)
+
+
         elif event_type == "highlight_section":
+            await self._expand_sql_pane()
             await self._highlight_sql_section(params.get("section", ""))
 
         elif event_type == "run_query":
@@ -311,6 +345,7 @@ class SQLViewerAdapter(BaseAdapter):
             self._screen_state.add(f"result:{params.get('query_ref', '')}")
 
         elif event_type == "show_result":
+            await self._collapse_sql_pane()
             await self._highlight_result()
 
         elif event_type == "clear_result":
@@ -513,6 +548,14 @@ class SQLViewerAdapter(BaseAdapter):
             await self.cursor_to("schema_orders", 400)
         await self.set_status("Reviewing schema...", True)
         return {}
+
+    async def _expand_sql_pane(self):
+        """Collapse results pane so full SQL section is visible."""
+        await self.page.evaluate("if(window.expandSQLPane) window.expandSQLPane();")
+
+    async def _collapse_sql_pane(self):
+        """Restore results pane after showing results."""
+        await self.page.evaluate("if(window.collapseSQLPane) window.collapseSQLPane();")
 
     async def _highlight_sql_section(self, section: str) -> None:
         console.print(f"  Highlight: [yellow]{section}[/yellow]")

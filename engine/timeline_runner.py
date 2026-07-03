@@ -43,6 +43,7 @@ PREROLL_TYPES = {"open_database", "open_file", "show_schema"}
 # How long after visual action before narration begins (seconds)
 # This is the "let it land" pause the learner needs
 VISUAL_SETTLE = {
+    "open_view":          1.2,
     "highlight_section": 0.6,
     "run_query":         1.0,
     "show_result":       0.5,

@@ -32,6 +32,7 @@ state = {
 def get_schema(db_path):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+    # Tables
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     tables = [r[0] for r in cur.fetchall()]
     schema = {}
@@ -39,7 +40,16 @@ def get_schema(db_path):
         cur.execute(f"PRAGMA table_info({t})")
         cols = [{"name": r[1], "type": r[2]} for r in cur.fetchall()]
         cur.execute(f"SELECT COUNT(*) FROM {t}")
-        schema[t] = {"columns": cols, "row_count": cur.fetchone()[0]}
+        schema[t] = {"columns": cols, "row_count": cur.fetchone()[0], "is_view": False}
+    # Views — shown separately with definition
+    cur.execute("SELECT name, sql FROM sqlite_master WHERE type='view' ORDER BY name")
+    for name, sql in cur.fetchall():
+        schema[name] = {
+            "columns": [],
+            "row_count": None,
+            "is_view": True,
+            "definition": sql or ""
+        }
     conn.close()
     return schema
 
@@ -126,6 +136,21 @@ def run_query():
 def highlight_section():
     section = request.json.get("section", "")
     return jsonify({"success": True, "section": section})
+
+@app.route("/api/get-view-sql", methods=["POST"])
+def get_view_sql():
+    """Return the CREATE VIEW SQL for a named view."""
+    view_name = request.json.get("view", "")
+    db_path = state.get("db_path")
+    if not db_path or not view_name:
+        return jsonify({"sql": ""})
+    conn = sqlite3.connect(db_path)
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='view' AND name=?",
+        (view_name,)
+    ).fetchone()
+    conn.close()
+    return jsonify({"sql": row[0] if row else ""})
 
 @app.route("/api/show-schema", methods=["POST"])
 def show_schema():

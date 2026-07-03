@@ -39,8 +39,8 @@ def synthesize(text: str, path: Path, voice: str, rate: int,
     if el_key and el_voice:
         import urllib.request, json as _j
         payload = _j.dumps({"text": text, "model_id": "eleven_turbo_v2_5",
-            "voice_settings": {"stability": 0.5, "similarity_boost": 0.85,
-                               "style": 0.0, "use_speaker_boost": True}}).encode()
+            "voice_settings": {"stability": 0.35, "similarity_boost": 0.85,
+                               "style": 0.25, "use_speaker_boost": True}}).encode()
         req = urllib.request.Request(
             f"https://api.elevenlabs.io/v1/text-to-speech/{el_voice}",
             data=payload,

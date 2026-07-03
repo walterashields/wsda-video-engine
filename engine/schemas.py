@@ -26,6 +26,7 @@ EventType = Literal[
     # Database / file
     "open_database",
     "open_file",
+    "open_view",
     "show_schema",
     # SQL
     "highlight_section",
