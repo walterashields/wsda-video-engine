@@ -35,6 +35,7 @@ from engine.schemas import (
     EVENT_APPROACH_LEAD,
 )
 from adapters.sql_viewer_adapter import SQLViewerAdapter
+from adapters.chat_demo_adapter import ChatDemoAdapter
 
 console = Console()
 
@@ -112,7 +113,8 @@ class TimelineRunner:
             total_events=len(timeline.events),
         )
 
-        self._adapter: SQLViewerAdapter | None = None
+        self._adapter: SQLViewerAdapter | ChatDemoAdapter | None = None
+        self._adapter_type: str = "sql_viewer"
         self._flask: subprocess.Popen | None = None
         self._t0: float = 0.0
         self._video_dir: Path | None = None
@@ -147,13 +149,24 @@ class TimelineRunner:
     async def _start_flask(self):
         console.print("\n[dim]Starting SQL viewer...[/dim]")
         web_app = Path(__file__).parent.parent / "web" / "app.py"
+        import tempfile
+        self._flask_log = tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False)
         self._flask = subprocess.Popen(
             [sys.executable, str(web_app)],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=self._flask_log,
+            stderr=self._flask_log,
         )
-        await asyncio.sleep(2.0)
-        console.print("[green]✓[/green] SQL viewer ready")
+        await asyncio.sleep(3.0)  # extra time for chat demo
+        # Check Flask is actually running
+        import urllib.request
+        try:
+            urllib.request.urlopen("http://localhost:5050/", timeout=2)
+            console.print("[green]✓[/green] SQL viewer ready")
+        except Exception as fe:
+            log_content = open(self._flask_log.name).read()
+            console.print(f"[red]Flask failed to start: {fe}[/red]")
+            console.print(f"[red]Flask log:\n{log_content}[/red]")
+            raise RuntimeError(f"Flask startup failed: {log_content[:500]}")
 
     async def _stop_flask(self):
         if self._flask:
@@ -179,7 +192,12 @@ class TimelineRunner:
             console.print("\n[dim]Pre-roll: loading lesson state...[/dim]")
             ctx  = await browser.new_context(viewport={"width": vw, "height": vh})
             page = await ctx.new_page()
-            self._adapter = SQLViewerAdapter(page, rehearsal=self.rehearsal)
+            if self.timeline.adapter_type == "chat_demo":
+                self._adapter = ChatDemoAdapter(page)
+                self._adapter_type = "chat_demo"
+            else:
+                self._adapter = SQLViewerAdapter(page, rehearsal=self.rehearsal)
+                self._adapter_type = "sql_viewer"
             await self._adapter.navigate()
             for e in preroll:
                 await self._adapter.action(e.type, e.params)
@@ -196,7 +214,12 @@ class TimelineRunner:
 
             rec_ctx  = await browser.new_context(**rec_args)
             rec_page = await rec_ctx.new_page()
-            self._adapter = SQLViewerAdapter(rec_page, rehearsal=self.rehearsal)
+            if self.timeline.adapter_type == "chat_demo":
+                self._adapter = ChatDemoAdapter(rec_page)
+                self._adapter_type = "chat_demo"
+            else:
+                self._adapter = SQLViewerAdapter(rec_page, rehearsal=self.rehearsal)
+                self._adapter_type = "sql_viewer"
             await self._adapter.navigate()
 
             # Restore state quickly
@@ -262,6 +285,12 @@ class TimelineRunner:
                 # Focus + Action
                 await self._phase_focus(event)
                 await self._phase_action(event)
+
+                # For pause events, sleep the full duration
+                if event.type == "pause":
+                    duration = event.params.get("duration", 0)
+                    if duration and duration > 0:
+                        await asyncio.sleep(float(duration) / self.speed)
 
                 # Visual settle — learner sees it
                 settle = VISUAL_SETTLE.get(event.type, 0.4) / self.speed

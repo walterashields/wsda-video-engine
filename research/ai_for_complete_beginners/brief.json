@@ -1,0 +1,368 @@
+{
+  "topic": "AI for complete beginners",
+  "format": "course",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "Generative AI tools like ChatGPT, Copilot, and Gemini have made AI accessible to non-technical professionals for the first time, and employers increasingly expect every role to demonstrate basic AI literacy. Millions of knowledge workers need a confident foundation in AI concepts before they can adopt these tools effectively.",
+    "target_learner": "Non-technical professionals aged 28-55 \u2014 project managers, marketers, HR specialists, small business owners, and career changers \u2014 who hear about AI daily but feel overwhelmed, unsure what is hype versus real, and worried about falling behind.",
+    "learner_goal": "Confidently explain core AI concepts, distinguish between AI types, evaluate which everyday AI tools solve which problems, and complete a simple hands-on AI workflow using a free tool \u2014 all without writing a single line of code.",
+    "competition_gap": "Most beginner AI courses either dive into Python and math too quickly (losing the true beginner) or stay entirely conceptual with no hands-on practice. This course fills the gap by keeping theory jargon-free AND giving learners real, guided exercises with free tools so they finish with practical experience, not just vocabulary.",
+    "platform_fit": "LinkedIn Learning and Udemy are ideal because learners on these platforms expect structured progression with certificates they can share with employers. The topic maps perfectly to professional upskilling budgets and corporate learning libraries, where AI literacy is now a top-requested category."
+  },
+  "content_structure": {
+    "hook": "You have heard the phrase artificial intelligence hundreds of times this year \u2014 but if someone asked you to explain what AI actually is and what it can do for YOUR job, could you answer with confidence? By the end of this course, you will.",
+    "core_promise": "You will go from AI-confused to AI-confident, able to explain how AI works, evaluate AI tools, and complete a real AI-powered workflow \u2014 no coding required.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "What AI Actually Is (And What It Is Not)",
+        "duration_minutes": 8,
+        "learning_objective": "By the end of this lesson the learner will be able to define artificial intelligence, distinguish AI from simple automation, and identify three real-world examples of AI they already use.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI You Already Use",
+            "duration_seconds": 120,
+            "visual_type": "slides",
+            "what_learner_sees": "A slide showing a smartphone screen with highlighted apps \u2014 email spam filter, photo search, map route suggestions \u2014 each labeled as AI-powered. Animated callouts appear as each example is discussed.",
+            "what_learner_hears": "Narration explains that the learner already interacts with AI dozens of times a day without realizing it. The instructor names specific everyday examples and explains why each one qualifies as AI rather than simple programming.",
+            "exercise_file": null,
+            "transition_to_next": "So if those are AI, what exactly makes something count as artificial intelligence? Let us nail down a definition you will never forget."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "A Plain-English Definition",
+            "duration_seconds": 150,
+            "visual_type": "slides",
+            "what_learner_sees": "An animated diagram comparing traditional programming (rules in, answers out) versus AI (data in, patterns learned, predictions out). Key terms appear on screen as spoken: machine learning, training data, model.",
+            "what_learner_hears": "The instructor gives a clear, jargon-free definition of AI and walks through the diagram. The narration emphasizes that AI learns from examples rather than following hard-coded rules, and introduces the three vocabulary terms the learner needs.",
+            "exercise_file": null,
+            "transition_to_next": "Now that we have the core idea, let us bust some myths that trip up most beginners."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "AI Myths Versus Reality",
+            "duration_seconds": 120,
+            "visual_type": "slides",
+            "what_learner_sees": "A true-or-false style slide deck. Five common AI myths appear one at a time (e.g., AI thinks like a human, AI will replace all jobs) with animated verdict stamps marking each as myth or nuance.",
+            "what_learner_hears": "The instructor addresses each myth conversationally, explaining why it is misleading and what the reality is. Emphasis on AI as a tool that augments human work rather than a sentient replacement.",
+            "exercise_file": null,
+            "transition_to_next": "Time to test yourself. Open the exercise file and see how well you can spot AI versus simple automation."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Exercise: Spot the AI",
+            "duration_seconds": 90,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens the PDF exercise file on screen. It lists ten technology scenarios. The instructor works through the first two as examples, circling answers, then encourages the learner to pause and complete the rest. The answer key on page two is briefly shown.",
+            "what_learner_hears": "Narration walks through the reasoning for the first two scenarios, modeling the thinking process. The instructor prompts the learner to pause the video, complete the exercise, then check their answers.",
+            "exercise_file": "01_spot_the_ai_quiz.pdf",
+            "transition_to_next": "Now that you can identify AI in the wild, let us explore the different types of AI you will encounter in headlines and at work."
+          }
+        ],
+        "exercise_files": [
+          "01_spot_the_ai_quiz.pdf"
+        ],
+        "key_takeaway": "AI is software that learns patterns from data to make predictions or decisions \u2014 it is not magic, not sentient, and you already use it every day."
+      },
+      {
+        "lesson_number": 2,
+        "title": "The AI Landscape: Types, Terms, and Tools You Should Know",
+        "duration_minutes": 10,
+        "learning_objective": "By the end of this lesson the learner will be able to categorize AI into its major types (narrow AI, generative AI, machine learning, deep learning), define ten essential vocabulary terms, and name five popular AI tools matched to common business tasks.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI Family Tree",
+            "duration_seconds": 150,
+            "visual_type": "slides",
+            "what_learner_sees": "An animated nested diagram builds on screen: Artificial Intelligence as the outer circle, Machine Learning inside it, Deep Learning inside that, and Generative AI highlighted as a recent branch. Each layer animates in with icons and one-line definitions.",
+            "what_learner_hears": "The instructor walks through each layer of the diagram, using analogies (e.g., AI is the whole zoo, machine learning is one exhibit, deep learning is a specific animal). Generative AI is explained as the category behind ChatGPT, DALL-E, and similar tools.",
+            "exercise_file": null,
+            "transition_to_next": "With the big picture clear, let us decode the jargon you will see in every AI article."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Your AI Vocabulary Cheat Sheet",
+            "duration_seconds": 150,
+            "visual_type": "slides",
+            "what_learner_sees": "A visually designed glossary appears term by term: algorithm, training data, model, neural network, large language model, prompt, token, hallucination, fine-tuning, API. Each term has a one-sentence plain-English definition and a small icon.",
+            "what_learner_hears": "The instructor reads each definition and adds a quick real-world example. Emphasis is placed on the five terms the learner will encounter most often. The instructor notes that the downloadable glossary PDF is a reference they can keep.",
+            "exercise_file": "02_ai_glossary_cheat_sheet.pdf",
+            "transition_to_next": "Vocabulary is useful, but which actual tools should you know about?"
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Five AI Tools Matched to Business Tasks",
+            "duration_seconds": 150,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens a browser and briefly shows the landing page of five tools: ChatGPT (writing and research), Canva Magic (design), Otter.ai (meeting notes), Grammarly (editing), and Google NotebookLM (document analysis). Each is shown for about 20 seconds with the key feature highlighted.",
+            "what_learner_hears": "For each tool the instructor states the business task it solves, whether it has a free tier, and one specific use case. The narration reinforces that these are narrow AI tools \u2014 each does one category of task well.",
+            "exercise_file": null,
+            "transition_to_next": "Let us put all of this together with a quick mapping exercise."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Exercise: Match the Tool to the Task",
+            "duration_seconds": 150,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens the Excel exercise file on screen. Column A lists ten workplace scenarios (e.g., summarize a 30-page report, create social media graphics). Column B is blank for the learner to fill in the best AI tool and AI type. The instructor completes two rows as examples.",
+            "what_learner_hears": "Narration models the decision process: identify the task category, recall which AI type handles it, then pick the tool. The learner is prompted to pause, complete the sheet, and check against the answer tab.",
+            "exercise_file": "02_tool_task_matching.xlsx",
+            "transition_to_next": "You now have the vocabulary and the map. In the next lesson we will get our hands dirty with the most important AI tool of the moment."
+          }
+        ],
+        "exercise_files": [
+          "02_ai_glossary_cheat_sheet.pdf",
+          "02_tool_task_matching.xlsx"
+        ],
+        "key_takeaway": "AI is an umbrella term \u2014 machine learning, deep learning, and generative AI are nested categories, and knowing which type a tool uses helps you pick the right one for any task."
+      },
+      {
+        "lesson_number": 3,
+        "title": "Hands On with ChatGPT: Your First AI Conversation",
+        "duration_minutes": 12,
+        "learning_objective": "By the end of this lesson the learner will be able to create a free ChatGPT account, write a structured prompt, iterate on the output, and use a prompt template to complete a real work task.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "Setting Up Your Free Account",
+            "duration_seconds": 120,
+            "visual_type": "browser",
+            "what_learner_sees": "Screen recording of navigating to chat.openai.com, clicking Sign Up, choosing the free tier, and arriving at the blank chat interface. Key interface elements (model selector, chat input, conversation history) are highlighted with callout annotations.",
+            "what_learner_hears": "Step-by-step narration guiding the learner through account creation. The instructor notes that no payment is required for the free tier and points out which features are free versus paid.",
+            "exercise_file": null,
+            "transition_to_next": "You are in. Now let us learn the difference between a bad prompt and a great one."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Anatomy of a Great Prompt",
+            "duration_seconds": 180,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor types a vague prompt (Help me with marketing) into ChatGPT and shows the generic response. Then types a structured prompt using the Role-Task-Format-Constraints framework and shows the dramatically better response. Both prompts and responses are visible side by side.",
+            "what_learner_hears": "Narration explains the four components of a strong prompt: Role (who should the AI act as), Task (what exactly do you need), Format (how should the output be structured), and Constraints (length, tone, audience). The instructor emphasizes that prompt quality determines output quality.",
+            "exercise_file": "03_prompt_templates.txt",
+            "transition_to_next": "Let us practice this framework with a real workplace scenario."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Guided Exercise: Write a Professional Email",
+            "duration_seconds": 180,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens the prompt templates text file, copies the email prompt template, pastes it into ChatGPT, and fills in the bracketed placeholders with a specific scenario (requesting a project deadline extension). The AI response appears. The instructor then demonstrates iterating: asking ChatGPT to make the tone more formal, then to shorten it.",
+            "what_learner_hears": "Narration walks through each step: choosing the template, customizing the placeholders, reviewing the output, and refining with follow-up prompts. The instructor stresses that AI is a conversation \u2014 the first answer is a draft, not the final product.",
+            "exercise_file": "03_prompt_templates.txt",
+            "transition_to_next": "Now it is your turn. Pause the video and try the second template on your own."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Your Turn: Summarize a Document",
+            "duration_seconds": 120,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor shows the second prompt template (document summary) and a sample text passage from the exercise file. The instructor copies the passage into ChatGPT with the template and shows the summary output. Then prompts the learner to try it with their own document or the provided sample.",
+            "what_learner_hears": "Brief narration setting up the independent exercise. The instructor encourages the learner to experiment with different constraint variations (bullet points versus paragraph, 50 words versus 200 words) to see how constraints change the output.",
+            "exercise_file": "03_sample_text_to_summarize.txt",
+            "transition_to_next": "You have just completed your first real AI workflow. But how do you know if you should trust what the AI told you? That is exactly what we cover next."
+          },
+          {
+            "scene_number": 5,
+            "scene_title": "Quick Wins: Three More Tasks to Try Tonight",
+            "duration_seconds": 120,
+            "visual_type": "slides",
+            "what_learner_sees": "A slide listing three additional prompt templates from the exercise file: brainstorm ideas for a presentation, create a pros-and-cons table, and draft a meeting agenda. Each includes a one-line preview of the prompt structure.",
+            "what_learner_hears": "The instructor briefly describes each use case and encourages the learner to try all three before moving to the next lesson. Reinforces the Role-Task-Format-Constraints framework as the universal template.",
+            "exercise_file": null,
+            "transition_to_next": "You are building real skills. Next, we tackle the critical question: when should you trust AI and when should you not?"
+          }
+        ],
+        "exercise_files": [
+          "03_prompt_templates.txt",
+          "03_sample_text_to_summarize.txt"
+        ],
+        "key_takeaway": "The quality of AI output depends almost entirely on the quality of your prompt \u2014 use the Role-Task-Format-Constraints framework every time, and always iterate."
+      },
+      {
+        "lesson_number": 4,
+        "title": "AI Pitfalls: Hallucinations, Bias, and When Not to Trust the Output",
+        "duration_minutes": 8,
+        "learning_objective": "By the end of this lesson the learner will be able to identify AI hallucinations, explain three common sources of AI bias, apply a five-point checklist to evaluate any AI output before using it, and articulate basic ethical and privacy considerations.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "When AI Gets It Wrong: Hallucinations in Action",
+            "duration_seconds": 150,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor types a prompt into ChatGPT asking for a list of academic studies on a niche topic. The AI returns confident-sounding citations. The instructor then searches Google Scholar for the cited papers, showing that two of them do not exist. Red X annotations appear over the fake citations.",
+            "what_learner_hears": "Narration explains what hallucinations are (the AI generating plausible-sounding but fabricated information), why they happen (the model predicts likely text, it does not verify facts), and which task types are highest risk (statistics, citations, legal or medical claims).",
+            "exercise_file": null,
+            "transition_to_next": "Hallucinations are one risk. Bias is another \u2014 and it is more subtle."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Bias: Where It Comes From and How to Spot It",
+            "duration_seconds": 120,
+            "visual_type": "slides",
+            "what_learner_sees": "A three-part diagram showing the bias pipeline: biased training data leads to biased model leads to biased output. Three real-world examples are shown: a hiring tool favoring certain demographics, an image generator reinforcing stereotypes, a translation tool defaulting male pronouns for doctors.",
+            "what_learner_hears": "The instructor explains each example briefly, emphasizing that bias is not intentional malice but a reflection of patterns in the data. The narration provides practical advice: always review AI output for assumptions about gender, race, culture, and geography.",
+            "exercise_file": null,
+            "transition_to_next": "So how do you protect yourself? Let us build your personal AI trust checklist."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Your Five-Point AI Output Checklist",
+            "duration_seconds": 120,
+            "visual_type": "slides",
+            "what_learner_sees": "A single clean slide builds five checklist items one at a time: 1) Can I verify this fact independently? 2) Is the output biased or one-sided? 3) Would I be comfortable if my boss saw this? 4) Does this contain private or sensitive data I should not have shared? 5) Am I using this as a draft or as a final product?",
+            "what_learner_hears": "The instructor explains each checkpoint with a brief example. Special emphasis on point four: never paste confidential company data, personal information, or proprietary content into a public AI tool without understanding the privacy policy.",
+            "exercise_file": "04_ai_output_checklist.pdf",
+            "transition_to_next": "Let us practice applying this checklist to a real scenario."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Exercise: Evaluate These AI Outputs",
+            "duration_seconds": 90,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens the checklist PDF and a companion Excel file containing four sample AI outputs (a product description with a factual error, a summary with subtle bias, a response that looks perfect, and one that includes fabricated data). The instructor applies the checklist to the first output, then prompts the learner to do the remaining three.",
+            "what_learner_hears": "Narration walks through the evaluation of the first sample, demonstrating how each checklist item applies. The instructor encourages the learner to pause and complete the exercise, then check the answer tab in the spreadsheet.",
+            "exercise_file": "04_evaluate_ai_outputs.xlsx",
+            "transition_to_next": "You now have the skills AND the judgment. In our final lesson, let us put everything together into your personal AI action plan."
+          }
+        ],
+        "exercise_files": [
+          "04_ai_output_checklist.pdf",
+          "04_evaluate_ai_outputs.xlsx"
+        ],
+        "key_takeaway": "AI is a powerful assistant, not an authority \u2014 always verify facts, check for bias, protect private data, and treat every AI output as a draft that needs your human judgment."
+      },
+      {
+        "lesson_number": 5,
+        "title": "Your 30-Day AI Action Plan: From Learner to Everyday User",
+        "duration_minutes": 7,
+        "learning_objective": "By the end of this lesson the learner will be able to identify three AI-ready tasks in their own role, build a personal 30-day AI adoption plan, and articulate their AI skills confidently to colleagues or on a resume.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "Audit Your Week: Find Your AI Opportunities",
+            "duration_seconds": 150,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor opens the 30-day planner Excel file and navigates to the first tab: Weekly Task Audit. The sheet has columns for task name, time spent, repetitiveness rating, and AI potential rating. The instructor fills in three example rows from a sample marketing manager role, rating each task.",
+            "what_learner_hears": "Narration explains the framework: the best tasks to hand to AI are repetitive, text-heavy, and low-stakes. The instructor models the thinking process and encourages the learner to pause and fill in their own tasks.",
+            "exercise_file": "05_30_day_ai_action_plan.xlsx",
+            "transition_to_next": "Now let us turn those opportunities into a structured plan."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Building Your 30-Day Plan",
+            "duration_seconds": 120,
+            "visual_type": "browser",
+            "what_learner_sees": "The instructor navigates to the second tab of the Excel file: 30-Day Plan. It is pre-structured into four weekly blocks. Week 1: Pick one AI tool, complete one task per day. Week 2: Add a second tool, try prompt iteration. Week 3: Apply the output checklist to everything. Week 4: Share results with a colleague and reflect. The instructor fills in sample entries.",
+            "what_learner_hears": "The instructor explains the progressive structure and why building the habit gradually is more effective than trying to change everything at once. Emphasis on week four \u2014 teaching someone else is the best way to solidify your own understanding.",
+            "exercise_file": "05_30_day_ai_action_plan.xlsx",
+            "transition_to_next": "Before we wrap up, let us make sure you can talk about these new skills."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "How to Talk About Your AI Skills",
+            "duration_seconds": 90,
+            "visual_type": "slides",
+            "what_learner_sees": "A slide showing three contexts: resume or LinkedIn profile, job interview, and team meeting. For each, a sample sentence is displayed demonstrating how to articulate AI literacy (e.g., Experienced in leveraging generative AI tools for content creation, document analysis, and workflow optimization).",
+            "what_learner_hears": "The instructor reads each example and explains why specificity matters \u2014 saying I use ChatGPT is vague, but saying I use structured prompting to draft and refine client communications demonstrates real skill.",
+            "exercise_file": null,
+            "transition_to_next": "Let us bring the entire course together."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Course Recap and Next Steps",
+            "duration_seconds": 60,
+            "visual_type": "slides",
+            "what_learner_sees": "A summary slide with five icons representing each lesson: 1) What AI Is, 2) AI Landscape, 3) Hands-On Prompting, 4) Pitfalls and Trust, 5) Your Action Plan. Below, three recommended next steps: explore an advanced prompting course, try a new AI tool each month, join an AI-focused community or newsletter.",
+            "what_learner_hears": "The instructor congratulates the learner, briefly recaps each lesson in one sentence, and encourages them to start their 30-day plan today. Closes with a motivating statement: you are no longer an AI beginner \u2014 you are an AI-informed professional.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "05_30_day_ai_action_plan.xlsx"
+        ],
+        "key_takeaway": "AI literacy is not about knowing everything \u2014 it is about starting with one task, one tool, and one prompt, then building the habit over 30 days until AI becomes a natural part of how you work."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "01_spot_the_ai_quiz.pdf",
+      "type": "pdf",
+      "purpose": "A ten-scenario quiz where the learner determines whether each technology example is AI-powered or simple automation, with an answer key on page two for self-assessment.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "02_ai_glossary_cheat_sheet.pdf",
+      "type": "pdf",
+      "purpose": "A printable one-page reference card with ten essential AI vocabulary terms, plain-English definitions, and icons \u2014 designed as a desk reference the learner can keep permanently.",
+      "lesson_used_in": [
+        2
+      ]
+    },
+    {
+      "filename": "02_tool_task_matching.xlsx",
+      "type": "xlsx",
+      "purpose": "An Excel worksheet with ten workplace scenarios in column A where the learner fills in the best AI tool and AI type in columns B and C, with an answer key on a second tab.",
+      "lesson_used_in": [
+        2
+      ]
+    },
+    {
+      "filename": "03_prompt_templates.txt",
+      "type": "txt",
+      "purpose": "A plain-text file containing five ready-to-use prompt templates using the Role-Task-Format-Constraints framework, with bracketed placeholders the learner customizes and pastes into ChatGPT.",
+      "lesson_used_in": [
+        3
+      ]
+    },
+    {
+      "filename": "03_sample_text_to_summarize.txt",
+      "type": "txt",
+      "purpose": "A 500-word sample business article that the learner pastes into ChatGPT along with a summarization prompt template to practice structured prompting and output iteration.",
+      "lesson_used_in": [
+        3
+      ]
+    },
+    {
+      "filename": "04_ai_output_checklist.pdf",
+      "type": "pdf",
+      "purpose": "A printable five-point checklist for evaluating any AI-generated output before using it, covering fact verification, bias detection, professionalism, privacy, and draft-versus-final status.",
+      "lesson_used_in": [
+        4
+      ]
+    },
+    {
+      "filename": "04_evaluate_ai_outputs.xlsx",
+      "type": "xlsx",
+      "purpose": "An Excel file with four sample AI outputs on the first tab that the learner evaluates using the checklist, with detailed evaluations and correct answers on a second tab.",
+      "lesson_used_in": [
+        4
+      ]
+    },
+    {
+      "filename": "05_30_day_ai_action_plan.xlsx",
+      "type": "xlsx",
+      "purpose": "A two-tab Excel workbook \u2014 Tab 1 is a Weekly Task Audit where the learner rates their current tasks for AI potential, and Tab 2 is a structured 30-day plan with weekly goals and daily action slots.",
+      "lesson_used_in": [
+        5
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "conversational",
+    "pacing": "moderate",
+    "complexity": "beginner",
+    "hands_on_ratio": "45 percent of total course time involves the learner actively completing exercises, filling in worksheets, or following along in a tool",
+    "adapters_needed": [
+      "slides",
+      "browser",
+      "excel"
+    ]
+  }
+}

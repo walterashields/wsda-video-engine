@@ -1,0 +1,624 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "ai_beginners_1_3",
+  "title": "Hands On with ChatGPT: Your First AI Conversation",
+  "course": "AI for Complete Beginners",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/ai_for_complete_beginners/video_1_3/production_card.yml",
+  "total_duration_ms": 316066,
+  "narration_locked": false,
+  "adapter_type": "chat_demo",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 400,
+      "type": "open_chat",
+      "target": "chat_demo",
+      "params": {
+        "user_name": "Walter Shields",
+        "initials": "WS"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1300,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01b",
+      "time_offset_ms": 37566,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "chat-area",
+        "callout": "Your AI workspace"
+      },
+      "narration": "Okay so this right here \u2014 this is ChatGPT. You get to this by going to chat dot openai dot com. Free account, no credit card, takes two minutes to set up. Left side is your conversation history. Center is where the AI talks back to you. Bottom is where you type. Simple setup. But what you do with it? That is where it gets interesting. I am going to show you something first that most people do wrong every single time they open this.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01b_pause",
+      "time_offset_ms": 38466,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 45.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01c",
+      "time_offset_ms": 39316,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01c_pause",
+      "time_offset_ms": 39766,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 40616,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "Marketing help"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 41516,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 42366,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Help me with marketing",
+        "region": "bad-prompt"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 42816,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 43666,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Sure! Here are some general marketing strategies:\n1. Define your target audience \u2014 Know who your customers are. 2. Build a social media presence \u2014 Use Instagram, Facebook, or LinkedIn. 3. Create valuable content \u2014 Blog posts and videos attract customers organically. 4. Email marketing \u2014 Build a list and send regular newsletters. 5. Paid advertising \u2014 Consider Google Ads or social media ads. 6. Track your results \u2014 Use analytics to see what is working.\nWould you like more detail on any of these?\n",
+        "region": "bad-response"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 44116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04b",
+      "time_offset_ms": 52883,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "bad-prompt",
+        "callout": "Four words. That is it."
+      },
+      "narration": "Four words. Help me with marketing. That is it. That is the entire prompt. And look what came back.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04b_pause",
+      "time_offset_ms": 53333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 14.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04c",
+      "time_offset_ms": 81683,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "bad-response",
+        "callout": "Generic. Useless. Not your fault \u2014 the prompt was the problem."
+      },
+      "narration": "Six bullet points of the most generic marketing advice you have ever seen. Define your audience. Build a social media presence. This is stuff from a textbook written in 2009. The AI is not broken. It just had nothing to work with. You gave it nothing specific, so it gave you nothing useful. The fix is not a better AI. The fix is a better prompt.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04c_pause",
+      "time_offset_ms": 82133,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04d",
+      "time_offset_ms": 82983,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04d_pause",
+      "time_offset_ms": 83433,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 84283,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "30-day bakery plan"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 85183,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 86033,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Act as an experienced digital marketing strategist for small businesses. Create a 30-day social media content plan for a local bakery that just opened. Present this as a weekly table with columns for Day, Platform, Content Type, and Caption Idea. Focus only on Instagram and Facebook, keep the tone warm and community-focused, and assume a budget of zero dollars for paid ads.",
+        "region": "structured-prompt"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 86933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06b",
+      "time_offset_ms": 149450,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "structured-prompt",
+        "callout": "Role \u2014 Task \u2014 Format \u2014 Constraints"
+      },
+      "narration": "Same question. Completely different prompt. Read what is highlighted on your screen. There are four parts to this and once you see them you will never write a bad prompt again. First line: Role. Act as an experienced digital marketing strategist. That tells the AI who to be. What lens to think through. Second part: Task. Create a thirty-day social media content plan for a local bakery that just opened. Specific. Detailed. Not just help with marketing. Third part: Format. A weekly table with four specific columns. Tell it how you want the answer structured. Last part: Constraints. Instagram and Facebook only, warm community tone, zero dollar budget. Those guardrails keep it focused on exactly what you need. Role. Task. Format. Constraints. Write that on a sticky note. Put it on your monitor. That framework will make you look like a pro every single time you use AI.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06b_pause",
+      "time_offset_ms": 149900,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 75.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06c",
+      "time_offset_ms": 150750,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06c_pause",
+      "time_offset_ms": 151200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 152050,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Here is your 30-Day Social Media Content Plan:\nWEEK 1 \u2014 Grand Opening Energy\nDay 1 | Instagram | Photo Post | \"Grand opening! Come say hi and grab a free cookie with any purchase today only.\" Day 2 | Facebook | Community Poll | \"What flavor should we bake next? Vote below!\" Day 3 | Instagram | Behind the Scenes | \"4am and the ovens are already on. This is what fresh looks like.\" Day 4 | Facebook | Customer Feature | \"Tag a friend who deserves a treat today.\" Day 5 | Instagram | Product Spotlight | \"Meet our sourdough. Three days of fermentation. Worth every minute.\" Day 6 | Facebook | Saturday Story | \"Saturday morning vibes. Come in and stay a while.\" Day 7 | Instagram | Weekly Recap | \"What a first week. Thank you for showing up for us.\"\nWEEK 2 \u2014 Building Community\nDay 8 | Instagram | Recipe Tip | \"The secret to a perfect croissant? Patience.\" Day 9 | Facebook | Local Feature | \"Shoutout to our neighbors at the flower shop next door.\" Day 10 | Instagram | Staff Spotlight | \"Meet Maria, who has been baking bread for 22 years.\"\n",
+        "region": "good-response"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 152500,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07b",
+      "time_offset_ms": 190016,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "good-response",
+        "callout": "This is what a good prompt looks like"
+      },
+      "narration": "Look at what came back. Day one: grand opening, free cookie, specific call to action. Day two: a poll asking customers what to bake next. Day five: a story about their sourdough and why it takes three days. Every single one is Instagram or Facebook. Every single one has a warm, community feel. Zero ad budget anywhere. This is not generic. This is a content calendar a real bakery owner could actually use tomorrow. Same AI. Same tool. Completely different output. Because we gave it a real prompt.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07b_pause",
+      "time_offset_ms": 190666,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 52.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07c",
+      "time_offset_ms": 191516,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07c_pause",
+      "time_offset_ms": 191966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 192816,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "This is great. Can you make Week 1 more focused on building email subscribers instead of general awareness?",
+        "region": "iteration-prompt"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 193716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08b",
+      "time_offset_ms": 222900,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "iteration-prompt",
+        "callout": "One sentence. That is all it takes."
+      },
+      "narration": "Here is the part that gets people. I did not rewrite the prompt. I typed one sentence. The AI remembers everything \u2014 the bakery, the two platforms, the community tone, the zero budget. All of it is still in context. I just told it what to change about Week One. That is iteration. And this is where the real power is. You do not start over. You refine.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08b_pause",
+      "time_offset_ms": 223350,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 42.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08c",
+      "time_offset_ms": 224200,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08c_pause",
+      "time_offset_ms": 224649,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 225499,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Great idea! Here is a revised Week 1 focused on growing your email list:\nDay 1 | Instagram | Photo Post | \"Grand opening special: sign up for our email list at the counter and get 10% off your next visit.\" Day 2 | Facebook | Lead Gen Post | \"Want to be the first to know about new flavors? Join our bakers list \u2014 link in comments.\" Day 3 | Instagram | Behind the Scenes | \"4am in the kitchen. Join our email list to get weekly updates straight from us.\" Day 4 | Facebook | Incentive Post | \"Email subscribers get early access to our Saturday special before we announce it publicly.\" Day 5 | Instagram | Social Proof | \"47 people joined our bakers list this week. Here is what they are most excited for.\" Day 6 | Facebook | Reminder | \"Last chance to join our launch week subscriber list and get the founding member discount.\" Day 7 | Instagram | Thank You | \"To everyone who subscribed this week \u2014 you are getting something special next Tuesday.\"\n",
+        "region": "iteration-response"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 225949,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09b",
+      "time_offset_ms": 263466,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "iteration-response",
+        "callout": "Same AI. One pivot. Completely different direction."
+      },
+      "narration": "Week One is completely rebuilt around email growth. Day one: sign up at the counter, get ten percent off your next visit. Day four: subscribers get early access before the public announcement. Day five: social proof \u2014 forty seven people already signed up. The AI kept the warm tone, the Instagram and Facebook focus, the zero dollar budget. It just changed the goal. One follow-up sentence. That is how you work with AI. Not as a search engine. As a collaborator you keep pushing until it is right.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09b_pause",
+      "time_offset_ms": 264116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 48.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09c",
+      "time_offset_ms": 264966,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09c_pause",
+      "time_offset_ms": 265416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 308766,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "input-box",
+        "callout": "Your turn \u2014 try it right now"
+      },
+      "narration": "Role. Task. Format. Constraints. That is the whole thing. Take something from your actual job this week. An email you have been putting off. A plan you need to draft. A presentation outline. Open ChatGPT, use the framework, and watch what happens. The first time it actually works for you \u2014 and it will \u2014 something clicks. And you will not go back. Next lesson we talk about what to do when the AI gets it wrong. Because it will get it wrong. And knowing how to catch it is just as important as knowing how to prompt it. See you there.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 309416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 311066,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

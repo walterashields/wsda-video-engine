@@ -190,5 +190,11 @@ def serve_audio():
         conditional=True,   # supports range requests for seeking
     )
 
+@app.route("/demo/chat")
+def demo_chat():
+    """Serve the ChatGPT demo interface."""
+    demo_path = Path(__file__).parent / "demo" / "chat.html"
+    return demo_path.read_text()
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5050, debug=False)

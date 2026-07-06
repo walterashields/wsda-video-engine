@@ -42,6 +42,17 @@ EventType = Literal[
     # Navigation
     "activate_table",
     "switch_window",
+    # Chat demo events
+    "open_chat",
+    "new_conversation",
+    "type_message",
+    "send_message",
+    "show_message",
+    "show_response",
+    "stream_response",
+    "highlight_region",
+    "clear_highlight",
+    "set_input",
     # Control
     "pause",
     "fade_out",
@@ -130,6 +141,15 @@ class ProductionEvent(BaseModel):
     intent: Optional[str] = None        # semantic intent label
     targets: Optional[list[str]] = None # for compare_results
     duration: Optional[float] = None    # for pause/zoom
+    # Chat demo fields
+    text: Optional[str] = None          # type_message / stream_response
+    wpm: Optional[int] = None           # typing/streaming speed
+    region: Optional[str] = None        # highlight_region
+    callout: Optional[str] = None       # highlight callout text
+    title: Optional[str] = None         # new_conversation title
+    user_name: Optional[str] = None     # open_chat user name
+    initials: Optional[str] = None      # open_chat initials
+    view: Optional[str] = None          # open_view name
 
     # Screen state management
     transition: TransitionType = "new_concept"
@@ -203,6 +223,7 @@ class LessonTimeline(BaseModel):
     compiled_from: str
     total_duration_ms: int
     narration_locked: bool = False
+    adapter_type: str = "sql_viewer"  # sql_viewer | chat_demo
     events: list[TimelineEvent]
 
 

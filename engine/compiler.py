@@ -67,6 +67,15 @@ def compile(card_path: str | Path, output_path: str | Path | None = None) -> Les
             params["targets"] = event.targets
         if event.duration is not None:
             params["duration"] = event.duration
+        # Chat demo fields
+        if event.text      is not None: params["text"]      = event.text
+        if event.wpm       is not None: params["wpm"]       = event.wpm
+        if event.region    is not None: params["region"]    = event.region
+        if event.callout   is not None: params["callout"]   = event.callout
+        if event.title     is not None: params["title"]     = event.title
+        if event.user_name is not None: params["user_name"] = event.user_name
+        if event.initials  is not None: params["initials"]  = event.initials
+        if event.view      is not None: params["view"]      = event.view
 
         # Narration duration estimate
         narr_s = estimate_duration(event.narration) if event.narration else 0.0
@@ -92,12 +101,15 @@ def compile(card_path: str | Path, output_path: str | Path | None = None) -> Les
 
     total_ms = int(max(e.time_offset_ms for e in compiled) + 5000)
 
+    adapter_type = "chat_demo" if card.assets.get("demo") == "chat" else "sql_viewer"
+
     timeline = LessonTimeline(
         lesson_id=card.lesson_id,
         title=card.title,
         course=card.course,
         compiled_from=str(card_path),
         total_duration_ms=total_ms,
+        adapter_type=adapter_type,
         events=compiled,
     )
 

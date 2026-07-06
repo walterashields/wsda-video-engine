@@ -1,0 +1,10 @@
+{
+  "course": "AI for complete beginners",
+  "format": "course",
+  "slug": "ai_for_complete_beginners",
+  "lessons": [
+    "/Users/waltershields/Desktop/wsda-video-engine/courses/ai_for_complete_beginners/video_1_3/production_card.yml"
+  ],
+  "hook": "You have heard the phrase artificial intelligence hundreds of times this year \u2014 but if someone asked you to explain what AI actually is and what it can do for YOUR job, could you answer with confidence? By the end of this course, you will.",
+  "core_promise": "You will go from AI-confused to AI-confident, able to explain how AI works, evaluate AI tools, and complete a real AI-powered workflow \u2014 no coding required."
+}

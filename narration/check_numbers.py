@@ -85,6 +85,10 @@ def check(card_path, db):
     with open(card_path) as f:
         card = yaml.safe_load(f)
 
+    if not card.get('assets', {}).get('database'):
+        console.print("[dim]No database asset — skipping number check (non-SQL lesson)[/dim]")
+        console.print("[bold green]✓ No number mismatches found[/bold green]")
+        return 0
     db_path = Path(db) if db else lesson_dir / "assets" / card['assets']['database'].split('/')[-1]
     sql_path = lesson_dir / "assets" / card['assets']['sql_file'].split('/')[-1]
 

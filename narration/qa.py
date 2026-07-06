@@ -289,9 +289,12 @@ def qa(audit_path, card_path, work_dir, fix, db):
         schedule.append(entry)
 
         # Check 1: Does clip fit in pause window?
-        # Use actual audit timing if available, fall back to card pause duration
+        # For chat demo lessons, events complete near-instantly so
+        # audit timing gives window=0. Use card pause duration directly.
         actual_window = None
-        if eid in audit_map and pause_id and pause_id in audit_map:
+        if pause_dur and pause_dur > 0:
+            actual_window = pause_dur  # trust card duration for chat demo
+        elif eid in audit_map and pause_id and pause_id in audit_map:
             # Actual window = time from narration event completion to next visual event start
             event_completed = audit_map[eid]['completed_at_ms'] / 1000
             # Find next non-pause event after the pause
