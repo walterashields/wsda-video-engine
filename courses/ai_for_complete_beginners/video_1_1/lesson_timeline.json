@@ -1,0 +1,861 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "What AI Actually Is (And What It Is Not)",
+  "course": "AI for Complete Beginners",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/ai_for_complete_beginners/video_1_1/production_card.yml",
+  "total_duration_ms": 657816,
+  "narration_locked": false,
+  "adapter_type": "chat_demo",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 400,
+      "type": "open_chat",
+      "target": "chat_demo",
+      "params": {
+        "user_name": "AI Coach",
+        "initials": "AC"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1300,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 35900,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "chat-area",
+        "callout": "Welcome to your first AI lesson"
+      },
+      "narration": "Welcome to your very first lesson on artificial intelligence. I know that phrase can sound intimidating, maybe even a little sci-fi. But here is the truth, you already use AI every single day, and by the end of the next few minutes you are going to know exactly what it is, what it is not, and why you do not need to be a programmer to understand it. So take a breath, grab your coffee, and let us dive in together.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 36800,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 41.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 37650,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 38100,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 38950,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "The AI You Already Use"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 39850,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 40700,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "I keep hearing about AI everywhere, but I don't think I actually use it in my daily life. Do I?",
+        "region": "prompt-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 41150,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 42000,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "You absolutely do! Here are 3 examples you probably used today:\n\n1. **Email Spam Filter** \u2014 Gmail or Outlook uses AI to decide which emails are junk. It learned from billions of examples what spam looks like.\n\n2. **Photo Search** \u2014 When you search your phone's photo library for \"dog\" or \"beach,\" AI recognizes what is in each image. Nobody manually tagged those photos.\n\n3. **Map Route Suggestions** \u2014 Google Maps or Waze predicts traffic and picks the fastest route. It learns from millions of drivers' real-time data.\n\nAll three learn from data and make predictions \u2014 that is what makes them AI, not just simple automation.",
+        "region": "response-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 42450,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 132466,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-1",
+        "callout": "3 AI examples you already use every day"
+      },
+      "narration": "Take a look at these three examples on screen. Number one, your email spam filter. Every time you open your inbox and it is not flooded with junk mail, that is AI working behind the scenes. It learned from billions of emails what spam looks like, things like suspicious links, certain phrases, unusual sender patterns, and it makes a prediction for every new message that arrives. Number two, photo search on your phone. When you type the word dog into your photo library and it pulls up every picture of your golden retriever, nobody sat there and labeled those photos by hand. An AI model was trained on millions of images so it could recognize objects, faces, and scenes all on its own. Number three, map route suggestions. When Google Maps tells you to take the highway instead of side streets because there is a wreck on Main Street, that is AI analyzing real-time data from millions of other drivers and predicting which route will be fastest for you right now. The key thing all three have in common is that they learn from data and they make predictions. They are not just following a simple if-then rule that a programmer typed out. That learning piece is what separates AI from plain old automation.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 132916,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 93.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 133766,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 134216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 135066,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "A Plain-English Definition"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 135966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 136816,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "OK, so those are examples. But can you give me a simple definition of AI that I can actually remember?",
+        "region": "prompt-2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 137266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 138116,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Here is the simplest way to think about it:\n\n**Traditional Programming:**\nRules go in \u2192 Answers come out.\nA human writes every rule. The computer just follows instructions.\n\n**Artificial Intelligence:**\nData goes in \u2192 Patterns are learned \u2192 Predictions come out.\nThe computer figures out the rules by studying examples.\n\n**3 terms to remember:**\n\u2022 **Machine Learning** \u2014 the most common type of AI. The system improves by studying more data.\n\u2022 **Training Data** \u2014 the examples the AI learns from (emails, photos, driving routes).\n\u2022 **Model** \u2014 the finished \"recipe\" the AI uses to make predictions on new data it has never seen before.",
+        "region": "response-2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 138566,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 252749,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-2",
+        "callout": "Traditional programming vs. AI"
+      },
+      "narration": "This is the single most important idea in the entire course, so let us make sure it really clicks. Look at the comparison on screen. With traditional programming, a human developer writes every rule by hand. If the temperature is below thirty two degrees, display a frost warning. Rules go in, answers come out. The computer is just following a script. With artificial intelligence, it works the other way around. You feed the system a huge pile of data, thousands or millions of examples, and the system figures out the patterns on its own. Then it uses those patterns to make predictions about new data it has never seen before. Nobody wrote a rule that says this photo contains a dog. Instead, the AI looked at millions of dog photos and learned what dog-ness looks like. Now there are three vocabulary terms on screen that I want you to tuck away. First, machine learning. This is the most common flavor of AI you will encounter. It just means the system gets better the more data it studies. Second, training data. These are the examples the AI learns from. For a spam filter, the training data is billions of emails that were already labeled as spam or not spam. Third, model. Think of the model as the finished recipe. Once the AI has studied all that training data, the model is what it produces, a set of learned patterns it can apply to brand new data it has never encountered. You do not need to memorize textbook definitions. Just remember, traditional programming is humans writing rules, AI is machines learning rules from data.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 253199,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 121.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 254049,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 254499,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 255349,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "AI Myths Versus Reality"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 256249,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 257099,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "There is so much hype out there. Can you help me separate the myths from reality? What do most people get wrong about AI?",
+        "region": "prompt-3"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 257549,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 258399,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Great question! Here are 5 common myths:\n\n**Myth 1: AI thinks like a human brain.**\n\u274c Myth. AI finds statistical patterns in data. It does not understand, feel, or have awareness.\n\n**Myth 2: AI will replace all jobs.**\n\u26a0\ufe0f Nuance. AI will change many jobs and eliminate some tasks, but it mostly augments human work. People who learn to use AI tools will replace people who do not.\n\n**Myth 3: AI is always right.**\n\u274c Myth. AI makes mistakes, reflects biases in its training data, and can confidently give wrong answers.\n\n**Myth 4: You need to code to use AI.**\n\u274c Myth. Most modern AI tools are designed for non-technical users. If you can type a sentence, you can use AI.\n\n**Myth 5: AI is brand new.**\n\u274c Myth. The field started in the 1950s. What is new is the computing power and data that made recent breakthroughs possible.",
+        "region": "response-3"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 258849,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17",
+      "time_offset_ms": 403033,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-3",
+        "callout": "5 AI myths busted"
+      },
+      "narration": "Let us walk through these five myths one at a time because I guarantee you have heard at least a couple of them from colleagues or from the news. Myth number one, AI thinks like a human brain. This is flat out false. AI does not think, it does not feel, it does not have consciousness. What it does is find statistical patterns in massive amounts of data. When a chatbot gives you a really impressive answer, it is not because it understands you. It is because it learned patterns in billions of sentences and it is predicting what words should come next. Myth number two, AI will replace all jobs. This one gets a nuance stamp rather than a simple myth label. AI absolutely will change many jobs and it will automate certain tasks. But here is the more accurate way to think about it, people who learn to use AI will replace people who do not. AI is a power tool, not a replacement worker. Myth number three, AI is always right. Definitely a myth. AI makes mistakes all the time. It can reflect biases that exist in its training data, and it can confidently give you a completely wrong answer with a straight face. That is why human judgment still matters enormously. Myth number four, you need to know how to code to use AI. This was somewhat true ten years ago, but today it is a myth. Most modern AI tools are built specifically for non-technical people. If you can type a sentence, you can use AI. That is exactly what this course is going to prove to you. Myth number five, AI is brand new. The field of artificial intelligence actually started all the way back in the nineteen fifties. What changed recently is that we finally have enough computing power and enough data to make the big breakthroughs possible. So AI is not new, but the current wave of incredibly useful AI tools is new, and that is what makes right now such an exciting time to learn.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17_pause",
+      "time_offset_ms": 403483,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 143.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e18",
+      "time_offset_ms": 404333,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e18_pause",
+      "time_offset_ms": 404783,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e19",
+      "time_offset_ms": 405633,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "Exercise: Spot the AI"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e19_pause",
+      "time_offset_ms": 406533,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e20",
+      "time_offset_ms": 407383,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "I want to practice. Can you give me some scenarios and I will try to figure out which ones are AI and which ones are simple automation?",
+        "region": "prompt-4"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e20_pause",
+      "time_offset_ms": 407833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e21",
+      "time_offset_ms": 408683,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Let's try 2 together, then you will do the rest on your own!\n\n**Scenario 1:** A thermostat turns on the heater when the temperature drops below 68\u00b0F.\n\n**Scenario 2:** Netflix recommends a show you have never heard of, and you end up loving it.",
+        "region": "response-4"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e21_pause",
+      "time_offset_ms": 409133,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e22",
+      "time_offset_ms": 507483,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-4",
+        "callout": "Let us reason through these together"
+      },
+      "narration": "OK here is where it gets fun. Let us work through these two scenarios together and I want you to think about the answer before I give it. Scenario number one, a thermostat turns on the heater when the temperature drops below sixty eight degrees Fahrenheit. Is that AI? The answer is no, that is simple automation. A human programmed one rule, if the temperature is below sixty eight, turn on the heater. There is no learning happening, no data being analyzed, no predictions being made. It is just a fixed rule, and the thermostat follows it every single time the same way. Now scenario number two, Netflix recommends a show you have never heard of and you end up loving it. Is that AI? Yes, that is absolutely AI. Netflix analyzes your viewing history, the viewing history of millions of other users, ratings, how long people watched before turning something off, and dozens of other data points. It learns patterns across all of that data and then it predicts what you specifically are likely to enjoy. Nobody at Netflix sat down and wrote a rule that says if this person watched three crime dramas, recommend this documentary. The system figured that out on its own from the data. See the difference? The thermostat follows one fixed rule. Netflix learns from data and makes predictions. That learning and predicting is the signature of AI.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e22_pause",
+      "time_offset_ms": 507933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 107.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e23",
+      "time_offset_ms": 508783,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e23_pause",
+      "time_offset_ms": 509233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e24",
+      "time_offset_ms": 510083,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "That makes so much sense! I think I can do the rest on my own now.",
+        "region": "prompt-5"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e24_pause",
+      "time_offset_ms": 510533,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e25",
+      "time_offset_ms": 511383,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "You have got this! Download the exercise file **01_spot_the_ai_quiz.pdf** \u2014 it has 10 scenarios for you to classify. Work through them on your own, then check your answers on page 2.\n\nRemember the key question: **Is the system learning from data and making predictions? Or is it just following a fixed rule someone programmed?**",
+        "region": "response-5"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e25_pause",
+      "time_offset_ms": 511833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e26",
+      "time_offset_ms": 561433,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-5",
+        "callout": "Your exercise file: 01_spot_the_ai_quiz.pdf"
+      },
+      "narration": "Now it is your turn. Go ahead and pause the video, download the exercise file called zero one underscore spot the AI quiz dot P-D-F. It has ten technology scenarios, and your job is to figure out which ones are AI and which ones are simple automation. For each one, ask yourself the question you see on screen, is the system learning from data and making predictions, or is it just following a fixed rule that a human programmed? Work through all ten scenarios on your own, then flip to page two of the P-D-F to check your answers. Take your time. There is no rush. When you are done, come back and we will wrap up.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e26_pause",
+      "time_offset_ms": 561883,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e27",
+      "time_offset_ms": 562733,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e27_pause",
+      "time_offset_ms": 563183,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e28",
+      "time_offset_ms": 564033,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "Key Takeaway and What Is Next"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e28_pause",
+      "time_offset_ms": 564933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e29",
+      "time_offset_ms": 565783,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "That was really helpful. Can you summarize the key takeaway from this lesson?",
+        "region": "prompt-6"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e29_pause",
+      "time_offset_ms": 566233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e30",
+      "time_offset_ms": 567083,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "Here is your key takeaway:\n\n**AI is software that learns patterns from data to make predictions or decisions. It is not magic, it is not sentient, and you already use it every day.**\n\nYou can now:\n\u2705 Define artificial intelligence in plain English\n\u2705 Distinguish AI from simple automation\n\u2705 Identify 3 real-world examples of AI you already use\n\nNext up: we will explore the different types of AI you see in headlines and at work.",
+        "region": "response-6"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e30_pause",
+      "time_offset_ms": 567533,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e31",
+      "time_offset_ms": 649216,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-6",
+        "callout": "Your key takeaway"
+      },
+      "narration": "Let us bring it all home. Look at the key takeaway on screen. AI is software that learns patterns from data to make predictions or decisions. It is not magic. It is not sentient. And you already use it every single day. You walked into this lesson maybe feeling a little overwhelmed by all the AI buzz, and now you can do three things you could not do before. First, you can define artificial intelligence in plain English. It is software that learns from data instead of following hard-coded rules. Second, you can tell the difference between AI and simple automation. Remember, the thermostat follows a fixed rule, Netflix learns from data. Third, you can point to at least three real-world examples of AI you already use, your spam filter, your photo search, and your map directions. That is a huge step forward, and you should feel good about it. In the next lesson, we are going to explore the different types of AI that you see in headlines and at work. We will talk about narrow AI versus general AI, and why that distinction matters for your career. I will see you there.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e31_pause",
+      "time_offset_ms": 649866,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 88.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e32",
+      "time_offset_ms": 650716,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e32_pause",
+      "time_offset_ms": 651166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 652816,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

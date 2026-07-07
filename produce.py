@@ -65,7 +65,8 @@ def latest_pair(lesson_id: str) -> tuple[Path, Path] | None:
 @click.option("--voice", default="Samantha", help="macOS fallback voice")
 @click.option("--max-retries", default=1, type=int, help="Max auto-fix retry cycles")
 @click.option("--skip-precheck", is_flag=True)
-def produce(card_path, el_key, el_voice, voice, max_retries, skip_precheck):
+@click.option("--format", "fmt", default=None, help="Format constraint for duration")
+def produce(card_path, el_key, el_voice, voice, max_retries, skip_precheck, fmt):
     card_path = Path(card_path)
     if not card_path.exists():
         console.print(f"[red]Production card not found: {card_path}[/red]")
@@ -107,6 +108,22 @@ def produce(card_path, el_key, el_voice, voice, max_retries, skip_precheck):
         console.print("[green]✓ Pre-check passed[/green]")
     else:
         console.print("[yellow]⚠ Skipping pre-check (--skip-precheck)[/yellow]")
+
+    # ── Verify production card ────────────────────────────────
+    console.print("\n[bold]Running verification...[/bold]")
+    verify_cmd = [sys.executable, "verify.py", str(card_path), "--fix"]
+    if fmt:
+        verify_cmd += ["--format", fmt]
+    vr = subprocess.run(verify_cmd, cwd=str(ROOT), capture_output=True, text=True)
+    console.print(vr.stdout)
+    if vr.returncode > 2:  # >2 unfixed issues = abort
+        console.print(Panel(
+            "[bold red]Verification failed — too many unfixable issues.[/bold red]\n"
+            "Review the production card and fix manually.",
+            border_style="red",
+        ))
+        sys.exit(1)
+    console.print("[green]✓ Verification passed[/green]")
 
     attempt = 0
     final_mp4 = None

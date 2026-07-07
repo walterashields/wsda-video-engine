@@ -1,0 +1,383 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The 3-Line Prompt Framework for Perfect SQL from ChatGPT",
+  "course": "SQL and AI using ChatGPT",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai_using_chatgpt_sql/video_1_1/production_card.yml",
+  "total_duration_ms": 475883,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 34050,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai_using_chatgpt_sql/video_1_1/assets/sql_and_ai_using_chatgpt_sql.db"
+      },
+      "narration": "Hey, welcome in. If you're a data analyst, a junior developer, or honestly anyone who writes S-Q-L at work, this lesson's for you. By the end of the next five minutes, you'll know a dead-simple three-line prompt framework that makes ChatGPT generate accurate, runnable S-Q-L queries on the first try. No more copying garbage output and spending twenty minutes fixing column names. We're going to fix that right now. Let's start by looking at the database we'll be working with today.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 34949,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 46.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 87683,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Alright, here's our schema. We've got three tables. First, there's a customers table with columns for customer_id, customer_name, and segment. Segment is the key one here, it tells us whether a customer is Enterprise, Mid-Market, or Small Business. Next up, we've got an orders table with order_id, customer_id, order_date, and total_amount. That customer_id column is our foreign key linking back to customers. And finally, there's a products table with product_id, product_name, category, and price. These three tables are what you'd paste into ChatGPT as your schema context. And that's the whole secret, you give it the actual CREATE TABLE statements, not some vague English description like \"I have a customers table.\" Let's open up the S-Q-L file and I'll show you exactly what I mean.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 88583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 70.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 89333,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai_using_chatgpt_sql/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 90233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 135366,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "bad_prompt_query"
+      },
+      "narration": "Okay, so here's what happens when most people prompt ChatGPT. They type something vague like \"write me a S-Q-L query to get top customers.\" No schema, no context, no constraints. And ChatGPT does its best, but look at what it produces. It's guessing table names, it's guessing column names, it's using a generic SELECT star with a LIMIT clause and no real logic. This query won't even run against our actual database because the table and column names don't match. It's not that ChatGPT is dumb, it's that you didn't give it the three things it needs. So let's look at what a good prompt actually produces.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 136266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 189316,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "good_prompt_query"
+      },
+      "narration": "Now here's the same request, but this time we used the three-line framework. Line one, we pasted the actual CREATE TABLE statements for customers, orders, and products. Line two, we stated the business question in plain English: \"Show me total revenue by customer segment, highest first.\" Line three, we added our constraints: use SQLite dialect, alias all columns, don't use subqueries. And look at what ChatGPT gave us back. It's a clean SELECT statement that joins customers to orders on customer_id, groups by segment, sums the total_amount column, aliases it as total_revenue, and orders descending. Every table name is correct. Every column name is correct. That's the power of giving ChatGPT your actual schema instead of a vague description. Let's run this and prove it works.",
+      "transition": "new_concept",
+      "clears": [
+        "bad_prompt_query"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 190216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 70.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 191066,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "good_prompt_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 191966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 239050,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Boom, no errors. Look at these results. We've got three rows, one for each customer segment. Enterprise comes in at the top with a total_revenue of 48750.00. Mid-Market is next at 23500.00. And Small Business rounds it out at 12250.00. That's 48,750 dollars, 23,500 dollars, and 12,250 dollars respectively. The JOIN conditions are perfect, the grouping is correct, and the ORDER BY is descending just like we asked. I didn't edit a single character of this query. I copied it straight from ChatGPT and pasted it into the S-Q-L viewer. That's what happens when you give ChatGPT the schema, the question, and the constraints. It doesn't have to guess anymore.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 239500,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 65.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 284216,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "revenue_by_segment_detailed"
+      },
+      "narration": "Now let's take it further. Same framework, slightly more complex question. This time the business question was: \"Show me total revenue and order count by customer segment, but only for orders placed in 2024, and include the average order value.\" Same schema context, same constraints, just a more detailed question in line two. Look at this query. It's filtering on order_date using a WHERE clause with the year 2024, it's calculating COUNT of order_id as order_count, SUM of total_amount as total_revenue, and it's even computing the average with a ROUND function to two decimal places. This is production-quality S-Q-L from a single prompt. Let's run it.",
+      "transition": "new_concept",
+      "clears": [
+        "good_prompt_query"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 285116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 62.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 285966,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "revenue_by_segment_detailed"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 286866,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 331449,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Perfect. Three rows again. Enterprise shows 15 orders, total_revenue of 35200.00, and an average order value of 2346.67. Mid-Market has 10 orders, total_revenue of 16800.00, and an average order value of 1680.00. Small Business has 8 orders, total_revenue of 8400.00, and an average order value of 1050.00. So that's 35,200 dollars across 15 Enterprise orders, 16,800 dollars across 10 Mid-Market orders, and 8,400 dollars across 8 Small Business orders. The averages are rounded to two decimal places exactly like we asked. Every column alias is clean and readable. This is the kind of output you can paste straight into a report or a dashboard.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 331899,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 65.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 379949,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "debug_query"
+      },
+      "narration": "Alright, here's a bonus trick. What about when you've got a query that's broken or running slow? Same framework, just add a fourth line. You paste in the broken query and ask ChatGPT to identify the error and suggest a fix. In this example, we had a query that was using a correlated subquery in the WHERE clause, which was killing performance. ChatGPT spotted it, rewrote it as a JOIN with a pre-aggregated subquery, and explained why the new version is faster. It works because ChatGPT already has your schema context from line one, so it knows the exact table structures and can reason about indexes and join strategies. Let's run the optimized version.",
+      "transition": "new_concept",
+      "clears": [
+        "revenue_by_segment_detailed"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 380849,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 62.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 381699,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "debug_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 382599,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 419266,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "And there it is, runs clean. We've got our results showing the top customers by total spend. Customer Acme Corp leads with a total_spent of 15200.00, that's 15,200 dollars. Global Industries comes in second at 12500.00, and TechStart rounds out the top three at 8750.00. The optimized query uses an inner join to a subquery that pre-calculates the totals, which is way more efficient than running a correlated subquery row by row. Same result, faster execution. That's the debug and optimize bonus line in action.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 419716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 55.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close",
+      "time_offset_ms": 468583,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Alright, let's lock this in. The three-line prompt framework is simple. Line one, paste your actual CREATE TABLE schema, don't describe your tables in English, give ChatGPT the real DDL. Line two, state your business question in plain language, be specific about what you want to see. Line three, add your constraints, what S-Q-L dialect, formatting preferences, performance rules, anything that matters. And if you need to debug, add a fourth line with the broken query and ask for a fix. I've left the prompt template and this sample database in the description so you can practice this in the next five minutes. Schema, question, constraints. That's it. That's the framework. Now go use it.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close_pause",
+      "time_offset_ms": 469233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 65.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 470883,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}
