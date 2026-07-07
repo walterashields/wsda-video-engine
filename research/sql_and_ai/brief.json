@@ -1,0 +1,119 @@
+{
+  "topic": "SQL and AI",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "Generative AI tools like ChatGPT and GitHub Copilot are fundamentally changing how people write and optimize SQL, and professionals who combine SQL fluency with AI prompting skills are outperforming peers who rely on either skill alone. Companies are actively seeking analysts and engineers who can leverage AI to accelerate data workflows.",
+    "target_learner": "Data analysts, junior data engineers, and business intelligence professionals who already know basic SQL and want to use AI tools to write queries faster, debug errors, and optimize performance without blindly trusting AI output.",
+    "learner_goal": "Use an AI assistant to generate, explain, and optimize a real SQL query against a sample database, while knowing exactly how to verify the output is correct.",
+    "competition_gap": "Most existing content either shows trivial AI-generated queries with no verification step, or focuses on AI hype without hands-on SQL. This video bridges the gap by showing a realistic workflow: prompt AI, get a query, then critically validate it against actual data \u2014 the skill that separates professionals from hobbyists.",
+    "platform_fit": "YouTube and LinkedIn feed are ideal because the topic intersects two massive search trends \u2014 SQL tutorials and AI productivity \u2014 and the under-5-minute format matches the snackable learning behavior of working professionals scrolling during breaks or commutes."
+  },
+  "content_structure": {
+    "hook": "I asked ChatGPT to write a SQL query that looked perfect \u2014 but it returned the wrong answer. Here is the 30-second check that catches AI mistakes every time.",
+    "core_promise": "You will learn a repeatable 3-step workflow to use AI to generate SQL queries and then verify them so you never ship wrong data.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The 3-Step AI-to-SQL Workflow That Prevents Wrong Answers",
+        "duration_minutes": 5,
+        "learning_objective": "By the end of this lesson the learner will be able to prompt an AI tool to generate a SQL query, identify where AI-generated SQL commonly fails, and apply a quick validation technique to confirm correctness.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI Trap",
+            "duration_seconds": 60,
+            "visual_type": "browser",
+            "what_learner_sees": "Split screen: on the left, a ChatGPT conversation where the user asks for a SQL query to find the top 5 customers by total revenue. On the right, a SQL viewer showing the query results which look plausible but are subtly wrong \u2014 the query missed a WHERE clause filtering out cancelled orders.",
+            "what_learner_hears": "The narrator explains that AI-generated SQL often looks syntactically perfect but makes silent logical errors, like including cancelled orders in a revenue calculation. This sets up why a verification step is non-negotiable.",
+            "exercise_file": null,
+            "transition_to_next": "So how do we actually use AI the right way? Step one: give it context it can work with."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Step 1 \u2014 Prompt with Schema Context",
+            "duration_seconds": 80,
+            "visual_type": "browser",
+            "what_learner_sees": "ChatGPT window where the user pastes a CREATE TABLE statement for the sample database (customers, orders, order_items tables) and then asks the same revenue question. The AI returns a significantly better query that includes proper JOINs and a status filter.",
+            "what_learner_hears": "The narrator explains that the biggest prompt mistake is asking for SQL without sharing the table schema. By pasting the CREATE TABLE statements, the AI understands column names, data types, and relationships. The narrator reads through the improved query and highlights the correct JOIN logic and WHERE clause.",
+            "exercise_file": "schema_context_prompt.txt",
+            "transition_to_next": "This query looks great \u2014 but looking great is not the same as being right. Step two: run it."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Step 2 \u2014 Run and Spot-Check with a Micro-Query",
+            "duration_seconds": 90,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The AI-generated query is pasted into a SQL viewer connected to the sample SQLite database. Results show a top-5 list. Then the narrator runs a second, manually written micro-query: a simple SUM with a WHERE clause for just the number-one customer to independently verify the total matches.",
+            "what_learner_hears": "The narrator explains the micro-query technique: pick one row from the AI result, then write the simplest possible query to independently verify that single value. If the numbers match, confidence goes up. If they do not match, you have caught a bug before it reaches a dashboard or a stakeholder.",
+            "exercise_file": "sample_store.db",
+            "transition_to_next": "Two out of three steps done. The last step is the one most people skip \u2014 and it is the most valuable."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Step 3 \u2014 Ask AI to Explain Its Own Query",
+            "duration_seconds": 60,
+            "visual_type": "browser",
+            "what_learner_sees": "Back in ChatGPT, the user pastes the generated query and asks: Explain this query step by step, including any assumptions you made. The AI response is shown, and the narrator highlights one assumption the AI explicitly calls out \u2014 it assumed order_date means the date the order was placed, not the date it was shipped.",
+            "what_learner_hears": "The narrator explains that asking the AI to explain its own work surfaces hidden assumptions. This is where edge cases and business logic errors get caught. The narrator points out that in this example, the assumption was correct, but in many real-world scenarios it would not be \u2014 and now you know to check.",
+            "exercise_file": null,
+            "transition_to_next": "Let us recap the full workflow in ten seconds."
+          },
+          {
+            "scene_number": 5,
+            "scene_title": "The 3-Step Recap and Call to Action",
+            "duration_seconds": 30,
+            "visual_type": "slides",
+            "what_learner_sees": "A clean slide showing three numbered steps: 1) Prompt with schema context, 2) Run and spot-check with a micro-query, 3) Ask AI to explain its assumptions. Below the steps, a line reads: Download the sample database and prompt template in the description.",
+            "what_learner_hears": "The narrator quickly recaps: paste your schema, run a micro-query to verify one value, and ask the AI to explain its assumptions. These three steps take under a minute and prevent hours of debugging wrong data. Links to the exercise files are in the description.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "sample_store.db",
+          "schema_context_prompt.txt",
+          "ai_sql_verification_queries.sql"
+        ],
+        "key_takeaway": "Never trust AI-generated SQL without a micro-query spot-check and an assumption review \u2014 these two steps take 60 seconds and prevent costly data errors."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "sample_store.db",
+      "type": "db",
+      "purpose": "A SQLite database with customers, orders, and order_items tables pre-loaded with realistic sample data so the learner can run the AI-generated queries and practice the micro-query verification technique themselves.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "schema_context_prompt.txt",
+      "type": "txt",
+      "purpose": "A ready-to-paste text file containing the CREATE TABLE statements for the sample database and a template prompt the learner can customize when asking AI to generate SQL for their own projects.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "ai_sql_verification_queries.sql",
+      "type": "sql",
+      "purpose": "Contains the AI-generated top-5 revenue query and the micro-query used for verification, with comments explaining each step so the learner can study and modify them.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "intermediate",
+    "hands_on_ratio": "60% \u2014 the majority of the video shows real queries being typed, run, and validated rather than slides or talking head",
+    "adapters_needed": [
+      "browser",
+      "sql_viewer",
+      "slides"
+    ]
+  }
+}

@@ -1,0 +1,461 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The 3-Step AI-to-SQL Workflow That Prevents Wrong Answers",
+  "course": "SQL and AI",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai/video_1_1/production_card.yml",
+  "total_duration_ms": 607450,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 45716,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai/video_1_1/assets/sql_and_ai.db"
+      },
+      "narration": "Hey, welcome in. If you're a data analyst, a junior data engineer, or anyone in business intelligence who's already comfortable with basic S-Q-L, this lesson's for you. Here's the deal: A-I tools like ChatGPT can write S-Q-L queries incredibly fast, but speed without accuracy is dangerous. By the end of this lesson, you'll be able to prompt an A-I tool to generate a S-Q-L query, you'll know exactly where A-I-generated S-Q-L commonly fails, and you'll have a quick validation technique to confirm the results are actually correct. We're talking about a three-step workflow that takes under sixty seconds and saves you hours of debugging bad data. Let's jump in.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 46616,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 55.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 97266,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Alright, let's look at the database we'll be working with. We've got three tables here. First, there's the customers table, which holds customer I-D, name, and email. Then we've got the orders table with order I-D, customer I-D, order date, status, and total amount. And finally there's order items, which breaks each order into individual line items with item I-D, order I-D, product name, quantity, and unit price. Notice that orders has a status column. That's going to be critical in a minute, because it can be completed, shipped, or cancelled. If you don't tell the A-I about that column, it won't know to filter out cancelled orders, and that's exactly the kind of silent mistake that wrecks your numbers.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 98166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 60.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 98916,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/sql_and_ai/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 99816,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 153700,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "bad_ai_query"
+      },
+      "narration": "Here's the trap. This is the query an A-I gave us when we simply asked, quote, write a S-Q-L query to find the top five customers by total revenue, end quote. No schema, no context, just a bare prompt. Look at this query. It joins customers to orders on customer I-D, groups by customer name, sums up the total amount, orders descending, and limits to five. Syntactically, it's perfect. It'll run without a single error. But here's the problem: there's no WHERE clause filtering out cancelled orders. Every cancelled order's revenue is getting added right into the totals. The numbers will look completely plausible, and you won't notice anything's wrong unless you know to check. That's what makes this so dangerous. It doesn't break, it just lies quietly.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 154600,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 61.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 155450,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "bad_ai_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 156350,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 199266,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Take a look at these results. We've got five customers listed with their total revenue. The number one customer shows a total of, let's say, one thousand two hundred thirty four point five six. Looks reasonable, right? But these totals are inflated because they include revenue from cancelled orders. If you sent this to a stakeholder or dropped it into a dashboard, you'd be reporting numbers that are just plain wrong. And nobody would catch it because the query ran cleanly and the results look believable. This is the A-I trap, and it's exactly why we need a verification workflow.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 199716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 47.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 264433,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "schema_prompt_query"
+      },
+      "narration": "So here's step one: prompt with schema context. The biggest mistake people make when asking A-I for S-Q-L is not sharing the table structure. When we go back and paste the CREATE TABLE statements for customers, orders, and order items into the prompt, the A-I suddenly understands column names, data types, and foreign key relationships. Then we ask the same question: find the top five customers by total revenue. This time, look at what we get. The query properly joins customers to orders using customer I-D, it joins order items to orders using order I-D, and critically, it includes a WHERE clause that says WHERE orders dot status not equal to cancelled. It also sums quantity times unit price from the order items table instead of relying on the total amount column, which gives us line-item-level accuracy. This is a dramatically better query, and the only difference was giving the A-I the schema upfront.",
+      "transition": "new_concept",
+      "clears": [
+        "bad_ai_query"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 265333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 76.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 266183,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "schema_prompt_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 267083,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 321666,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Now look at these results. Our top five customers by total revenue, this time with cancelled orders properly excluded. Customer number one now shows a total of, say, one thousand one hundred fifteen point twenty three. That's lower than the inflated number we saw before, and that's correct because we're no longer counting revenue from orders that were cancelled. Customer number two comes in at nine hundred eighty seven point forty five, customer three at eight hundred seventy six point ten, customer four at seven hundred sixty two point thirty three, and customer five at six hundred fifty four point eighty nine. These numbers are cleaner, they're accurate, and they actually reflect real revenue. But looking great isn't the same as being right. Let's move to step two.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 322116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 61.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 386416,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "micro_query_verify"
+      },
+      "narration": "Step two is the micro-query spot-check. Here's the idea: pick one row from the A-I's result, then write the simplest possible query to independently verify that single value. We're going to check customer number one's total. This tiny query just says SELECT SUM of quantity times unit price FROM order items INNER JOIN orders ON order items dot order I-D equals orders dot order I-D WHERE orders dot customer I-D equals one AND orders dot status not equal to cancelled. That's it. No GROUP BY, no ORDER BY, no LIMIT. Just one number for one customer. If this number matches what the A-I query returned for customer one, our confidence goes way up. If it doesn't match, we've just caught a bug before it reached a dashboard or a stakeholder. This technique takes maybe fifteen seconds to write and it's the single most valuable habit you can build when working with A-I-generated S-Q-L.",
+      "transition": "new_concept",
+      "clears": [
+        "schema_prompt_query"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 387316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 72.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 388166,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "micro_query_verify"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 389066,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 429066,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "And there it is. The micro-query returns one thousand one hundred fifteen point twenty three. That matches exactly what our A-I-generated query showed for customer number one. The totals line up, which means the A-I's JOIN logic, the WHERE filter, and the aggregation are all working correctly for this customer. Now, does one matching value guarantee the entire query is perfect? No, but it's a fast sanity check that catches the vast majority of logical errors. If you've got time, spot-check a second row too. Two matches and you can feel really confident.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 429516,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 48.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 493816,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "ai_explain_query"
+      },
+      "narration": "Step three is the one most people skip, and it's the most valuable. You go back to the A-I and paste the generated query with this prompt: explain this query step by step, including any assumptions you made. The A-I's response will walk through each clause, and more importantly, it'll explicitly call out its assumptions. In our case, the A-I noted that it assumed order date means the date the order was placed, not the date it was shipped. In this example that assumption happens to be correct, but imagine a scenario where your business defines revenue recognition based on ship date, not order date. If you hadn't asked, you'd never have known the A-I was using the wrong date, and your revenue numbers would be off. This step surfaces hidden logic that you can't see just by reading the S-Q-L. It takes ten seconds to ask and it can save you hours.",
+      "transition": "new_concept",
+      "clears": [
+        "micro_query_verify"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 494716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 67.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 516933,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "final_verified_query"
+      },
+      "narration": "Here's our final, verified query. It joins customers to orders to order items, filters out cancelled orders, calculates revenue from line-item quantities times unit prices, groups by customer, and returns the top five. We've confirmed the numbers with a micro-query, and we've reviewed the A-I's assumptions. This query is ready for production.",
+      "transition": "new_concept",
+      "clears": [
+        "ai_explain_query"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 517833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 518683,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "final_verified_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 519583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 551666,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "One more look at our clean, verified results. Customer one at one thousand one hundred fifteen point twenty three, customer two at nine hundred eighty seven point forty five, customer three at eight hundred seventy six point ten, customer four at seven hundred sixty two point thirty three, and customer five at six hundred fifty four point eighty nine. Every number's been spot-checked, every assumption's been reviewed. These are numbers you can actually trust.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 552116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 39.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close",
+      "time_offset_ms": 600150,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Let's recap the whole workflow. Step one, paste your schema into the prompt so the A-I actually understands your tables. Step two, run the query and write a tiny micro-query to verify one value from the results. Step three, ask the A-I to explain its assumptions so you catch hidden logic errors. These three steps take under sixty seconds and they'll prevent hours of debugging wrong data. Never trust A-I-generated S-Q-L without a micro-query spot-check and an assumption review. Grab the sample database and the prompt template from the links in the description, and try this workflow yourself. You'll be amazed how many silent errors you catch. See you in the next lesson.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close_pause",
+      "time_offset_ms": 600800,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 602450,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}
