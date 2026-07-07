@@ -296,6 +296,14 @@ will cause the recording to fail.
 
 {PRODUCTION_STANDARD}
 
+GROUNDING RULE — NON-NEGOTIABLE:
+When verified data is provided in the prompt, that data is the complete and
+only truth about what will appear on screen. Every table name, column name,
+and number in your narration must come from that verified data, copied
+exactly. Do not invent, round differently, or assume any table, column, or
+number that isn't listed there. If you're unsure whether something is real,
+leave it out rather than guess.
+
 You always respond with valid YAML only.
 No markdown fences. No preamble. No explanation. Just YAML.
 Start your response with: schema_version: "3.0"
@@ -315,6 +323,8 @@ Adapter type: {adapter_type}
 LESSON CONTEXT:
 {lesson_context}
 
+{verified_data}
+
 NARRATION VOICE REQUIREMENT:
 - Use contractions throughout: we're, I'll, you'll, it's, don't, can't, won't
 - Casual and warm, like a smart friend explaining something they love
@@ -328,34 +338,206 @@ Additional context:
 Generate a production card with rich, over-explained narration.
 Every narration block must have a following pause sized correctly.
 Use contractions. Use casual speech. Read every number aloud.
+Every table, column, and number in the narration must come directly from
+the VERIFIED DATA above — nothing assumed, nothing invented.
 
 Return ONLY valid YAML starting with schema_version: "3.0"
 """
 
 
-SQL_SYSTEM = """You generate SQL files for educational lessons.
+NUMBER_FIX_PROMPT = """Your previous production card mentioned numbers, tables,
+or columns that don't match the verified data. Fix these specific issues,
+keep everything else the same:
+
+{issues}
+
+VERIFIED DATA (the only truth):
+{verified_data}
+
+Previous card:
+{previous_card}
+
+Return the complete corrected YAML, starting with schema_version: "3.0"
+"""
+
+
+SQL_SYSTEM = """You generate SELF-CONTAINED SQL files for educational lessons.
+
+The file you generate is the ONLY source of truth for the database. It will be
+executed exactly as written to build a real SQLite database, and every query
+result it produces will be the exact numbers shown on screen and read aloud
+in narration. There is no separate schema step. If you don't create it here,
+it doesn't exist.
 
 Rules:
-- Every section starts with: -- [section_name]
-- Section names use lowercase and underscores only
-- Each query is clear, educational, and demonstrates one concept
-- Include a brief comment explaining what the query demonstrates
-- Valid SQLite syntax only
-- Format code clearly for on-screen display
+1. Start with CREATE TABLE statements for every table the lesson needs.
+   Add a one-line comment above each table explaining what it represents.
+2. Follow with INSERT statements that seed REALISTIC data. For any query
+   that aggregates (SUM, AVG, GROUP BY, COUNT), seed enough rows (8-20 per
+   table) that the aggregation produces a meaningful, non-trivial result.
+   Use varied, plausible values, not round placeholder numbers like 100/200/300.
+3. Then add the teaching queries, each in its own section:
+   -- [section_name]
+   SELECT ...;
+   Section names use lowercase and underscores only.
+4. Every table and column referenced in a teaching query MUST have been
+   created in step 1. Never reference a table or column you didn't create.
+5. Valid SQLite syntax only. Format code clearly for on-screen display.
+6. Include a brief comment above each teaching query explaining what it
+   demonstrates.
 
 Return ONLY the SQL file content. No markdown. No explanation."""
 
 
-SQL_PROMPT = """Generate SQL queries for this lesson.
+SQL_PROMPT = """Generate a complete, self-contained SQL file for this lesson.
 
 Lesson: {lesson_title}
 Scenes needing SQL:
 {scene_needs}
 
-Tables will be created separately. Use realistic column and table names
-appropriate for the topic. Make the SQL educational and clear.
+This file must include CREATE TABLE statements, INSERT statements with
+realistic seed data, and the teaching queries with -- [section_name] headers.
+Nothing exists unless you create it in this file. Use realistic column and
+table names appropriate for the topic.
 
-Return only the SQL file content with -- [section_name] headers."""
+Return only the SQL file content."""
+
+
+DB_BUILD_ERROR_PROMPT = """Your previous SQL file failed to build a working database.
+
+Previous SQL file:
+{previous_sql}
+
+Error(s):
+{errors}
+
+Fix the file. Remember: every table and column used in a teaching query must
+be created and seeded earlier in the SAME file. Return the complete corrected
+SQL file, nothing else."""
+
+
+def parse_sql_sections(sql_content: str) -> dict:
+    """Split a SQL file into named SELECT sections (marked with -- [name])."""
+    sections, cur, lines = {}, None, []
+    for line in sql_content.splitlines():
+        m = re.match(r'--\s*\[(\w+)\]', line)
+        if m:
+            if cur and lines:
+                sections[cur] = '\n'.join(lines).strip()
+            cur, lines = m.group(1), []
+        elif cur is not None:
+            lines.append(line)
+    if cur and lines:
+        sections[cur] = '\n'.join(lines).strip()
+    return sections
+
+
+def build_database_from_sql(db_path: Path, sql_content: str) -> tuple[bool, str]:
+    """
+    Execute ONLY the DDL/DML (CREATE/INSERT/DROP/ALTER) statements from a SQL
+    file to build a real database. No fallback, no placeholder tables — if
+    this fails, the SQL file is wrong and must be regenerated.
+    Returns (success, error_message).
+    """
+    import sqlite3 as _sqlite3
+
+    if db_path.exists():
+        db_path.unlink()
+
+    conn = _sqlite3.connect(str(db_path))
+    try:
+        for stmt in sql_content.split(";"):
+            # Strip leading full-line comments/blank lines, keep the code
+            code_lines = [
+                ln for ln in stmt.splitlines()
+                if not ln.strip().startswith("--")
+            ]
+            stmt = "\n".join(code_lines).strip()
+            if not stmt:
+                continue
+            upper = stmt.upper().lstrip()
+            if upper.startswith(("CREATE", "INSERT", "DROP", "ALTER")):
+                conn.execute(stmt)
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        return False, str(e)
+    conn.close()
+    return True, ""
+
+
+def run_verified_queries(db_path: Path, sections: dict) -> tuple[dict, list[str]]:
+    """
+    Execute every named teaching query against the REAL database and capture
+    the exact values that will be displayed (rounded to 2 decimals, same as
+    the SQL viewer). Returns (results, errors).
+    """
+    import sqlite3 as _sqlite3
+
+    results = {}
+    errors = []
+    conn = _sqlite3.connect(str(db_path))
+    try:
+        for name, sql in sections.items():
+            try:
+                cursor = conn.execute(sql)
+                cols = [d[0] for d in cursor.description] if cursor.description else []
+                rows = cursor.fetchall()
+                display_rows = []
+                for row in rows:
+                    display_row = []
+                    for val in row:
+                        if isinstance(val, float):
+                            display_row.append(round(val, 2))
+                        else:
+                            display_row.append(val)
+                    display_rows.append(display_row)
+                results[name] = {"columns": cols, "rows": display_rows}
+            except Exception as e:
+                errors.append(f"Query '{name}' failed: {e}")
+    finally:
+        conn.close()
+    return results, errors
+
+
+def get_real_schema(db_path: Path) -> dict:
+    """Read the actual table/column names that exist in the built database."""
+    import sqlite3 as _sqlite3
+    conn = _sqlite3.connect(str(db_path))
+    schema = {}
+    try:
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()]
+        for t in tables:
+            cols = [r[1] for r in conn.execute(f"PRAGMA table_info({t})").fetchall()]
+            schema[t] = cols
+    finally:
+        conn.close()
+    return schema
+
+
+def format_verified_data_block(schema: dict, query_results: dict) -> str:
+    """Build the grounding context injected into the narration prompt."""
+    lines = ["VERIFIED DATA — this is the ONLY database and result data that exists.",
+             "Narration must ONLY reference table names, column names, and numeric",
+             "values listed below. Never mention a table, column, or number that",
+             "isn't listed here — it will not be on screen.",
+             "",
+             "REAL TABLES AND COLUMNS:"]
+    for table, cols in schema.items():
+        lines.append(f"- {table}({', '.join(cols)})")
+
+    lines.append("")
+    lines.append("REAL QUERY RESULTS (exact values that will appear on screen, 2 decimals):")
+    for name, data in query_results.items():
+        lines.append(f"[{name}] columns: {', '.join(data['columns'])}")
+        for row in data['rows'][:15]:
+            lines.append(f"  {row}")
+        if len(data['rows']) > 15:
+            lines.append(f"  ... ({len(data['rows']) - 15} more rows)")
+
+    return "\n".join(lines)
 
 
 def detect_adapter(lesson: dict, brief: dict) -> str:
@@ -464,6 +646,125 @@ def validate_card(card_yaml: str) -> tuple[bool, list[str]]:
     return len(errors) == 0, errors
 
 
+def _extract_decimal_mentions(text: str) -> list:
+    """Find decimal numbers mentioned in narration text (plain or spelled out)."""
+    found = []
+    for m in re.finditer(r'\b0\.\d+\b', text):
+        found.append((m.group(), float(m.group())))
+    word_digits = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+                   'six': 6, 'seven': 7, 'eight': 8, 'nine': 9}
+    for m in re.finditer(r'zero point (\w+)(?:\s+(\w+))?(?:\s+(\w+))?(?:\s+(\w+))?', text.lower()):
+        digits = [word_digits.get(g) for g in m.groups() if g and g in word_digits]
+        if digits:
+            found.append((m.group(), float("0." + "".join(str(d) for d in digits))))
+    return found
+
+
+def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
+    """
+    Compare narration in a drafted card against the REAL, verified query
+    results. Returns a list of human-readable issue strings, empty if clean.
+    """
+    all_display_values = set()
+    for data in query_results.values():
+        for row in data['rows']:
+            for v in row:
+                if isinstance(v, (int, float)):
+                    all_display_values.add(round(float(v), 2))
+
+    parsed = yaml.safe_load(card_yaml)
+    issues = []
+    for e in parsed.get('events', []):
+        narr = (e.get('narration') or '').strip()
+        if not narr:
+            continue
+        for raw_text, num in _extract_decimal_mentions(narr):
+            if not any(abs(num - v) < 0.005 for v in all_display_values):
+                issues.append(
+                    f"Event {e.get('id')}: narration says '{raw_text}' ({num}) "
+                    f"but no verified query result matches that value."
+                )
+    return issues
+
+
+def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
+                               db_name: str, sql_name: str) -> tuple:
+    """
+    Generate a self-contained SQL file, execute it to build a REAL database,
+    run every teaching query against it, and return (sql_content, db_path,
+    query_results). Retries generation if the SQL fails to build or run.
+    Raises RuntimeError if it can't produce a working database after retries.
+    """
+    scenes = lesson.get('scenes', [])
+    sql_scenes = [s for s in scenes if s.get('visual_type') == 'sql_viewer']
+    scene_needs = '\n'.join([
+        f"- Scene {s['scene_number']}: {s['scene_title']} - {s['what_learner_sees']}"
+        for s in sql_scenes
+    ]) or "- Design queries appropriate to the lesson's learning objective."
+
+    db_path = assets_dir / db_name
+    sql_content = None
+    query_results = {}
+    prior_errors = []
+
+    for attempt in range(1, 4):
+        console.print(f"  Drafting SQL + database (attempt {attempt}/3)...")
+
+        if attempt == 1:
+            prompt = SQL_PROMPT.format(lesson_title=lesson_title, scene_needs=scene_needs)
+        else:
+            prompt = DB_BUILD_ERROR_PROMPT.format(
+                previous_sql=sql_content or "",
+                errors="\n".join(prior_errors),
+            )
+
+        sql_response = client.messages.create(
+            model="claude-opus-4-6",
+            max_tokens=3000,
+            system=SQL_SYSTEM,
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        sql_content = sql_response.content[0].text.strip()
+        sql_content = re.sub(r'^```sql\s*', '', sql_content, flags=re.MULTILINE)
+        sql_content = re.sub(r'```\s*$', '', sql_content.strip())
+
+        ok, build_err = build_database_from_sql(db_path, sql_content)
+        if not ok:
+            prior_errors = [f"Database build failed: {build_err}"]
+            console.print(f"  [yellow]Warning - DB build failed:[/yellow] {build_err}")
+            continue
+
+        sections = parse_sql_sections(sql_content)
+        if not sections:
+            prior_errors = ["No -- [section_name] teaching queries found in the file."]
+            console.print(f"  [yellow]Warning - no teaching query sections found[/yellow]")
+            continue
+
+        query_results, query_errors = run_verified_queries(db_path, sections)
+        if query_errors:
+            prior_errors = query_errors
+            console.print(f"  [yellow]Warning - query execution errors:[/yellow]")
+            for err in query_errors:
+                console.print(f"    - {err}")
+            continue
+
+        console.print(f"  [green]OK[/green] Database built and all queries verified")
+        break
+    else:
+        raise RuntimeError(
+            f"Could not build a working database after 3 attempts. "
+            f"Last errors: {prior_errors}"
+        )
+
+    sql_path = assets_dir / sql_name
+    sql_path.write_text(sql_content)
+    console.print(f"  [green]OK[/green] SQL: {sql_path.name}")
+    console.print(f"  [green]OK[/green] Database: {db_path.name}")
+
+    return sql_content, db_path, query_results
+
+
 def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     lesson_num = lesson['lesson_number']
     lesson_id = f"video_1_{lesson_num}"
@@ -481,7 +782,18 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
 
     console.print(f"  Adapter: [cyan]{adapter_type}[/cyan]")
 
-    # Generate production card with retry
+    # STEP 1: for SQL lessons, build the REAL database and run the REAL
+    # queries FIRST. Narration gets written only after we know exactly what
+    # will be on screen. This is the fix for the narration-visual disconnect.
+    query_results = {}
+    verified_data_block = ""
+    if adapter_type == 'sql_viewer':
+        _, db_path, query_results = build_verified_sql_and_db(
+            lesson, lesson['title'], assets_dir, db_name, sql_name
+        )
+        schema = get_real_schema(db_path)
+        verified_data_block = format_verified_data_block(schema, query_results)
+
     # Build lesson context string
     lesson_context_parts = [
         f"Lesson {lesson_num} of {len(brief.get('content_structure', {}).get('lessons', []))}",
@@ -493,8 +805,8 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         lesson_context_parts.append(
             "IMPORTANT: This is a conceptual lesson. Use the chat demo interface "
             "where the instructor asks questions and gets structured educational responses. "
-            "The AI responses should contain the core teaching content — definitions, "
-            "examples, comparisons — formatted clearly for on-screen reading. "
+            "The AI responses should contain the core teaching content - definitions, "
+            "examples, comparisons - formatted clearly for on-screen reading. "
             "The narration explains and deepens what the learner sees on screen."
         )
     lesson_context = "\n".join(lesson_context_parts)
@@ -502,27 +814,39 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     # Normalize adapter type for card generation
     card_adapter = "chat_demo" if "chat_demo" in adapter_type else adapter_type
 
+    # STEP 2: generate narration, grounded in verified_data_block for SQL
+    # lessons. Retry loop now checks BOTH schema validity AND number accuracy
+    # against the real database, not just YAML shape.
     card_yaml = None
+    raw = None
+    number_issues = []
     for attempt in range(1, 4):
         console.print(f"  Drafting card (attempt {attempt}/3)...")
+
+        if attempt == 1 or not number_issues:
+            prompt = DRAFT_PROMPT.format(
+                lesson_json=json.dumps(lesson, indent=2),
+                topic=brief['topic'],
+                target_learner=brief['market_analysis']['target_learner'],
+                tone=prod_notes.get('tone', 'conversational'),
+                adapter_type=card_adapter,
+                lesson_context=lesson_context,
+                verified_data=verified_data_block,
+                database=db_name,
+                sql_file=sql_name,
+            )
+        else:
+            prompt = NUMBER_FIX_PROMPT.format(
+                issues="\n".join(number_issues),
+                verified_data=verified_data_block,
+                previous_card=raw,
+            )
 
         response = client.messages.create(
             model="claude-opus-4-6",
             max_tokens=6000,
             system=DRAFT_SYSTEM,
-            messages=[{
-                "role": "user",
-                "content": DRAFT_PROMPT.format(
-                    lesson_json=json.dumps(lesson, indent=2),
-                    topic=brief['topic'],
-                    target_learner=brief['market_analysis']['target_learner'],
-                    tone=prod_notes.get('tone', 'conversational'),
-                    adapter_type=card_adapter,
-                    lesson_context=lesson_context,
-                    database=db_name,
-                    sql_file=sql_name,
-                )
-            }]
+            messages=[{"role": "user", "content": prompt}]
         )
 
         raw = response.content[0].text.strip()
@@ -530,125 +854,64 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         raw = re.sub(r'```\s*$', '', raw.strip())
 
         valid, errors = validate_card(raw)
-        if valid:
-            # Enforce duration limit based on format
-            format_limits = {
-                "short-video": 5, "tutorial": 12,
-                "lesson": 10, "course": 15,
-            }
-            lesson_format = brief.get("format", "course")
-            max_min = format_limits.get(lesson_format, 15)
-            max_s = max_min * 60
-
-            # Calculate estimated duration from pauses
-            parsed = yaml.safe_load(raw)
-            total_s = sum(
-                float(e.get("duration", 0))
-                for e in parsed.get("events", [])
-                if e.get("type") == "pause"
-            )
-
-            if total_s > max_s * 1.1:
-                scale = max_s / total_s
-                # Scale all pause durations
-                import re as _re
-                def scale_duration(m):
-                    val = float(m.group(1))
-                    new_val = max(0.3, round(val * scale, 1))
-                    return f"duration: {new_val}"
-                raw = _re.sub(r"duration: ([\d.]+)", scale_duration, raw)
-                new_min = total_s * scale / 60
-                console.print(f"  [yellow]Duration scaled: {total_s/60:.1f}min → {new_min:.1f}min[/yellow]")
-
-            card_yaml = raw
-            console.print(f"  [green]✓[/green] Card validated")
-            break
-        else:
-            console.print(f"  [yellow]⚠ Validation errors (attempt {attempt}):[/yellow]")
+        if not valid:
+            console.print(f"  [yellow]Warning - validation errors (attempt {attempt}):[/yellow]")
             for err in errors:
                 console.print(f"    - {err}")
             if attempt < 3:
                 console.print(f"  Retrying with error feedback...")
+            number_issues = []
+            continue
+
+        # Verified-number check only applies to SQL lessons with real results
+        number_issues = check_number_mismatches(raw, query_results) if query_results else []
+        if number_issues:
+            console.print(f"  [yellow]Warning - number mismatches vs. real database (attempt {attempt}):[/yellow]")
+            for iss in number_issues:
+                console.print(f"    - {iss}")
+            if attempt < 3:
+                console.print(f"  Retrying with corrective feedback...")
+            continue
+
+        # Enforce duration limit based on format
+        format_limits = {
+            "short-video": 5, "tutorial": 12,
+            "lesson": 10, "course": 15,
+        }
+        lesson_format = brief.get("format", "course")
+        max_min = format_limits.get(lesson_format, 15)
+        max_s = max_min * 60
+
+        parsed = yaml.safe_load(raw)
+        total_s = sum(
+            float(e.get("duration", 0))
+            for e in parsed.get("events", [])
+            if e.get("type") == "pause"
+        )
+
+        if total_s > max_s * 1.1:
+            scale = max_s / total_s
+            def scale_duration(m):
+                val = float(m.group(1))
+                new_val = max(0.3, round(val * scale, 1))
+                return f"duration: {new_val}"
+            raw = re.sub(r"duration: ([\d.]+)", scale_duration, raw)
+            new_min = total_s * scale / 60
+            console.print(f"  [yellow]Duration scaled: {total_s/60:.1f}min -> {new_min:.1f}min[/yellow]")
+
+        card_yaml = raw
+        console.print(f"  [green]OK[/green] Card validated - schema clean, numbers verified against real database")
+        break
 
     if not card_yaml:
-        console.print(f"  [red]Failed after 3 attempts — saving best attempt[/red]")
+        console.print(f"  [red]Failed after 3 attempts - saving best attempt (may contain unverified numbers)[/red]")
         card_yaml = raw
 
     card_path = lesson_dir / "production_card.yml"
     card_path.write_text(card_yaml)
-    console.print(f"  [green]✓[/green] Card: {card_path.name}")
-
-    # Generate SQL file if SQL lesson
-    if adapter_type == 'sql_viewer':
-        scenes = lesson.get('scenes', [])
-        sql_scenes = [s for s in scenes if s.get('visual_type') == 'sql_viewer']
-
-        if sql_scenes:
-            console.print(f"  Drafting SQL queries...")
-            scene_needs = '\n'.join([
-                f"- Scene {s['scene_number']}: {s['scene_title']} — {s['what_learner_sees']}"
-                for s in sql_scenes
-            ])
-
-            sql_response = client.messages.create(
-                model="claude-opus-4-6",
-                max_tokens=2000,
-                system=SQL_SYSTEM,
-                messages=[{
-                    "role": "user",
-                    "content": SQL_PROMPT.format(
-                        lesson_title=lesson['title'],
-                        scene_needs=scene_needs,
-                    )
-                }]
-            )
-
-            sql_content = sql_response.content[0].text.strip()
-            sql_content = re.sub(r'^```sql\s*', '', sql_content, flags=re.MULTILINE)
-            sql_content = re.sub(r'```\s*$', '', sql_content.strip())
-
-            sql_path = assets_dir / sql_name
-            sql_path.write_text(sql_content)
-            console.print(f"  [green]✓[/green] SQL: {sql_path.name}")
-
-        # Create the SQLite database from the SQL file
-        db_path = assets_dir / db_name
-        if not db_path.exists():
-            import sqlite3 as _sqlite3
-            conn = _sqlite3.connect(str(db_path))
-            # Parse and execute CREATE TABLE/INSERT statements from SQL
-            # Skip SELECT statements — only run DDL/DML
-            sql_file = assets_dir / sql_name
-            if sql_file.exists():
-                raw_sql = sql_file.read_text()
-                for stmt in raw_sql.split(";"):
-                    stmt = stmt.strip()
-                    # Skip section headers and empty
-                    if not stmt or stmt.startswith("--"):
-                        continue
-                    # Only run CREATE, INSERT, DROP statements
-                    upper = stmt.upper().lstrip()
-                    if upper.startswith(("CREATE", "INSERT", "DROP", "ALTER")):
-                        try:
-                            conn.execute(stmt)
-                        except Exception:
-                            pass  # ignore DDL errors — tables may not exist yet
-            # Create placeholder tables for any SELECT queries
-            # by extracting FROM table names
-            import re as _re
-            from_tables = _re.findall(r'FROM\s+(\w+)', raw_sql if sql_file.exists() else "", _re.IGNORECASE)
-            for tbl in set(from_tables):
-                try:
-                    conn.execute(f"CREATE TABLE IF NOT EXISTS {tbl} (id INTEGER PRIMARY KEY, name TEXT, value REAL, amount REAL, total REAL, date TEXT, category TEXT)")
-                    conn.execute(f"INSERT OR IGNORE INTO {tbl} (id, name, value, amount, total) VALUES (1, 'Sample A', 100.0, 250.0, 350.0), (2, 'Sample B', 200.0, 150.0, 350.0), (3, 'Sample C', 300.0, 100.0, 400.0)")
-                except Exception:
-                    pass
-            conn.commit()
-            conn.close()
-            console.print(f"  [green]✓[/green] Database: {db_path.name}")
+    console.print(f"  [green]OK[/green] Card: {card_path.name}")
 
     return card_path
-
 
 @click.command()
 @click.argument("brief_path")
