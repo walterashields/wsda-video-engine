@@ -84,16 +84,18 @@ def get_sql_sections(sql_path: Path) -> set[str]:
 
 
 def extract_table_references(narration: str) -> set[str]:
-    """Extract table names mentioned in narration text."""
-    # Common patterns: "the X table", "FROM X", "in X"
+    """Extract table names mentioned in narration text.
+    Only matches the explicit 'the X table' phrasing. Earlier versions also
+    matched 'from X' and 'in the X', which fire on completely ordinary
+    English ("something's off in the join", "template in the description")
+    and caused verify.py's auto-fix to create garbage tables with those
+    words as names, corrupting a database that was otherwise correctly
+    built and verified. Being conservative here (missing a real reference
+    occasionally) is far safer than being permissive (fabricating fake
+    tables in the actual database)."""
     tables = set()
-    for m in re.finditer(
-        r'\bthe\s+(\w+)\s+table\b|\bfrom\s+(\w+)\b|\bin\s+the\s+(\w+)\b',
-        narration, re.IGNORECASE
-    ):
-        for g in m.groups():
-            if g:
-                tables.add(g.lower())
+    for m in re.finditer(r'\bthe\s+(\w+)\s+table\b', narration, re.IGNORECASE):
+        tables.add(m.group(1).lower())
     return tables
 
 
@@ -124,12 +126,29 @@ def fix_duration(card_path: Path, card: dict, max_minutes: float) -> bool:
 
 def fix_missing_tables(db_path: Path, missing: set[str]):
     """Add placeholder tables for any missing ones."""
-    if not db_path.exists():
-        conn = sqlite3.connect(str(db_path))
-    else:
-        conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path))
+
+    # Defense in depth: even with a tightened detection regex, never create
+    # a table for a SQL reserved word or an overly generic English word —
+    # these are almost certainly false-positive matches, not real table
+    # references, and creating them corrupts an otherwise-correct database.
+    _sql_reserved = {
+        'select', 'from', 'where', 'join', 'group', 'order', 'table',
+        'insert', 'update', 'delete', 'create', 'drop', 'alter', 'and',
+        'or', 'not', 'null', 'primary', 'key', 'index', 'view',
+    }
+    _generic_words = {
+        'data', 'description', 'summary', 'details', 'result', 'results',
+        'query', 'value', 'values', 'information', 'content', 'section',
+    }
 
     for tbl in missing:
+        if tbl.lower() in _sql_reserved or tbl.lower() in _generic_words:
+            console.print(
+                f"  [yellow]Skipping '{tbl}' — reserved/generic word, "
+                f"likely a false-positive match, not a real table reference[/yellow]"
+            )
+            continue
         try:
             conn.execute(f"""
                 CREATE TABLE IF NOT EXISTS {tbl} (

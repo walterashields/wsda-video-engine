@@ -378,24 +378,28 @@ def qa(audit_path, card_path, work_dir, fix, db):
         timing_fixes = [i for i in issues if i['type'] == 'TIMING' and 'pause_id' in i]
         if timing_fixes:
             console.print(f"[bold]Auto-fixing {len(timing_fixes)} pause durations...[/bold]")
-            content = card_path.read_text()
+            # Edit the parsed structure directly and re-dump. String-pattern
+            # matching on raw YAML text is fragile — it silently breaks
+            # whenever quoting/indentation style changes upstream (e.g. a
+            # generator that dumps unquoted plain scalars), reporting 0
+            # fixes even though issues were correctly found.
+            events_by_id = {e.get('id'): e for e in card_events if isinstance(e, dict)}
             for issue in timing_fixes:
-                # Find and update the pause duration in the YAML
                 pause_id = issue['pause_id']
-                needed   = issue['needed_dur']
-                # Pattern: find the pause block with this ID and update duration
-                old_pattern = f'  - id: "{pause_id}"\n    type: "pause"\n    duration:'
-                idx = content.find(old_pattern)
-                if idx != -1:
-                    # Find the duration line
-                    dur_start = content.find('duration:', idx) + len('duration:')
-                    dur_end   = content.find('\n', dur_start)
-                    old_dur   = content[dur_start:dur_end].strip()
-                    content   = content[:dur_start] + f' {needed:.0f}.0' + content[dur_end:]
-                    console.print(f"  {pause_id}: {old_dur}s → {needed:.0f}s")
+                needed = issue['needed_dur']
+                pause_event = events_by_id.get(pause_id)
+                if pause_event is not None:
+                    old_dur = pause_event.get('duration')
+                    pause_event['duration'] = round(float(needed), 1)
+                    console.print(f"  {pause_id}: {old_dur}s -> {needed:.1f}s")
                     fixes.append(pause_id)
+                else:
+                    console.print(f"  [yellow]Warning - could not find pause event '{pause_id}' in card[/yellow]")
 
-            card_path.write_text(content)
+            if fixes:
+                card_path.write_text(
+                    yaml.dump(card, sort_keys=False, allow_unicode=True, width=100)
+                )
             console.print(f"[green]✓[/green] Fixed {len(fixes)} pause durations in {card_path.name}")
             console.print("[dim]Re-run recording to apply changes[/dim]")
 
