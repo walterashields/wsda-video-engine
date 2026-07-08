@@ -58,6 +58,79 @@ def get_display_values(db_path: Path, sql: str) -> list[float]:
     return values
 
 
+_NUMBER_WORDS = {
+    'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6,
+    'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12,
+    'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16, 'seventeen': 17,
+    'eighteen': 18, 'nineteen': 19, 'twenty': 20, 'thirty': 30, 'forty': 40,
+    'fifty': 50, 'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
+}
+_MAGNITUDE_WORDS = {'hundred': 100, 'thousand': 1000, 'million': 1000000, 'billion': 1000000000}
+
+
+def _words_to_int(tokens: list) -> float:
+    total, current = 0, 0
+    for tok in tokens:
+        if tok == 'and':
+            continue
+        if tok in _NUMBER_WORDS:
+            current += _NUMBER_WORDS[tok]
+        elif tok in _MAGNITUDE_WORDS:
+            mag = _MAGNITUDE_WORDS[tok]
+            if mag == 100:
+                current = (current or 1) * 100
+            else:
+                total += (current or 1) * mag
+                current = 0
+    return total + current
+
+
+def extract_spelled_number_mentions(text: str) -> list[tuple[str, float]]:
+    """
+    Find fully spelled-out numbers, e.g. 'ninety-four thousand eight hundred
+    seventy point zero zero' -> ('...', 94870.0). Needed because narration
+    sometimes spells numbers out (better for TTS) instead of using digits,
+    and plain digit-regex checking can't see those at all — a silent blind
+    spot that lets wrong numbers through undetected.
+    """
+    words = re.findall(r"[a-zA-Z']+", text.lower())
+    vocab = set(_NUMBER_WORDS) | set(_MAGNITUDE_WORDS) | {'and', 'point'}
+    results = []
+    i, n = 0, len(words)
+    while i < n:
+        if words[i] in vocab and words[i] not in ('and', 'point'):
+            j = i
+            run = []
+            while j < n and words[j] in vocab:
+                run.append(words[j])
+                j += 1
+            while run and run[-1] in ('and', 'point'):
+                run.pop()
+                j -= 1
+            if run:
+                if 'point' in run:
+                    idx = run.index('point')
+                    whole_tokens = [t for t in run[:idx] if t != 'and']
+                    dec_tokens = [t for t in run[idx + 1:]
+                                  if t in _NUMBER_WORDS and t not in _MAGNITUDE_WORDS]
+                    whole_val = _words_to_int(whole_tokens) if whole_tokens else 0
+                    dec_digits = ''.join(str(_NUMBER_WORDS[t]) for t in dec_tokens)
+                    val = float(f"{int(whole_val)}.{dec_digits}") if dec_digits else float(whole_val)
+                else:
+                    whole_tokens = [t for t in run if t != 'and']
+                    val = float(_words_to_int(whole_tokens))
+                if val >= 100 or 'point' in run:
+                    results.append((' '.join(run), val))
+            i = j
+        else:
+            i += 1
+    return results
+
+
+_APPROX_QUALIFIERS = ('almost', 'about', 'roughly', 'nearly', 'around',
+                       'approximately', 'just over', 'just under', 'give or take')
+
+
 def extract_decimal_mentions(text: str) -> list[tuple[str, float]]:
     """Find decimal numbers and number-words in narration text."""
     found = []
@@ -72,7 +145,20 @@ def extract_decimal_mentions(text: str) -> list[tuple[str, float]]:
         if digits:
             num_str = "0." + "".join(str(d) for d in digits)
             found.append((m.group(), float(num_str)))
-    return found
+    # Fully spelled-out numbers: "ninety-four thousand eight hundred seventy point zero zero"
+    found.extend(extract_spelled_number_mentions(text))
+
+    # Drop mentions explicitly framed as approximations — not claims about
+    # an exact displayed value.
+    text_lower = text.lower()
+    filtered = []
+    for raw_text, num in found:
+        idx = text_lower.find(raw_text.lower())
+        preceding = text_lower[max(0, idx - 25):idx] if idx >= 0 else ''
+        if any(q in preceding for q in _APPROX_QUALIFIERS):
+            continue
+        filtered.append((raw_text, num))
+    return filtered
 
 
 @click.command()
