@@ -800,11 +800,16 @@ def _words_to_int(tokens: list) -> float:
         if tok in _NUMBER_WORDS:
             current += _NUMBER_WORDS[tok]
         elif tok in _MAGNITUDE_WORDS:
+            if current == 0:
+                # A bare magnitude word with no preceding number ("a hundred
+                # percent", "thousands of rows") is not a real number phrase
+                # — don't fabricate an implicit "one hundred"/"one thousand".
+                continue
             mag = _MAGNITUDE_WORDS[tok]
             if mag == 100:
-                current = (current or 1) * 100
+                current = current * 100
             else:
-                total += (current or 1) * mag
+                total += current * mag
                 current = 0
     return total + current
 
