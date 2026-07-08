@@ -1,101 +1,98 @@
--- Table representing customers
+-- Customers table
 CREATE TABLE customers (
-    customer_id   INTEGER PRIMARY KEY,
+    customer_id INTEGER PRIMARY KEY,
     customer_name TEXT NOT NULL,
-    region        TEXT NOT NULL
+    region TEXT NOT NULL
 );
 
--- Table representing orders placed by customers
+-- Orders table representing sales transactions
 CREATE TABLE orders (
-    order_id    INTEGER PRIMARY KEY,
-    customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
-    order_date  TEXT NOT NULL,
-    total_amount REAL NOT NULL
+    order_id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    order_date TEXT NOT NULL,
+    total_amount REAL NOT NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
 -- Seed customers
 INSERT INTO customers (customer_id, customer_name, region) VALUES
-(1, 'Greenfield Industries',  'Northeast'),
-(2, 'Apex Logistics',         'West'),
-(3, 'Summit Health Partners',  'Southeast'),
-(4, 'Cascade Manufacturing',   'Midwest'),
-(5, 'BrightPath Education',    'West'),
-(6, 'Ironclad Security',       'Northeast'),
-(7, 'TerraFirma Construction', 'Southeast'),
-(8, 'NovaWave Media',          'West'),
-(9, 'Pinecrest Foods',         'Midwest'),
-(10, 'Atlas Marine Supply',    'Northeast');
+(1, 'Greenfield Manufacturing', 'Northeast'),
+(2, 'Apex Logistics', 'Southeast'),
+(3, 'Bridgewater Solutions', 'Midwest'),
+(4, 'Coastal Dynamics', 'West'),
+(5, 'Pinnacle Health Systems', 'Northeast'),
+(6, 'Redwood Analytics', 'West'),
+(7, 'Summit Energy Corp', 'Southeast'),
+(8, 'Trident Marine Services', 'Midwest'),
+(9, 'Vanguard Retail Group', 'Northeast'),
+(10, 'Horizon Aerospace', 'West');
 
--- Seed orders — varied realistic amounts across 2024
+-- Seed orders with varied, realistic amounts across 2024
 INSERT INTO orders (order_id, customer_id, order_date, total_amount) VALUES
--- Greenfield Industries  (expect total: 4825 + 7190 + 3340 + 5685 + 2910 = 23950)
-(101, 1, '2024-01-14', 4825.00),
-(102, 1, '2024-03-08', 7190.00),
-(103, 1, '2024-06-22', 3340.00),
-(104, 1, '2024-09-11', 5685.00),
-(105, 1, '2024-11-03', 2910.00),
--- Apex Logistics  (expect total: 22430)
-(106, 2, '2024-02-19', 6430.00),
-(107, 2, '2024-04-05', 3875.00),
-(108, 2, '2024-07-17', 8250.00),
-(109, 2, '2024-10-28', 3875.00),
--- Summit Health Partners  (expect total: 19560)
-(110, 3, '2024-01-30', 5120.00),
-(111, 3, '2024-05-14', 7890.00),
-(112, 3, '2024-08-09', 6550.00),
--- Cascade Manufacturing  (expect total: 17315)
-(113, 4, '2024-02-02', 4315.00),
-(114, 4, '2024-06-18', 6400.00),
-(115, 4, '2024-09-25', 3100.00),
-(116, 4, '2024-12-01', 3500.00),
--- BrightPath Education  (expect total: 15720)
-(117, 5, '2024-03-12', 5720.00),
-(118, 5, '2024-07-29', 4500.00),
-(119, 5, '2024-11-15', 5500.00),
--- Ironclad Security  (expect total: 12835)
-(120, 6, '2024-04-10', 4235.00),
-(121, 6, '2024-08-22', 8600.00),
--- TerraFirma Construction  (expect total: 11390)
-(122, 7, '2024-01-08', 3890.00),
-(123, 7, '2024-05-30', 7500.00),
--- NovaWave Media  (expect total: 9875)
-(124, 8, '2024-06-04', 4125.00),
-(125, 8, '2024-10-19', 5750.00),
--- Pinecrest Foods  (expect total: 8460)
-(126, 9, '2024-03-25', 3460.00),
-(127, 9, '2024-09-07', 5000.00),
--- Atlas Marine Supply  (expect total: 6950)
-(128, 10, '2024-07-12', 6950.00);
-
-
--- =================================================================
--- TEACHING QUERIES
--- =================================================================
+-- Greenfield Manufacturing (customer 1): should total 94,870.00
+(101, 1, '2024-01-15', 12450.00),
+(102, 1, '2024-03-08', 18975.50),
+(103, 1, '2024-05-22', 9340.00),
+(104, 1, '2024-07-11', 27600.00),
+(105, 1, '2024-09-30', 15280.75),
+(106, 1, '2024-11-14', 11223.75),
+-- Apex Logistics (customer 2): should total 78,411.25
+(107, 2, '2024-02-03', 22100.00),
+(108, 2, '2024-04-19', 8735.25),
+(109, 2, '2024-06-28', 31450.00),
+(110, 2, '2024-10-05', 16126.00),
+-- Bridgewater Solutions (customer 3): should total 67,295.00
+(111, 3, '2024-01-28', 14500.00),
+(112, 3, '2024-04-02', 19875.00),
+(113, 3, '2024-08-16', 32920.00),
+-- Coastal Dynamics (customer 4): should total 53,680.50
+(114, 4, '2024-03-14', 28400.00),
+(115, 4, '2024-07-09', 15780.50),
+(116, 4, '2024-12-01', 9500.00),
+-- Pinnacle Health Systems (customer 5): should total 89,124.00
+(117, 5, '2024-02-20', 34500.00),
+(118, 5, '2024-05-11', 21874.00),
+(119, 5, '2024-08-25', 18250.00),
+(120, 5, '2024-11-30', 14500.00),
+-- Redwood Analytics (customer 6): should total 42,615.75
+(121, 6, '2024-01-09', 17890.75),
+(122, 6, '2024-06-15', 24725.00),
+-- Summit Energy Corp (customer 7): should total 61,340.00
+(123, 7, '2024-03-22', 19500.00),
+(124, 7, '2024-07-30', 26840.00),
+(125, 7, '2024-10-18', 15000.00),
+-- Trident Marine Services (customer 8): should total 48,925.50
+(126, 8, '2024-04-07', 23450.50),
+(127, 8, '2024-09-12', 25475.00),
+-- Vanguard Retail Group (customer 9): should total 72,380.00
+(128, 9, '2024-02-14', 18950.00),
+(129, 9, '2024-05-29', 27430.00),
+(130, 9, '2024-08-08', 14500.00),
+(131, 9, '2024-11-21', 11500.00),
+-- Horizon Aerospace (customer 10): should total 56,750.00
+(132, 10, '2024-01-31', 31250.00),
+(133, 10, '2024-06-04', 25500.00);
 
 -- [ai_generated_top5_query]
--- This is the "AI-generated" query the narrator pastes into the SQL viewer.
--- It ranks all customers by their 2024 total spend and returns the top 5.
+-- This is the AI-generated query: "Show me the top 5 customers by total 2024 revenue"
+-- Pasted directly from the AI into the SQL viewer
 SELECT
     c.customer_name,
     c.region,
-    COUNT(o.order_id)        AS order_count,
-    SUM(o.total_amount)      AS total_spend
+    COUNT(o.order_id)        AS total_orders,
+    SUM(o.total_amount)      AS total_revenue
 FROM customers c
-JOIN orders o ON o.customer_id = c.customer_id
+JOIN orders o ON c.customer_id = o.customer_id
 WHERE o.order_date BETWEEN '2024-01-01' AND '2024-12-31'
 GROUP BY c.customer_id, c.customer_name, c.region
-ORDER BY total_spend DESC
+ORDER BY total_revenue DESC
 LIMIT 5;
 
-
 -- [micro_query_spot_check]
--- The manually written micro-query to independently verify the #1 customer's total.
--- The narrator checks: does this simple SUM match the 23950.00 shown in the top-5 list?
+-- Step 2 spot-check: manually written micro-query to verify the #1 customer's total
+-- We independently SUM only Greenfield Manufacturing's orders to confirm the number matches
 SELECT
     SUM(total_amount) AS verified_total
 FROM orders
-WHERE customer_id = (
-    SELECT customer_id
-    FROM customers
-    WHERE customer_name = 'Greenfield Industries'
-);
+WHERE customer_id = 1
+  AND order_date BETWEEN '2024-01-01' AND '2024-12-31';
