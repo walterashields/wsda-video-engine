@@ -225,6 +225,7 @@ class SQLViewerAdapter(BaseAdapter):
         self.page = page
         self.rehearsal = rehearsal
         self.targets = TargetRegistry()
+        self._schema_table_count = 0
         self._screen_state: set[str] = set()  # what is currently visible
 
     # ── Lifecycle ──────────────────────────────────────────────
@@ -514,6 +515,7 @@ class SQLViewerAdapter(BaseAdapter):
         if not result.get("success"):
             raise RuntimeError(f"DB load failed: {result.get('error')}")
         schema = result["schema"]
+        self._schema_table_count = len([1 for info in schema.values() if not info.get("is_view")])
         await self.page.evaluate(f"window.wsda.renderSchema({json.dumps(schema)})")
         await self.page.evaluate(f"window.wsda.setDBLabel({json.dumps(Path(db_path).name)})")
         await self.set_status("Database loaded", True)
@@ -539,13 +541,19 @@ class SQLViewerAdapter(BaseAdapter):
         return result
 
     async def _scan_schema(self) -> dict:
-        """Mouse scans schema panel — learner's eye follows."""
+        """Mouse scans schema panel — learner's eye follows.
+        Scans exactly as many rows as actually exist in the current database,
+        never more (older lessons had fixed 3-table layouts; this must not
+        assume a table count that doesn't match the real schema)."""
         if not self.rehearsal:
-            await self.cursor_to("schema_details", 500)
-            await asyncio.sleep(0.4)
-            await self.cursor_to("schema_summary", 400)
-            await asyncio.sleep(0.3)
-            await self.cursor_to("schema_orders", 400)
+            base_x, base_y, row_h = 100, 133, 50
+            row_count = max(1, min(self._schema_table_count or 1, 4))
+            for i in range(row_count):
+                x, y = base_x, base_y + i * row_h
+                jx = x + random.uniform(-5, 5)
+                jy = y + random.uniform(-4, 4)
+                await bezier_move(self.page, jx, jy, 400 if i else 500)
+                await asyncio.sleep(0.3 if i else 0.4)
         await self.set_status("Reviewing schema...", True)
         return {}
 

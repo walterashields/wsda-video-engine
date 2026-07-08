@@ -331,6 +331,24 @@ NARRATION VOICE REQUIREMENT:
 - First 30 seconds must state who this lesson is for and what they'll be able to do
 - Never sound like a textbook or a corporate training manual
 
+WIT AND PERSONALITY — narration must have an opinion and a sense of humor,
+not just accurately describe what's on screen. Flat, competent-but-boring
+narration is a failure state even if every fact is correct. Concretely:
+- React to the data like a person would, not a script. Instead of "Row one:
+  Greenfield Industries, total spend 23950.00" try "Greenfield Industries
+  is out here spending like it's going out of style — 23950.00 in 2024 alone."
+- Editorialize honestly. If a number is surprising, say so ("that's almost
+  8 grand more than the next customer"). If a query result confirms
+  something, have a small moment of satisfaction, not a flat "the numbers
+  match."
+- Use a running bit or callback where natural (e.g. treating the AI's query
+  like a suspect being cross-examined: "the alibi checks out").
+- Vary sentence rhythm. Don't narrate every table row in the same
+  "Name, region, count, total" cadence — that's what makes it feel like a
+  script being read, not a person talking.
+- Still every fact must obey the GROUNDING RULE above. Wit is in the
+  delivery, never in the numbers.
+
 Additional context:
 - Database: {database}
 - SQL file: {sql_file}
@@ -646,6 +664,122 @@ def validate_card(card_yaml: str) -> tuple[bool, list[str]]:
     return len(errors) == 0, errors
 
 
+_NUMERIC_TOKEN_RE = re.compile(r'\$?\d[\d,]*(?:\.\d+)?%?')
+
+
+def _spoken_word_units(text: str) -> float:
+    """
+    Estimate how many 'spoken words' a piece of narration actually takes to
+    say aloud. Plain words count as 1. Numeric tokens (dollar amounts,
+    decimals, percentages) are severely undercounted by a naive word count
+    ("23950.00" is one token but "twenty three thousand nine hundred fifty
+    dollars" is 7 spoken words) — this is the root cause of pauses being
+    too short and TTS audio getting cut off or distorted on numbers.
+    """
+    units = 0.0
+    for tok in text.split():
+        stripped = tok.strip('.,;:!?()')
+        m = _NUMERIC_TOKEN_RE.fullmatch(stripped)
+        if not m:
+            units += 1.0
+            continue
+        digits = re.sub(r'[^\d]', '', stripped)
+        has_decimal = '.' in stripped
+        # Rough heuristic: ~1 spoken word per 1-2 digits (place-value groups
+        # like "thousand", "hundred"), plus a couple words for "dollars"/
+        # "percent"/decimal reading.
+        word_est = max(2, (len(digits) + 1) // 2 + 1)
+        if has_decimal:
+            word_est += 2  # "point five zero" / "and fifty cents"
+        if '%' in stripped:
+            word_est += 1  # "percent"
+        units += word_est
+    return units
+
+
+def recompute_pause_durations(raw_yaml: str) -> str:
+    """
+    Deterministically recalculate every pause duration from the ACTUAL
+    narration text using numeric-aware word counting, overriding whatever
+    the model computed. This runs before the model's own math is trusted,
+    since numeric-heavy narration (dollar amounts especially) is exactly
+    where naive word-count pause sizing breaks down and produces audio that
+    gets cut off or distorted when the pause window is too short.
+    """
+    parsed = yaml.safe_load(raw_yaml)
+    events = parsed.get('events', [])
+
+    for i, e in enumerate(events):
+        narr = (e.get('narration') or '').strip()
+        if not narr:
+            continue
+        # Find the immediately following pause event
+        if i + 1 < len(events) and events[i + 1].get('type') == 'pause':
+            pause_event = events[i + 1]
+            units = _spoken_word_units(narr)
+            new_duration = round((units / 145 * 60) + 8, 1)
+            pause_event['duration'] = new_duration
+
+    return yaml.dump(parsed, sort_keys=False, allow_unicode=True, width=100)
+
+
+def enforce_duration_cap(raw_yaml: str, max_s: float) -> tuple:
+    """
+    If total runtime exceeds the format cap, compress pauses toward their
+    minimum safe floor (word-time + 1s margin) rather than uniformly scaling
+    every pause by the same ratio. Uniform scaling was the root cause of
+    audio getting cut off: it shrank number-dense narration blocks by the
+    same percentage as simple ones, even though number-dense narration needs
+    MORE time per word, not less.
+    Returns (possibly-modified yaml, status message).
+    """
+    parsed = yaml.safe_load(raw_yaml)
+    events = parsed.get('events', [])
+
+    pause_info = []  # (pause_event_dict, floor_dur, current_dur)
+    for i, e in enumerate(events):
+        narr = (e.get('narration') or '').strip()
+        if narr and i + 1 < len(events) and events[i + 1].get('type') == 'pause':
+            pause_event = events[i + 1]
+            units = _spoken_word_units(narr)
+            word_time = units / 145 * 60
+            floor_dur = round(word_time + 1.0, 1)
+            cur_dur = float(pause_event.get('duration', floor_dur))
+            pause_info.append((pause_event, floor_dur, cur_dur))
+
+    total_s = sum(p[2] for p in pause_info)
+    if total_s <= max_s * 1.1 or not pause_info:
+        return raw_yaml, f"Within cap: {total_s/60:.1f}min"
+
+    total_floor = sum(p[1] for p in pause_info)
+    total_slack = sum(p[2] - p[1] for p in pause_info)
+    needed_reduction = total_s - max_s
+
+    if needed_reduction <= total_slack and total_slack > 0:
+        ratio = needed_reduction / total_slack
+        for pause_event, floor_dur, cur_dur in pause_info:
+            slack = cur_dur - floor_dur
+            pause_event['duration'] = round(cur_dur - slack * ratio, 1)
+        new_total = sum(p[0]['duration'] for p in pause_info)
+        return (
+            yaml.dump(parsed, sort_keys=False, allow_unicode=True, width=100),
+            f"Compressed buffer slack: {total_s/60:.1f}min -> {new_total/60:.1f}min",
+        )
+    else:
+        # Can't safely compress further without risking cut-off audio again.
+        for pause_event, floor_dur, cur_dur in pause_info:
+            pause_event['duration'] = floor_dur
+        return (
+            yaml.dump(parsed, sort_keys=False, allow_unicode=True, width=100),
+            (
+                f"WARNING: even at minimum safe pacing this script runs "
+                f"{total_floor/60:.1f}min against a {max_s/60:.1f}min cap. "
+                f"Durations set to floor, but the narration TEXT needs to be "
+                f"shortened - timing math alone can't fix this safely."
+            ),
+        )
+
+
 def _extract_decimal_mentions(text: str) -> list:
     """Find decimal numbers mentioned in narration text (plain or spelled out)."""
     found = []
@@ -873,7 +1007,14 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
                 console.print(f"  Retrying with corrective feedback...")
             continue
 
-        # Enforce duration limit based on format
+        # Deterministically recompute pause durations from actual narration
+        # text (numeric-aware), overriding the model's own word-count math.
+        # This is the fix for audio getting cut off / distorted on numbers.
+        raw = recompute_pause_durations(raw)
+        console.print(f"  [green]OK[/green] Pause durations recalculated (numeric-aware)")
+
+        # Enforce duration limit based on format — compress buffer slack only,
+        # never below what the narration actually needs to be spoken safely.
         format_limits = {
             "short-video": 5, "tutorial": 12,
             "lesson": 10, "course": 15,
@@ -882,22 +1023,8 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         max_min = format_limits.get(lesson_format, 15)
         max_s = max_min * 60
 
-        parsed = yaml.safe_load(raw)
-        total_s = sum(
-            float(e.get("duration", 0))
-            for e in parsed.get("events", [])
-            if e.get("type") == "pause"
-        )
-
-        if total_s > max_s * 1.1:
-            scale = max_s / total_s
-            def scale_duration(m):
-                val = float(m.group(1))
-                new_val = max(0.3, round(val * scale, 1))
-                return f"duration: {new_val}"
-            raw = re.sub(r"duration: ([\d.]+)", scale_duration, raw)
-            new_min = total_s * scale / 60
-            console.print(f"  [yellow]Duration scaled: {total_s/60:.1f}min -> {new_min:.1f}min[/yellow]")
+        raw, cap_message = enforce_duration_cap(raw, max_s)
+        console.print(f"  [cyan]{cap_message}[/cyan]")
 
         card_yaml = raw
         console.print(f"  [green]OK[/green] Card validated - schema clean, numbers verified against real database")
