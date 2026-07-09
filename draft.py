@@ -412,18 +412,30 @@ Rules:
 1. Start with CREATE TABLE statements for every table the lesson needs.
    Add a one-line comment above each table explaining what it represents.
 2. Follow with INSERT statements that seed REALISTIC data. For any query
-   that aggregates (SUM, AVG, GROUP BY, COUNT), seed enough rows (8-20 per
-   table) that the aggregation produces a meaningful, non-trivial result.
-   Use varied, plausible values, not round placeholder numbers like 100/200/300.
+   that aggregates (SUM, AVG, GROUP BY, COUNT), seed enough rows (8-15 per
+   table — no more than needed to make the result meaningful) that the
+   aggregation produces a non-trivial result. Use varied, plausible values,
+   not round placeholder numbers like 100/200/300. Keep row counts modest;
+   this file has a limited size budget and verbose seed data isn't worth
+   crowding out the teaching queries.
 3. Then add the teaching queries, each in its own section:
    -- [section_name]
    SELECT ...;
    Section names use lowercase and underscores only.
 4. Every table and column referenced in a teaching query MUST have been
-   created in step 1. Never reference a table or column you didn't create.
+   created in step 1, using the EXACT same column names — no exceptions.
+   Before finishing, mentally re-check each teaching query against your own
+   CREATE TABLE statements above: does every column name match exactly
+   (same spelling, same table)? A query referencing a column your own
+   CREATE TABLE didn't define is the single most common failure here —
+   check this specifically before responding.
 5. Valid SQLite syntax only. Format code clearly for on-screen display.
 6. Include a brief comment above each teaching query explaining what it
    demonstrates.
+7. If the lesson needs several distinct queries (e.g. a wrong version and
+   a corrected version), keep each one focused and no longer than it needs
+   to be — don't pad with extra columns or commentary that isn't essential
+   to the teaching point.
 
 Return ONLY the SQL file content. No markdown. No explanation."""
 
@@ -962,7 +974,7 @@ def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
 
         sql_response = client.messages.create(
             model="claude-opus-4-6",
-            max_tokens=3000,
+            max_tokens=6000,
             system=SQL_SYSTEM,
             messages=[{"role": "user", "content": prompt}]
         )
@@ -1184,10 +1196,30 @@ def draft(brief_path, lesson_num, course_dir):
             sys.exit(1)
 
     cards = []
+    failed_lessons = []
     for lesson in lessons:
         console.print(f"\n[bold]Lesson {lesson['lesson_number']}:[/bold] {lesson['title']}")
-        card_path = draft_lesson(lesson, brief, out_dir)
-        cards.append(card_path)
+        try:
+            card_path = draft_lesson(lesson, brief, out_dir)
+            cards.append(card_path)
+        except RuntimeError as e:
+            console.print(f"[red]Lesson {lesson['lesson_number']} failed: {e}[/red]")
+            console.print("[dim]Skipping this lesson, continuing with any others...[/dim]")
+            failed_lessons.append(lesson['lesson_number'])
+
+    if not cards:
+        console.print(Panel(
+            f"[bold red]All lessons failed.[/bold red]\n\n"
+            f"Failed: {failed_lessons}\n"
+            f"See errors above — most often this means the SQL generation "
+            f"couldn't produce a working database after 3 attempts (schema "
+            f"got too complex, or column names drifted between the CREATE "
+            f"TABLE and the teaching queries). Try running again — it's a "
+            f"fresh model attempt each time.",
+            title="Failed",
+            border_style="red",
+        ))
+        sys.exit(1)
 
     # Write manifest
     manifest = {
@@ -1197,15 +1229,26 @@ def draft(brief_path, lesson_num, course_dir):
     }
     (out_dir / "course_manifest.json").write_text(json.dumps(manifest, indent=2))
 
-    console.print(Panel(
+    done_msg = (
         f"[bold green]Draft complete.[/bold green]\n\n"
         f"Lessons: {len(cards)}\n"
+    )
+    if failed_lessons:
+        done_msg += f"[yellow]Failed: {failed_lessons}[/yellow]\n"
+    done_msg += (
         f"Output:  [cyan]{out_dir}[/cyan]\n\n"
         f"Next:\n"
-        f"  python3 produce.py {cards[0] if cards else 'CARD_PATH'}",
+        f"  python3 produce.py {cards[0] if cards else 'CARD_PATH'}"
+    )
+
+    console.print(Panel(
+        done_msg,
         title="Done",
-        border_style="green"
+        border_style="green" if not failed_lessons else "yellow",
     ))
+
+    if failed_lessons:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
