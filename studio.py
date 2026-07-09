@@ -3,7 +3,7 @@
 WSDA Studio — web interface for content production
 
 Run with: python3 studio.py
-Opens at: http://localhost:7000
+Opens at: http://localhost:7010
 
 The user fills in a form. The system researches, drafts, and produces.
 """
@@ -609,5 +609,5 @@ def status(job_id):
 
 if __name__ == '__main__':
     print('\nWSDA Studio')
-    print('Open: http://localhost:7000\n')
-    app.run(host='127.0.0.1', port=7000, debug=False)
+    print('Open: http://localhost:7010\n')
+    app.run(host='127.0.0.1', port=7010, debug=False)
