@@ -469,73 +469,91 @@ def run_production(job_id: str, payload: dict):
 
         update('research', 'done', f'Brief ready: {brief_path.name}', 20)
 
-        # ── Step 2: Draft ───────────────────────────────────────────
-        update('draft', 'active', 'Drafting production cards...', 25)
-
+        # ── Step 2+: Draft + Produce, once per lesson ────────────────
         with open(brief_path) as f:
             import json as _json
             brief = _json.load(f)
 
         lessons = brief.get('content_structure', {}).get('lessons', [])
-        # For now produce first lesson only (scalable to all)
-        first_lesson = lessons[0] if lessons else None
-        if not first_lesson:
+        if not lessons:
             update('draft', 'error', 'No lessons in brief')
             job['status'] = 'error'
             return
 
-        code, out = run_cmd([
-            sys.executable, 'draft.py', str(brief_path),
-            '--lesson', str(first_lesson['lesson_number']),
-        ])
-        if code != 0:
-            update('draft', 'error', 'Draft failed')
-            job['status'] = 'error'
-            return
-
-        update('draft', 'done', 'Production card ready', 40)
-
-
-
-        # Find card
         course_slug = _re.sub(r'[^a-z0-9]+', '_', brief['topic'].lower()).strip('_')[:40]
-        lesson_num = first_lesson['lesson_number']
-        card_path = ROOT / 'courses' / course_slug / f'video_1_{lesson_num}' / 'production_card.yml'
+        total = len(lessons)
+        succeeded, failed = [], []
 
-        if not card_path.exists():
-            update('draft', 'error', f'Card not found: {card_path}')
-            job['status'] = 'error'
-            return
+        for idx, lesson in enumerate(lessons):
+            lesson_num = lesson['lesson_number']
+            label = f"Lesson {idx + 1}/{total}"
+            # Progress: research already took 0-20%. Remaining 80% split
+            # evenly across lessons, each split roughly 1/3 draft, 2/3 produce.
+            base = 20 + int(80 * idx / total)
+            draft_pct = 20 + int(80 * (idx + 0.3) / total)
+            done_pct = 20 + int(80 * (idx + 1) / total)
 
-        # ── Step 3 + 4 + 5: Produce ────────────────────────────────
-        update('record', 'active', 'Recording silent video...', 45)
+            for step in ('draft', 'record', 'narrate', 'qa'):
+                job['steps'][step] = 'pending'
 
-        env = dict(os.environ)
-        code, out = run_cmd([
-            sys.executable, 'produce.py', str(card_path),
-            '--format', fmt,
-        ])
+            update('draft', 'active', f'{label}: drafting production card...', base)
 
-        if 'Production complete' in out or 'final.mp4' in out:
-            update('record',  'done', None, 70)
-            update('narrate', 'done', None, 85)
-            update('qa',      'done', 'QA passed', 100)
+            code, out = run_cmd([
+                sys.executable, 'draft.py', str(brief_path),
+                '--lesson', str(lesson_num),
+            ])
+            if code != 0:
+                update('draft', 'error', f'{label}: draft failed — skipping', draft_pct)
+                failed.append(lesson_num)
+                continue
+
+            update('draft', 'done', f'{label}: production card ready', draft_pct)
+
+            card_path = ROOT / 'courses' / course_slug / f'video_1_{lesson_num}' / 'production_card.yml'
+            if not card_path.exists():
+                update('draft', 'error', f'{label}: card not found at {card_path}', draft_pct)
+                failed.append(lesson_num)
+                continue
+
+            update('record', 'active', f'{label}: recording + narrating...', draft_pct)
+
+            code, out = run_cmd([
+                sys.executable, 'produce.py', str(card_path),
+                '--format', fmt,
+            ])
+
+            if 'Production complete' in out or 'final.mp4' in out:
+                update('record',  'done', None, done_pct)
+                update('narrate', 'done', None, done_pct)
+                update('qa',      'done', f'{label}: QA passed', done_pct)
+                succeeded.append(lesson_num)
+
+                # Grab the most recently created final video — this specific
+                # lesson's produce.py run just wrote it, so it's the newest
+                # match at this point in time.
+                final_mp4s = sorted(
+                    (ROOT / 'output').glob('*_final.mp4'),
+                    key=lambda p: p.stat().st_mtime,
+                )
+                if final_mp4s:
+                    mp4 = final_mp4s[-1]
+                    job['outputs'].append({
+                        'name': mp4.name,
+                        'path': f'/output/{mp4.name}',
+                        'meta': f'{label} — {mp4.stat().st_size // 1024} KB — ready for Final Cut Pro',
+                    })
+            else:
+                update('record', 'error', f'{label}: production failed', done_pct)
+                failed.append(lesson_num)
+
+        if succeeded and not failed:
             job['status'] = 'done'
-
-            # Find output file
-            lesson_id = brief['topic'].lower().replace(' ', '_')[:20]
-            outputs = []
-            for mp4 in (ROOT / 'output').glob(f'*_final.mp4'):
-                outputs.append({
-                    'name': mp4.name,
-                    'path': f'/output/{mp4.name}',
-                    'meta': f'{mp4.stat().st_size // 1024} KB — ready for Final Cut Pro',
-                })
-            job['outputs'] = outputs[-1:] if outputs else []
+        elif succeeded and failed:
+            job['status'] = 'done'
+            job['error'] = f'Lessons {failed} failed — see logs. Lessons {succeeded} completed.'
         else:
-            update('record', 'error', 'Production failed', 100)
             job['status'] = 'error'
-            job['error'] = 'produce.py did not complete successfully'
+            job['error'] = f'All lessons failed: {failed}'
 
     except Exception as e:
         job['status'] = 'error'
