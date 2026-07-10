@@ -871,41 +871,52 @@ def extract_spelled_number_mentions(text: str) -> list:
     split naturally since word tokenization only matches letters. Needed
     because narration sometimes spells out numbers instead of using digits,
     and digit-only checking (_extract_decimal_mentions) can't see those.
+
+    Splits on punctuation FIRST (commas, periods, semicolons, colons) so a
+    number-word run never crosses a real sentence/list boundary. Without
+    this, "order 1001, eighty-four forty-nine" reads as two adjacent
+    numbers in the vocabulary with nothing (after stripping punctuation)
+    to separate them, and gets merged into one garbage number
+    (1001 -> "one thousand one", 84.49 -> "eighty four point four nine",
+    concatenated into 1085.49). Punctuation is the boundary; losing it
+    before scanning caused this.
     """
-    words = re.findall(r"[a-zA-Z']+", text.lower())
     vocab = set(_NUMBER_WORDS) | set(_MAGNITUDE_WORDS) | {'and', 'point'}
     results = []
-    i, n = 0, len(words)
-    while i < n:
-        if words[i] in vocab and words[i] not in ('and', 'point'):
-            j = i
-            run = []
-            while j < n and words[j] in vocab:
-                run.append(words[j])
-                j += 1
-            while run and run[-1] in ('and', 'point'):
-                run.pop()
-                j -= 1
-            if run:
-                if 'point' in run:
-                    idx = run.index('point')
-                    whole_tokens = [t for t in run[:idx] if t != 'and']
-                    dec_tokens = [t for t in run[idx + 1:]
-                                  if t in _NUMBER_WORDS and t not in _MAGNITUDE_WORDS]
-                    whole_val = _words_to_int(whole_tokens) if whole_tokens else 0
-                    dec_digits = ''.join(str(_NUMBER_WORDS[t]) for t in dec_tokens)
-                    val = float(f"{int(whole_val)}.{dec_digits}") if dec_digits else float(whole_val)
-                else:
-                    whole_tokens = [t for t in run if t != 'and']
-                    val = float(_words_to_int(whole_tokens))
-                # Skip trivial single small-number words (too many false positives,
-                # e.g. "two tables", "step one") — only flag numbers that look like
-                # they're reporting a real figure (3+ digits or has a decimal).
-                if val >= 100 or 'point' in run:
-                    results.append((' '.join(run), val))
-            i = j
-        else:
-            i += 1
+
+    for segment in re.split(r'[,.;:]', text.lower()):
+        words = re.findall(r"[a-zA-Z']+", segment)
+        i, n = 0, len(words)
+        while i < n:
+            if words[i] in vocab and words[i] not in ('and', 'point'):
+                j = i
+                run = []
+                while j < n and words[j] in vocab:
+                    run.append(words[j])
+                    j += 1
+                while run and run[-1] in ('and', 'point'):
+                    run.pop()
+                    j -= 1
+                if run:
+                    if 'point' in run:
+                        idx = run.index('point')
+                        whole_tokens = [t for t in run[:idx] if t != 'and']
+                        dec_tokens = [t for t in run[idx + 1:]
+                                      if t in _NUMBER_WORDS and t not in _MAGNITUDE_WORDS]
+                        whole_val = _words_to_int(whole_tokens) if whole_tokens else 0
+                        dec_digits = ''.join(str(_NUMBER_WORDS[t]) for t in dec_tokens)
+                        val = float(f"{int(whole_val)}.{dec_digits}") if dec_digits else float(whole_val)
+                    else:
+                        whole_tokens = [t for t in run if t != 'and']
+                        val = float(_words_to_int(whole_tokens))
+                    # Skip trivial single small-number words (too many false
+                    # positives, e.g. "two tables", "step one") — only flag
+                    # numbers that look like they're reporting a real figure.
+                    if val >= 100 or 'point' in run:
+                        results.append((' '.join(run), val))
+                i = j
+            else:
+                i += 1
     return results
 
 
