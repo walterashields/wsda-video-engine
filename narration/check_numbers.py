@@ -234,7 +234,7 @@ def check(card_path, db):
 
         allowed = set()
         for ref in revealed_so_far:
-            allowed |= query_display_values[ref]
+            allowed.update(query_display_values[ref])
 
         mentioned = extract_decimal_mentions(narr)
 
