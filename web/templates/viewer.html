@@ -719,10 +719,32 @@ function renderSQL(content, sections) {
 
 function highlightSection(section) {
   document.querySelectorAll('.sql-block').forEach(b => b.classList.remove('highlighted'));
-  document.querySelectorAll(`#block-${section}`).forEach(el => {
-    el.classList.add('highlighted');
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  const el = document.querySelector(`#block-${section}`);
+  if (!el) return;
+  el.classList.add('highlighted');
+
+  const container = document.querySelector('.sql-scroll');
+  if (container) {
+    const elTop = el.offsetTop;
+    const elHeight = el.offsetHeight;
+    const containerHeight = container.clientHeight;
+    let targetScroll;
+    if (elHeight <= containerHeight) {
+      // Whole block fits — center it so there's breathing room on both
+      // sides instead of pinning the top edge (which cuts off the bottom
+      // of any block taller than half the viewport).
+      targetScroll = elTop - (containerHeight - elHeight) / 2;
+    } else {
+      // Block taller than the viewport — align to top with a small margin
+      // so the query's opening (comment + SELECT) is visible. Some
+      // clipping is still possible for an oversized block, but this is
+      // rare now that queries are capped at 4 concise sections per lesson.
+      targetScroll = elTop - 16;
+    }
+    container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+  } else {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 // ── Results ────────────────────────────────────────────────────

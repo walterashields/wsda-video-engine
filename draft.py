@@ -311,9 +311,14 @@ fact must still be the real, grounded name.
   ID", "total_revenue" -> "total revenue", "order_date" -> "order date".
   Never say "customer underscore id" or run it together as one mangled word.
 - Table names: same treatment. "order_summary" -> "order summary table".
-- Numbers already covered by GROUNDING RULE, but say them in whichever form
-  (digits or spelled out) reads most naturally aloud — either is fine as
-  long as the value is exact.
+- Numbers: ALWAYS spell them out in words, never write raw digit strings.
+  Write "ninety-four thousand eight hundred seventy point zero zero", not
+  "94,870.00". This is not optional. Comma-separated digit strings with
+  decimals are read aloud unreliably by the voice engine — it can mangle or
+  distort them. Spelled-out words read cleanly every time. This applies to
+  every number in narration: dollar amounts, row counts, percentages, all
+  of it. The exact value must still match GROUNDING RULE exactly — spelling
+  it out doesn't change what number it is, only how it's written for speech.
 
 PACING — this is instructional video, not a lecture. Keep it moving.
 - Prefer shorter narration blocks over long explanatory ones. If a sentence
@@ -450,6 +455,18 @@ This file must include CREATE TABLE statements, INSERT statements with
 realistic seed data, and the teaching queries with -- [section_name] headers.
 Nothing exists unless you create it in this file. Use realistic column and
 table names appropriate for the topic.
+
+HARD LIMIT: no more than 4 teaching query sections total, regardless of how
+many scenes are listed above or how many distinct causes/angles the topic
+could touch on. If this topic could plausibly have several different root
+causes (e.g. a data mismatch could come from duplicate joins, OR null
+handling, OR timezone/date-boundary drift), do NOT build a query for each
+one. Pick the SINGLE clearest, most illustrative cause and build the whole
+lesson around just that one: show the wrong result, isolate why it's wrong,
+show the fix. A short lesson teaches one thing well — covering every
+possible cause turns a 5-minute lesson into a 20-minute one. If the scenes
+list above implies more than 4 distinct query moments, consolidate or cut
+rather than generating all of them.
 
 Return only the SQL file content."""
 
@@ -993,6 +1010,21 @@ def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
         if not sections:
             prior_errors = ["No -- [section_name] teaching queries found in the file."]
             console.print(f"  [yellow]Warning - no teaching query sections found[/yellow]")
+            continue
+
+        if len(sections) > 4:
+            prior_errors = [
+                f"Generated {len(sections)} teaching query sections "
+                f"({', '.join(sections.keys())}) — this exceeds the 4-section "
+                f"limit. This is almost always a scope problem, not a SQL "
+                f"problem: pick ONE clear root cause / narrative thread for "
+                f"this lesson and consolidate down to at most 4 queries "
+                f"total. Do not try to cover every possible angle."
+            ]
+            console.print(
+                f"  [yellow]Warning - too many query sections ({len(sections)}), "
+                f"lesson is over-scoped[/yellow]"
+            )
             continue
 
         query_results, query_errors = run_verified_queries(db_path, sections)
