@@ -1,0 +1,1033 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "Diagnosing the five silent reasons your GROUP BY total drifts from the dashboard",
+  "course": "Why your GROUP BY total doesn't match the dashboard",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_1/production_card.yml",
+  "total_duration_ms": 653733,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 36133,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_1/assets/why_your_group_by_total_doesn_t_match_th.db"
+      },
+      "narration": "Alright, this lesson's for you if you've ever pulled a GROUP BY query, walked into a meeting feeling confident, and then someone says, \"that's not what the dashboard shows.\" Instant credibility hit. By the end of this lesson, you'll be able to diagnose the five most common reasons your S-Q-L total drifts from the dashboard number, and you'll know exactly how to fix each one. We're talking duplicate rows from joins, missing filters, NULL handling, time zone boundaries, and metric definition drift. Let's get into it.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 37033,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 43.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 61433,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Here's our database. We've got two tables. The orders table has order ID, region, order date, gross revenue, subtotal, discount amount, refund amount, is test order, and status. Then there's a shipments table with shipment ID, order ID, shipped date, and carrier. Pretty standard e-commerce setup. The trouble starts when these two tables meet in a JOIN.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 62333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 33.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 63083,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 63983,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 79116,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene1_group_by_total"
+      },
+      "narration": "Let's start by reproducing the mismatch. This query groups orders by region and sums up the gross revenue. Simple stuff, the kind of query you'd write in thirty seconds. Let's see what it gives us.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 80016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 19.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 80866,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene1_group_by_total"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 81766,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 115100,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Okay, look at this. Midwest comes in at 120,925.00. Northeast at 199,825.00. Southeast, 154,200.00. West is the big spender at 290,110.25. Grand total, 765,060.25. You'd feel great about this number, right? Except imagine your dashboard says something completely different for the same date range. Your stomach drops. Your instinct says the dashboard is wrong. Spoiler: it usually isn't. Let's figure out where this gap lives, starting with the most common culprit, something lurking in your FROM clause.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 115550,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 44.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 136516,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene2a_inflated_join"
+      },
+      "narration": "Cause number one: duplicate rows from joins. Here we're joining orders to the shipments table and counting all rows with COUNT star, plus summing the total revenue. If an order shipped in multiple packages, it'll appear once per shipment. Your SUM inflates silently. Nobody warns you. Let's run it.",
+      "transition": "new_concept",
+      "clears": [
+        "scene1_group_by_total"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 137416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 138266,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene2a_inflated_join"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 139166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 163750,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There it is. The inflated count star gives us 19 rows and a total revenue of 1,125,150.75. That's way higher than the 765,060.25 we just saw. The join to shipments created extra rows, and SUM happily counted every duplicate. This is what's called fan-out, and it's the number one silent killer of accurate GROUP BY totals.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 164200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 31.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 175583,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene2b_distinct_check"
+      },
+      "narration": "Here's the diagnostic query. We're comparing total rows to the count of distinct order IDs. This tells us exactly how many extra rows the join created.",
+      "transition": "new_concept",
+      "clears": [
+        "scene2a_inflated_join"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 176483,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 17.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 177333,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene2b_distinct_check"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 178233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 198233,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "19 total rows, but only 14 distinct orders. That's 5 extra rows the join invented. Five rows that inflated your SUM without leaving a trace. The fix? Either aggregate before you join, or use DISTINCT carefully. But now let's tackle cause number two, filter gaps.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 198683,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 27.9
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 214649,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene2c_filter_gap_visible"
+      },
+      "narration": "Dashboards love hidden default filters, test accounts, internal orders, refunded transactions. They're baked in so deeply that nobody remembers they're there. This query pulls orders that a dashboard would typically exclude. Let's see who the offenders are.",
+      "transition": "new_concept",
+      "clears": [
+        "scene2b_distinct_check"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 215549,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 24.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 216399,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene2c_filter_gap_visible"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 217299,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 245633,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Two rows jump out. Order 1012 in the West region, gross revenue 99,999.00, and look at that is test order column, it's flagged as 1. That's a test order someone forgot to clean up. Then order 1013 in the Northeast, 54,350.00, with a status of refunded. The dashboard silently excludes both of these. Your S-Q-L didn't. That's a gap of over 154,000 dollars right there.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 246083,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 36.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 255383,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene2d_filtered_total"
+      },
+      "narration": "Now let's add those filters, exclude test orders and refunded rows, and re-run our GROUP BY to see the corrected totals.",
+      "transition": "new_concept",
+      "clears": [
+        "scene2c_filter_gap_visible"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 256283,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 14.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17",
+      "time_offset_ms": 257133,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene2d_filtered_total"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17_pause",
+      "time_offset_ms": 258033,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e18",
+      "time_offset_ms": 295116,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Much better. Midwest holds steady at 120,925.00, it had no test or refunded orders. Northeast dropped from 199,825.00 down to 145,475.00 because we kicked out that refunded order. Southeast stays at 154,200.00. And the West fell hard, from 290,110.25 to 190,111.25, thanks to removing that 99,999 dollar test order. Grand total is now 610,711.25. We've already closed a huge chunk of the gap just by matching the dashboard's filters. Two causes down, three to go. The next one's invisible unless you know to look for it.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e18_pause",
+      "time_offset_ms": 295566,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 46.6
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e19",
+      "time_offset_ms": 318199,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene3a_sum_with_nulls"
+      },
+      "narration": "Cause number three: NULLs silently excluded from aggregation. This is one of those S-Q-L standard behaviors that trips people up forever. SUM, AVG, and COUNT of a column all skip NULL values entirely. If your dashboard treats NULLs as zero, or vice versa, your totals diverge. Let's look at the discount amount column.",
+      "transition": "new_concept",
+      "clears": [
+        "scene2d_filtered_total"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e19_pause",
+      "time_offset_ms": 319099,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 31.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e20",
+      "time_offset_ms": 319949,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene3a_sum_with_nulls"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e20_pause",
+      "time_offset_ms": 320849,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e21",
+      "time_offset_ms": 335016,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "We've got 12 total rows, but only 10 have a discount value. The total discount ignoring NULLs is 30,756.25. Two rows are just missing from that calculation entirely. Let's find them.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e21_pause",
+      "time_offset_ms": 335466,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 23.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e22",
+      "time_offset_ms": 342683,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene3b_show_null_rows"
+      },
+      "narration": "This query pulls every row where discount amount is NULL. Let's see which orders are hiding.",
+      "transition": "new_concept",
+      "clears": [
+        "scene3a_sum_with_nulls"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e22_pause",
+      "time_offset_ms": 343583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 13.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e23",
+      "time_offset_ms": 344433,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene3b_show_null_rows"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e23_pause",
+      "time_offset_ms": 345333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e24",
+      "time_offset_ms": 369083,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There they are. Order 1003 in the Southeast, gross revenue 18,990.00, discount amount is NULL. And order 1011, also Southeast, 46,890.00, also NULL. These aren't zero-discount orders, they're orders where the discount was never recorded. Big difference. If the dashboard treats those as zero and your S-Q-L skips them entirely, you'll get different totals.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e24_pause",
+      "time_offset_ms": 369533,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 33.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e25",
+      "time_offset_ms": 377999,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene3c_coalesce_fix"
+      },
+      "narration": "Here's the fix. We wrap discount amount in COALESCE, defaulting NULLs to zero. Let's see if it changes anything.",
+      "transition": "new_concept",
+      "clears": [
+        "scene3b_show_null_rows"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e25_pause",
+      "time_offset_ms": 378899,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 15.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e26",
+      "time_offset_ms": 379749,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene3c_coalesce_fix"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e26_pause",
+      "time_offset_ms": 380649,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e27",
+      "time_offset_ms": 415649,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Interesting. 12 total rows, total discount with COALESCE is 30,756.25, total discount without COALESCE is also 30,756.25, and the difference is 0.00. In this case, adding COALESCE didn't change the sum because the NULL rows had no numeric value to add. But here's the point, you didn't know that until you checked. And with AVG it would've mattered, because AVG divides by the count of non-NULL values. Fewer values in the denominator means a higher average. Always check, always decide explicitly.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e27_pause",
+      "time_offset_ms": 416099,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 45.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e28",
+      "time_offset_ms": 437899,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene4a_utc_vs_eastern"
+      },
+      "narration": "Cause number four: time zone boundaries. This one only shows up at the edges of your date range, which makes it maddeningly hard to spot. If your database stores timestamps in UTC but the dashboard renders in US Eastern, orders near midnight shift across date boundaries. Let's look at the evidence.",
+      "transition": "new_concept",
+      "clears": [
+        "scene3c_coalesce_fix"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e28_pause",
+      "time_offset_ms": 438799,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e29",
+      "time_offset_ms": 439649,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene4a_utc_vs_eastern"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e29_pause",
+      "time_offset_ms": 440549,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e30",
+      "time_offset_ms": 493466,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Look at this. Order 1001, UTC timestamp January 1st at 3:14 AM. Convert that to Eastern and it's December 31st at 10:14 PM. The UTC date says January 1st, but Eastern says December 31st. Gross revenue, 42,750.00. That order lives in January if you're in UTC, but December if you're in Eastern. Same story with order 1014, UTC January 1st at 2:30 AM becomes December 31st at 9:30 PM Eastern, with 38,740.00 in revenue. And then there's order 1015, UTC February 1st at 4:15 AM, which becomes January 31st at 11:15 PM Eastern, 27,580.00. That one shifts into January when you switch to Eastern. Order 1008 also shifts, UTC January 18th at 1:10 AM becomes January 17th at 8:10 PM Eastern, gross revenue 14,760.00.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e30_pause",
+      "time_offset_ms": 493916,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 67.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e31",
+      "time_offset_ms": 504049,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene4b_boundary_impact"
+      },
+      "narration": "Let's quantify the damage. This query tallies up how many orders shift in and out of January because of the time zone difference.",
+      "transition": "new_concept",
+      "clears": [
+        "scene4a_utc_vs_eastern"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e31_pause",
+      "time_offset_ms": 504949,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 15.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e32",
+      "time_offset_ms": 505799,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene4b_boundary_impact"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e32_pause",
+      "time_offset_ms": 506699,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e33",
+      "time_offset_ms": 530866,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Two orders shift out of January, that's 81,490.00 in revenue disappearing from your January total. But one order shifts in, bringing 27,580.00 with it. Net impact, you're losing about 53,910 dollars from your January number just because of time zones. That's not a rounding error, that's a real discrepancy that'll have someone questioning your work.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e33_pause",
+      "time_offset_ms": 531316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 33.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e34",
+      "time_offset_ms": 550199,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene4c_metric_definition_drift"
+      },
+      "narration": "And now cause number five, the most frustrating one of all: metric definition drift. Someone redefined \"revenue\" last quarter and nobody sent you the memo. Your S-Q-L uses gross revenue. The dashboard now uses subtotal minus refunds. Let's see how big that gap gets.",
+      "transition": "new_concept",
+      "clears": [
+        "scene4b_boundary_impact"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e34_pause",
+      "time_offset_ms": 551099,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 27.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e35",
+      "time_offset_ms": 551949,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene4c_metric_definition_drift"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e35_pause",
+      "time_offset_ms": 552849,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e36",
+      "time_offset_ms": 590766,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Every single region has a gap. Midwest, your S-Q-L says 120,925.00, the dashboard says 110,000.00, that's a definition gap of 10,925.00. Northeast, 145,475.00 versus 134,075.00, gap of 11,400.00. Southeast, 154,200.00 versus 145,200.00, 9,000.00 apart. And the West, 190,111.25 versus 170,850.00, a definition gap of 19,261.25. Grand total, your analyst revenue is 610,711.25, the dashboard shows 560,125.00, and the total definition gap is 50,586.25. That's over 50,586 dollars of difference explained entirely by which column someone decided \"revenue\" means. Always check the semantic layer or documentation before you query.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e36_pause",
+      "time_offset_ms": 591216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 55.6
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e37",
+      "time_offset_ms": 605516,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "scene4d_final_matching_query"
+      },
+      "narration": "Let's bring it all together. This final query applies every fix, no fan-out, proper filters, NULLs handled, correct time zone, and the right metric definition. Let's see if we can match the dashboard.",
+      "transition": "new_concept",
+      "clears": [
+        "scene4c_metric_definition_drift"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e37_pause",
+      "time_offset_ms": 606416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e38",
+      "time_offset_ms": 607266,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "scene4d_final_matching_query"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e38_pause",
+      "time_offset_ms": 608166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e39",
+      "time_offset_ms": 624416,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There we go. Midwest, 73,500.00. Northeast, 93,950.00. Southeast, 171,200.00. West, 170,850.00. Grand total, 509,500.00. Those are the dashboard's numbers. We got there by systematically working through all five causes. No guessing, no finger-pointing, just methodical diagnosis.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e39_pause",
+      "time_offset_ms": 624866,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close",
+      "time_offset_ms": 648733,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "So here's your five-point checklist. One, check for row duplication from joins. Two, replicate all dashboard filters. Three, handle NULLs explicitly. Four, align time zones and date boundaries. Five, confirm the metric definition hasn't changed. Before you message your analytics engineer, before you question the dashboard, run through these five. Nine times out of ten",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}
