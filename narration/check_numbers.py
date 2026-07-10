@@ -211,36 +211,42 @@ def check(card_path, db):
 
     console.print(table)
 
-    # Now check each narration block
+    # Now check each narration block. A number is valid if it matches the
+    # current event's query, OR any query already revealed earlier in the
+    # timeline — "diagnose then fix" lessons legitimately compare a new
+    # result to an earlier one ("compare that to the $X we saw before"),
+    # which is not an error. What's actually wrong is a number that matches
+    # nothing shown so far, or only exists in a query not yet revealed.
     issues = []
     events = card.get('events', [])
+    revealed_so_far = set()
+
     for i, e in enumerate(events):
+        if e.get('query_ref') and e['query_ref'] in query_display_values:
+            revealed_so_far.add(e['query_ref'])
+
         narr = (e.get('narration') or '').strip()
         if not narr:
             continue
-        query_ref = e.get('query_ref')
-        # Try to infer query from preceding events if not explicit
-        if not query_ref:
-            for j in range(i, -1, -1):
-                if events[j].get('query_ref'):
-                    query_ref = events[j]['query_ref']
-                    break
 
-        if not query_ref or query_ref not in query_display_values:
+        if not revealed_so_far:
             continue
 
-        actual = query_display_values[query_ref]
+        allowed = set()
+        for ref in revealed_so_far:
+            allowed |= query_display_values[ref]
+
         mentioned = extract_decimal_mentions(narr)
 
         for raw_text, num in mentioned:
-            match = any(abs(num - v) < 0.005 for v in actual)
+            match = any(abs(num - v) < 0.005 for v in allowed)
             if not match:
                 issues.append({
                     'event': e['id'],
-                    'query': query_ref,
+                    'query': ', '.join(sorted(revealed_so_far)),
                     'mentioned': raw_text,
                     'value': num,
-                    'actual': actual,
+                    'actual': sorted(allowed),
                 })
 
     if issues:

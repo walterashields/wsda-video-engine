@@ -925,15 +925,16 @@ def _extract_decimal_mentions(text: str) -> list:
 
 def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
     """
-    Compare narration in a drafted card against the REAL, verified query
-    results for that SPECIFIC event's query — not just "does this number
-    exist somewhere in the database". A number can be real and verified for
-    query A but still wrong if narration cites it while discussing query B;
-    checking against a flat pool of all values misses that entirely. This
-    mirrors narration/check_numbers.py's query_ref correlation, which is
-    the actual gate produce.py runs before recording.
+    Compare narration in a drafted card against REAL, verified query results.
+
+    A number is valid if it matches the CURRENT event's own query, OR any
+    query already revealed earlier in the timeline — "diagnose then fix"
+    lessons legitimately compare a new result to an earlier one ("compare
+    that to the $X we saw before"), and that's not an error. What's actually
+    wrong is a number that doesn't match anything real yet shown, or that
+    only exists in a query that hasn't been revealed yet (a forward
+    reference the viewer can't have seen).
     """
-    # Per-query display values (not pooled)
     query_display_values = {}
     for name, data in query_results.items():
         vals = set()
@@ -949,22 +950,25 @@ def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
     approx_qualifiers = ('almost', 'about', 'roughly', 'nearly', 'around',
                           'approximately', 'just over', 'just under', 'give or take')
 
+    revealed_so_far = set()  # cumulative query_refs shown up to this point
+
     for i, e in enumerate(events):
+        if e.get('query_ref') and e['query_ref'] in query_display_values:
+            revealed_so_far.add(e['query_ref'])
+
         narr = (e.get('narration') or '').strip()
         if not narr:
             continue
 
-        query_ref = e.get('query_ref')
-        if not query_ref:
-            for j in range(i, -1, -1):
-                if events[j].get('query_ref'):
-                    query_ref = events[j]['query_ref']
-                    break
+        # Values from every query already revealed by this point in the
+        # timeline are all fair game for comparative narration.
+        allowed_values = set()
+        for ref in revealed_so_far:
+            allowed_values |= query_display_values[ref]
 
-        if not query_ref or query_ref not in query_display_values:
-            continue  # non-SQL event (intro/close/etc) - nothing to check against
+        if not allowed_values:
+            continue  # nothing revealed yet (e.g. intro) - nothing to check
 
-        actual = query_display_values[query_ref]
         mentions = _extract_decimal_mentions(narr) + extract_spelled_number_mentions(narr)
         narr_lower = narr.lower()
 
@@ -972,13 +976,13 @@ def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
             idx = narr_lower.find(raw_text.lower())
             preceding = narr_lower[max(0, idx - 25):idx] if idx >= 0 else ''
             if any(q in preceding for q in approx_qualifiers):
-                continue  # explicitly framed as an approximation
-            if not any(abs(num - v) < 0.01 for v in actual):
+                continue
+            if not any(abs(num - v) < 0.01 for v in allowed_values):
                 issues.append(
-                    f"Event {e.get('id')} ({query_ref}): narration says "
-                    f"'{raw_text}' ({num}) but that query's real results are "
-                    f"{sorted(actual)} — this number belongs to a different "
-                    f"query, or doesn't exist anywhere."
+                    f"Event {e.get('id')}: narration says '{raw_text}' ({num}) "
+                    f"but this doesn't match any query result revealed so far "
+                    f"({sorted(allowed_values)}) — likely a fabricated number "
+                    f"or a reference to a query that hasn't been shown yet."
                 )
     return issues
 
