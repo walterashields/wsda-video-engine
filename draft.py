@@ -926,34 +926,59 @@ def _extract_decimal_mentions(text: str) -> list:
 def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
     """
     Compare narration in a drafted card against the REAL, verified query
-    results. Returns a list of human-readable issue strings, empty if clean.
+    results for that SPECIFIC event's query — not just "does this number
+    exist somewhere in the database". A number can be real and verified for
+    query A but still wrong if narration cites it while discussing query B;
+    checking against a flat pool of all values misses that entirely. This
+    mirrors narration/check_numbers.py's query_ref correlation, which is
+    the actual gate produce.py runs before recording.
     """
-    all_display_values = set()
-    for data in query_results.values():
+    # Per-query display values (not pooled)
+    query_display_values = {}
+    for name, data in query_results.items():
+        vals = set()
         for row in data['rows']:
             for v in row:
                 if isinstance(v, (int, float)):
-                    all_display_values.add(round(float(v), 2))
+                    vals.add(round(float(v), 2))
+        query_display_values[name] = vals
 
     parsed = yaml.safe_load(card_yaml)
+    events = parsed.get('events', [])
     issues = []
-    for e in parsed.get('events', []):
+    approx_qualifiers = ('almost', 'about', 'roughly', 'nearly', 'around',
+                          'approximately', 'just over', 'just under', 'give or take')
+
+    for i, e in enumerate(events):
         narr = (e.get('narration') or '').strip()
         if not narr:
             continue
+
+        query_ref = e.get('query_ref')
+        if not query_ref:
+            for j in range(i, -1, -1):
+                if events[j].get('query_ref'):
+                    query_ref = events[j]['query_ref']
+                    break
+
+        if not query_ref or query_ref not in query_display_values:
+            continue  # non-SQL event (intro/close/etc) - nothing to check against
+
+        actual = query_display_values[query_ref]
         mentions = _extract_decimal_mentions(narr) + extract_spelled_number_mentions(narr)
-        approx_qualifiers = ('almost', 'about', 'roughly', 'nearly', 'around',
-                              'approximately', 'just over', 'just under', 'give or take')
         narr_lower = narr.lower()
+
         for raw_text, num in mentions:
             idx = narr_lower.find(raw_text.lower())
             preceding = narr_lower[max(0, idx - 25):idx] if idx >= 0 else ''
             if any(q in preceding for q in approx_qualifiers):
-                continue  # explicitly framed as an approximation, not a claimed exact value
-            if not any(abs(num - v) < 0.01 for v in all_display_values):
+                continue  # explicitly framed as an approximation
+            if not any(abs(num - v) < 0.01 for v in actual):
                 issues.append(
-                    f"Event {e.get('id')}: narration says '{raw_text}' ({num}) "
-                    f"but no verified query result matches that value."
+                    f"Event {e.get('id')} ({query_ref}): narration says "
+                    f"'{raw_text}' ({num}) but that query's real results are "
+                    f"{sorted(actual)} — this number belongs to a different "
+                    f"query, or doesn't exist anywhere."
                 )
     return issues
 
