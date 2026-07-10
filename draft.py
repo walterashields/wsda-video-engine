@@ -330,6 +330,17 @@ PACING — this is instructional video, not a lecture. Keep it moving.
   short enough that the pause never feels like dead air waiting for talking
   to catch up to the action.
 
+RESULT-SET NARRATION — never read out every row and column of a query
+result. The viewer can already see the table on screen; your job is to
+point out what MATTERS, not transcribe what's visible.
+- Call out 1-2 representative or most-notable rows by name/value, describe
+  the overall pattern or takeaway, and move on. "Five rows here, and every
+  one comes in higher than we'd expect" beats reading all five rows' every
+  column aloud.
+- This applies doubly to any counting claim ("X rows have Y") — state it
+  once, confidently, and don't re-verify it by re-reading each row's value
+  aloud as proof.
+
 You always respond with valid YAML only.
 No markdown fences. No preamble. No explanation. Just YAML.
 Start your response with: schema_version: "3.0"
@@ -441,6 +452,12 @@ Rules:
    a corrected version), keep each one focused and no longer than it needs
    to be — don't pad with extra columns or commentary that isn't essential
    to the teaching point.
+8. Don't mix a grand-total/summary row into the same result set as detail
+   rows (e.g. a UNION ALL adding a "TOTAL" row at the bottom). If a query
+   is meant to show individual rows and someone will count how many have a
+   property (like NULL in some column), a summary row can itself show NULL
+   in that column and get miscounted as a real row. Keep detail queries and
+   aggregate/summary queries as separate sections.
 
 Return ONLY the SQL file content. No markdown. No explanation."""
 
