@@ -1,0 +1,136 @@
+{
+  "topic": "Why LEFT JOIN can quietly turn your matches into NULLs for data analysts using SQL",
+  "format": "lesson",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "As organizations push data literacy across all business roles, more analysts are writing their own SQL queries without formal database training, and LEFT JOIN misunderstandings are one of the top causes of silently wrong dashboards and reports. The rise of self-serve analytics tools like dbt, Metabase, and Looker makes it critical that analysts understand join behavior at a deeper level.",
+    "target_learner": "A data analyst with 6-18 months of SQL experience who uses LEFT JOINs regularly but has been burned by unexpected NULLs in query results and does not fully understand why they appear or how to prevent them.",
+    "learner_goal": "Diagnose and prevent the common scenarios where a LEFT JOIN silently introduces NULLs into matched rows, so they can trust their query output and stop debugging phantom data issues.",
+    "competition_gap": "Most existing content explains LEFT JOIN syntax and shows the classic Venn diagram, but almost nobody walks through the subtle scenarios where NULLs appear even when you expect a match \u2014 such as duplicate keys causing fan-out that later gets aggregated, filtering the right table in the WHERE clause instead of the ON clause, or joining on columns that contain NULLs themselves. This lesson should focus on the traps, not the syntax.",
+    "platform_fit": "Best suited for LinkedIn Learning or Udemy as a mid-course lesson within a broader SQL for Data Analysts course. It assumes the learner already knows basic JOIN syntax from a prior lesson and sets up a next lesson on defensive JOIN patterns and data validation."
+  },
+  "content_structure": {
+    "hook": "Your LEFT JOIN matched every row \u2014 so why is your report full of NULLs? The answer is not what you think.",
+    "core_promise": "You will be able to identify and fix the three most common ways a LEFT JOIN silently turns your matched data into NULLs.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "How LEFT JOIN Quietly Turns Your Matches into NULLs \u2014 and How to Stop It",
+        "duration_minutes": 8,
+        "learning_objective": "By the end of this lesson the learner will be able to identify three hidden causes of unexpected NULLs in LEFT JOIN results and apply targeted fixes to each one.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The Phantom NULL Problem",
+            "duration_seconds": 100,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A simple two-table schema is displayed: an orders table and a customers table. The instructor runs a LEFT JOIN query that looks correct. The result set is shown and several rows that should have customer names instead show NULL. A red highlight draws attention to the unexpected NULLs.",
+            "what_learner_hears": "The narrator describes a real scenario: you wrote a LEFT JOIN to pull customer names onto an orders report. Every customer ID in orders exists in the customers table \u2014 you checked. But somehow, NULLs are showing up. The narrator says this is not a missing data problem, it is a join behavior problem, and there are three specific traps that cause it.",
+            "exercise_file": "phantom_nulls_setup.sql",
+            "transition_to_next": "Now let us look at the first trap \u2014 what happens when your WHERE clause accidentally undoes your LEFT JOIN."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Trap 1 \u2014 WHERE Clause Converts LEFT JOIN to INNER JOIN",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "Two side-by-side queries: one with a filter on the right table in the WHERE clause, one with the same filter moved to the ON clause. Result sets are shown below each query. The WHERE version loses rows entirely. The ON version preserves all left-side rows with NULLs where the filter does not match. Arrows and highlights show the logical difference.",
+            "what_learner_hears": "The narrator explains that adding a WHERE condition on a right-table column silently converts a LEFT JOIN into an INNER JOIN because NULL values from unmatched rows fail the WHERE test and get eliminated. The fix is simple: move right-table filters into the ON clause. The narrator walks through both result sets and explains exactly which rows survive and why.",
+            "exercise_file": "where_vs_on_filter.sql",
+            "transition_to_next": "That trap removes rows. The next trap is sneakier \u2014 it adds rows you did not ask for."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Trap 2 \u2014 Duplicate Keys Create Fan-Out and False NULLs",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The customers table is shown with a duplicate customer_id row. The LEFT JOIN query is re-run, and the result set now has more rows than the orders table. A COUNT query before and after the join proves the row inflation. Then a GROUP BY with aggregation is shown producing incorrect totals. The narrator highlights how one duplicate key silently doubled a revenue figure.",
+            "what_learner_hears": "The narrator explains that LEFT JOIN performs a cross-product on matching keys, so a single duplicate in the right table quietly multiplies your rows. This does not produce NULLs directly, but when you later aggregate or join again, the inflated rows create mismatches that surface as NULLs or wrong values downstream. The narrator shows how to detect duplicates with a GROUP BY HAVING COUNT query before joining.",
+            "exercise_file": "duplicate_key_fanout.sql",
+            "transition_to_next": "The third trap is the most invisible of all \u2014 what happens when the key you are joining on is itself NULL."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Trap 3 \u2014 Joining on Columns That Contain NULLs",
+            "duration_seconds": 80,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The orders table is shown with some rows where customer_id is NULL. The LEFT JOIN is run and these rows come back with all right-side columns as NULL, even though a customer with a NULL id also exists in the customers table. A short explanation slide appears showing that NULL = NULL evaluates to UNKNOWN, not TRUE. Then a COALESCE-based workaround is demonstrated.",
+            "what_learner_hears": "The narrator explains that in SQL, NULL does not equal NULL. So if your join key contains NULLs on both sides, those rows will never match. The LEFT JOIN dutifully keeps the left row but fills the right side with NULLs \u2014 giving you the illusion of missing data when in fact the data exists but can not match. The narrator shows how to use COALESCE or IS NOT DISTINCT FROM where supported to handle this edge case.",
+            "exercise_file": "null_key_join.sql",
+            "transition_to_next": "Now let us bring all three traps together with a quick diagnostic checklist."
+          },
+          {
+            "scene_number": 5,
+            "scene_title": "Your LEFT JOIN Diagnostic Checklist",
+            "duration_seconds": 60,
+            "visual_type": "slides",
+            "what_learner_sees": "A clean three-item checklist on screen: 1) Check \u2014 are any right-table filters in the WHERE clause instead of the ON clause? 2) Check \u2014 does the right table have duplicate keys? Run a GROUP BY HAVING COUNT check. 3) Check \u2014 do your join key columns contain NULLs? Each item has a one-line fix beside it. A final line reads: Run a row count before and after every LEFT JOIN.",
+            "what_learner_hears": "The narrator recaps the three traps and their fixes. They encourage the learner to open the exercise file and try deliberately triggering each trap, then fixing it. The narrator previews the next lesson, which will cover defensive join patterns including how to write self-validating CTEs that catch these issues automatically.",
+            "exercise_file": null,
+            "transition_to_next": "In the next lesson, we will build reusable CTE patterns that catch these problems before your stakeholders do."
+          }
+        ],
+        "exercise_files": [
+          "phantom_nulls_setup.sql",
+          "where_vs_on_filter.sql",
+          "duplicate_key_fanout.sql",
+          "null_key_join.sql",
+          "sample_data.csv"
+        ],
+        "key_takeaway": "A LEFT JOIN does not just add NULLs for missing matches \u2014 it can silently introduce NULLs through WHERE clause placement, duplicate keys, and NULL join columns, even when your data is technically complete."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "phantom_nulls_setup.sql",
+      "type": "sql",
+      "purpose": "Creates the orders and customers tables and inserts sample data that triggers all three NULL traps so the learner can follow along from the start of the lesson.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "where_vs_on_filter.sql",
+      "type": "sql",
+      "purpose": "Contains two versions of the same LEFT JOIN query \u2014 one with the right-table filter in the WHERE clause and one in the ON clause \u2014 so the learner can run both and compare results side by side.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "duplicate_key_fanout.sql",
+      "type": "sql",
+      "purpose": "Contains queries that demonstrate row fan-out from duplicate keys, including a pre-join duplicate detection query using GROUP BY and HAVING COUNT, so the learner can practice identifying duplicates before joining.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "null_key_join.sql",
+      "type": "sql",
+      "purpose": "Contains queries that demonstrate NULL = NULL behavior in join keys, along with COALESCE and IS NOT DISTINCT FROM workarounds the learner can test.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "sample_data.csv",
+      "type": "csv",
+      "purpose": "Provides the raw data for learners who want to import into their own database environment rather than running the setup SQL script directly.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "conversational",
+    "pacing": "deliberate",
+    "complexity": "intermediate",
+    "hands_on_ratio": "60 percent doing, 40 percent watching",
+    "adapters_needed": [
+      "sql_viewer",
+      "slides"
+    ]
+  }
+}

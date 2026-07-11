@@ -1,0 +1,276 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: How LEFT JOIN Quietly Turns Your Matches into NULLs — and How to Stop It
+course: Why LEFT JOIN Can Quietly Turn Your Matches into NULLs
+assets:
+  database: assets/why_left_join_can_quietly_turn_your_matc.db
+  sql_file: assets/lesson_1_queries.sql
+events:
+- id: e01
+  type: open_database
+  target: sql_viewer
+  asset: assets/why_left_join_can_quietly_turn_your_matc.db
+  transition: new_concept
+  narration: 'Hey, welcome in. This lesson''s for you if you''ve been writing LEFT JOINs for a few months,
+    you''re pretty comfortable with the syntax, but every now and then you get NULLs in your results that
+    just don''t make sense. You checked the data, the keys exist, the rows are there, and yet, NULLs.
+    By the end of this lesson, you''ll be able to spot three hidden causes of those phantom NULLs and
+    fix each one on the spot. Let''s dig in.
+
+    '
+- id: e01_pause
+  type: pause
+  duration: 41.5
+  transition: continuation
+- id: e02
+  type: show_schema
+  target: sql_viewer
+  transition: new_concept
+  narration: 'Here''s our schema. Two tables, nice and simple. We''ve got a customers table with customer
+    ID, customer name, and region. And we''ve got an orders table with order ID, customer ID, order date,
+    and amount. The kind of setup you''d see in any reporting database. Nothing weird, nothing exotic.
+    That''s what makes the NULLs so frustrating, because this looks like it should just work.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 34.5
+  transition: continuation
+- id: e03
+  type: open_file
+  target: sql_viewer
+  asset: assets/lesson_1_queries.sql
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e04
+  type: highlight_section
+  target: sql_viewer
+  section: left_join_baseline
+  transition: new_concept
+  clears: []
+  narration: 'Alright, here''s our baseline query. We''re doing a straightforward LEFT JOIN from orders
+    over to customers on customer ID. We''re pulling back order ID, customer ID, customer name, region,
+    and amount. This is the query you''d write on day one of building an orders report. Let''s run it
+    and see what comes back.
+
+    '
+- id: e04_pause
+  type: pause
+  duration: 29.9
+  transition: continuation
+- id: e05
+  type: run_query
+  target: sql_viewer
+  query_ref: left_join_baseline
+- id: e05_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e06
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Okay, eleven rows back. And right away, look at order ID eight, customer ID is NULL, customer
+    name is NULL, region is NULL, but the amount is five hundred twenty point zero zero. There''s a real
+    order sitting there with no customer attached. Same story with order ID ten, amount sixty-four point
+    eight zero, completely orphaned. And then there''s order ID nine, this one''s interesting, it has
+    customer ID nine hundred ninety-nine, but customer name and region are both NULL. So that customer
+    ID exists in orders but doesn''t match anything in the customers table. Three different rows, three
+    different flavors of NULL. Most of the other rows look fine. Bright Elm Bakery shows up twice, order
+    IDs one and six, amounts two hundred forty-nine point five zero and three hundred ten point six zero.
+    Copper Fox Brewing also appears twice. Everything''s matching beautifully, except for those three
+    problem rows. And here''s the thing, this isn''t a missing data problem. This is a join behavior problem.
+    There are three specific traps that cause this, and we''re going to break each one open.
+
+    '
+- id: e06_pause
+  type: pause
+  duration: 83.3
+  transition: continuation
+- id: e07
+  type: highlight_section
+  target: sql_viewer
+  section: where_destroys_left_join
+  transition: new_concept
+  clears:
+  - left_join_baseline
+  narration: 'Trap number one, and this one''s a classic. We''ve got the same LEFT JOIN, but now we''ve
+    added a WHERE clause filtering on region equals Northeast. Region lives on the customers table, that''s
+    the right side of our join. Seems reasonable, right? You just want Northeast orders. But watch what
+    happens.
+
+    '
+- id: e07_pause
+  type: pause
+  duration: 29.1
+  transition: continuation
+- id: e08
+  type: run_query
+  target: sql_viewer
+  query_ref: where_destroys_left_join
+- id: e08_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e09
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Three rows. That''s it. We went from eleven rows down to three. Order ID one, Bright Elm
+    Bakery, two hundred forty-nine point five zero. Order ID five, Finch and Fern Café, one thousand three
+    hundred forty point zero zero. Order ID six, Bright Elm Bakery again, three hundred ten point six
+    zero. Every other order just vanished. Not turned into NULLs, completely gone. Your LEFT JOIN silently
+    became an INNER JOIN. Here''s why. When the LEFT JOIN can''t find a match, it fills the right-side
+    columns with NULL. Then the WHERE clause comes along and asks, "is region equal to Northeast?" Well,
+    NULL isn''t equal to anything. That comparison returns UNKNOWN, and UNKNOWN gets filtered out. So
+    every unmatched row, plus every row where region isn''t Northeast, gets dropped. Your LEFT JOIN did
+    its job. The WHERE clause undid it.
+
+    '
+- id: e09_pause
+  type: pause
+  duration: 72.2
+  transition: continuation
+- id: e10
+  type: highlight_section
+  target: sql_viewer
+  section: fix_filter_in_on_clause
+  transition: new_concept
+  clears:
+  - where_destroys_left_join
+  narration: 'Here''s the fix. Same filter, region equals Northeast, but we''ve moved it into the ON clause.
+    This tells S-Q-L, "when you''re looking for matches, only consider customers in the Northeast. But
+    if there''s no match, still keep the left-side row." Let''s see the difference.
+
+    '
+- id: e10_pause
+  type: pause
+  duration: 26.2
+  transition: continuation
+- id: e11
+  type: run_query
+  target: sql_viewer
+  query_ref: fix_filter_in_on_clause
+- id: e11_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e12
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Now we''re talking. All eleven rows are back. The Northeast customers, Bright Elm Bakery
+    and Finch and Fern Café, still have their names and regions filled in. But look at order ID two, Copper
+    Fox Brewing is a Midwest customer, so customer name and region come back as NULL because the ON clause
+    filter didn''t match. The row survived though. Same with order ID three, four, seven, and the rest.
+    Every single order is preserved. The non-Northeast ones just have NULLs on the right side, which is
+    exactly what a LEFT JOIN is supposed to do. That''s the fix. Right-table filters go in the ON clause,
+    not the WHERE clause.
+
+    '
+- id: e12_pause
+  type: pause
+  duration: 53.5
+  transition: continuation
+- id: e13
+  type: highlight_section
+  target: sql_viewer
+  section: revenue_comparison
+  transition: new_concept
+  clears:
+  - fix_filter_in_on_clause
+  narration: 'And just to drive the point home, here''s a side-by-side revenue comparison. We''re summing
+    the amount column and counting rows for both approaches. Let''s see how bad the damage actually is.
+
+    '
+- id: e13_pause
+  type: pause
+  duration: 20.8
+  transition: continuation
+- id: e14
+  type: run_query
+  target: sql_viewer
+  query_ref: revenue_comparison
+- id: e14_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e15
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Wow. The broken WHERE approach gives us total revenue of one thousand nine hundred point
+    one zero with only three rows. The fixed ON clause approach? Three thousand eight hundred fifty-seven
+    point one five across all eleven rows. That''s almost two thousand dollars in revenue that just disappeared
+    from your report because of where you put a filter. Imagine handing that broken number to a stakeholder.
+    That''s not a rounding error, that''s half your data missing.
+
+    '
+- id: e15_pause
+  type: pause
+  duration: 39.4
+  transition: continuation
+- id: e16
+  type: highlight_section
+  target: sql_viewer
+  section: left_join_baseline
+  transition: new_concept
+  clears:
+  - revenue_comparison
+  narration: 'Now let''s talk about trap number two, duplicate keys. Let''s go back to our baseline result.
+    Remember how Bright Elm Bakery appeared in two rows? That''s fine, those are two different orders,
+    order IDs one and six. But imagine the customers table had a duplicate row for that same customer
+    ID. Your LEFT JOIN would cross every matching order with every matching customer row, doubling those
+    rows silently. You wouldn''t get an error. You''d just get inflated counts and wrong totals downstream.
+    The defense? Before you join, run a GROUP BY on your join key with a HAVING COUNT greater than one.
+    If anything comes back, you''ve got duplicates to clean up first.
+
+    '
+- id: e16_pause
+  type: pause
+  duration: 54.8
+  transition: continuation
+- id: e17
+  type: highlight_section
+  target: sql_viewer
+  section: left_join_baseline
+  transition: new_concept
+  clears: []
+  narration: 'Trap number three, and this one''s the sneakiest. Look at order IDs eight and ten. Their
+    customer ID is NULL. Now, even if the customers table also had a row where customer ID was NULL, the
+    join still wouldn''t match them. Because in S-Q-L, NULL doesn''t equal NULL. That comparison returns
+    UNKNOWN, not TRUE. So the LEFT JOIN keeps those left-side rows, fills the right side with NULLs, and
+    you''re staring at what looks like missing data when really the data''s there, it just can''t match
+    on a NULL key. The fix? Use COALESCE to replace NULLs with a sentinel value before joining, or if
+    your database supports it, use IS NOT DISTINCT FROM instead of equals in your ON clause. Either way,
+    you''re telling S-Q-L that two NULLs should be treated as a match.
+
+    '
+- id: e17_pause
+  type: pause
+  duration: 63.9
+  transition: continuation
+- id: e_close
+  type: zoom_result
+  target: sql_viewer
+  transition: emphasis
+  narration: 'Alright, here''s your diagnostic checklist. Before you trust any LEFT JOIN result, ask three
+    questions. One, are any right-table filters sitting in the WHERE clause? Move them to ON. Two, does
+    the right table have duplicate keys? Run a GROUP BY HAVING COUNT check. Three, do your join key columns
+    contain NULLs? Handle them with COALESCE. And honestly, just make it a habit, run a row count before
+    and after every LEFT JOIN. If the numbers don''t make sense, one of these three traps is almost certainly
+    why. In the next lesson, we''ll build reusable CTE patterns that catch these problems automatically,
+    before your stakeholders do. See you there.
+
+    '
+- id: e_close_pause
+  type: pause
+  duration: 57.9
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis
