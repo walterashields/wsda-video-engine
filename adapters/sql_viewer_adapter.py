@@ -566,10 +566,16 @@ class SQLViewerAdapter(BaseAdapter):
     async def _expand_sql_pane(self):
         """Collapse results pane so full SQL section is visible."""
         await self.page.evaluate("if(window.expandSQLPane) window.expandSQLPane();")
+        await asyncio.sleep(0.45)  # match the 0.4s CSS transition, see _collapse_sql_pane
 
     async def _collapse_sql_pane(self):
         """Restore results pane after showing results."""
         await self.page.evaluate("if(window.collapseSQLPane) window.collapseSQLPane();")
+        # The pane collapse is a 0.4s CSS transition (see .sql-pane transition:
+        # height 0.4s ease in viewer.html). Without waiting for it, this event
+        # gets marked complete - and narration gets scheduled to start -
+        # before the results pane has actually finished animating into view.
+        await asyncio.sleep(0.45)
 
     async def _highlight_sql_section(self, section: str) -> None:
         console.print(f"  Highlight: [yellow]{section}[/yellow]")
