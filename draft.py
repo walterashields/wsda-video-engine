@@ -341,6 +341,17 @@ point out what MATTERS, not transcribe what's visible.
   once, confidently, and don't re-verify it by re-reading each row's value
   aloud as proof.
 
+VISUAL PROGRESSION — every time narration introduces a new point ("trap
+two", "here's another issue with this same query"), something on screen
+must actually change to go with it. Never write a highlight_section event
+that targets the exact same section as the previous one with nothing in
+between — that produces zero visual change while the viewer hears entirely
+new content, and it reads as the video being frozen or broken.
+If you want to make a second or third analytical point using data that's
+already displayed (e.g. pointing out something else in a result set
+already on screen), use zoom_result or compare_results to visually shift
+emphasis — never just repeat the same highlight_section call.
+
 You always respond with valid YAML only.
 No markdown fences. No preamble. No explanation. Just YAML.
 Start your response with: schema_version: "3.0"
@@ -727,6 +738,39 @@ def validate_card(card_yaml: str) -> tuple[bool, list[str]]:
     for e in events:
         if e.get('type') == 'pause' and not e.get('duration'):
             errors.append(f"Pause {e.get('id')} missing duration")
+
+    # Check for frozen-screen repeats: a highlight_section that targets the
+    # SAME section as the previous "screen-setting" action, with no
+    # run_query/show_result/zoom_result/compare_results in between, produces
+    # zero visual change even though narration introduces new content. This
+    # is exactly the "screen never shifts" bug — the model wrote a new
+    # analytical point without building any new visual for it.
+    screen_setting_types = {
+        'highlight_section', 'run_query', 'show_result',
+        'zoom_result', 'compare_results', 'highlight_result',
+    }
+    last_section_target = None
+    for i, e in enumerate(events):
+        etype = e.get('type')
+        if etype not in screen_setting_types:
+            continue
+        if etype == 'highlight_section':
+            target = e.get('section')
+            if target is not None and target == last_section_target:
+                errors.append(
+                    f"Event {e['id']}: highlight_section repeats the same "
+                    f"target ('{target}') as the previous screen-setting "
+                    f"event, with no run_query/show_result/zoom_result in "
+                    f"between — this produces NO visual change on screen. "
+                    f"If this narration makes a new point using data already "
+                    f"shown, use zoom_result or compare_results instead of "
+                    f"re-highlighting the same section."
+                )
+            last_section_target = target
+        else:
+            # Any other screen-setting action resets the repeat tracker,
+            # since it DID produce a real visual change.
+            last_section_target = None
 
     return len(errors) == 0, errors
 
