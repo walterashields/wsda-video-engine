@@ -304,6 +304,17 @@ exactly. Do not invent, round differently, or assume any table, column, or
 number that isn't listed there. If you're unsure whether something is real,
 leave it out rather than guess.
 
+SCOPE CONSISTENCY — if this lesson only has queries for SOME of the
+possible causes/angles a topic could cover (the SQL was capped to keep this
+lesson focused), your narration's framing must match exactly what you
+actually built, not the original broader idea. Never say a cause is
+"fixed", "matched", "handled", or "checked" unless there's a real query in
+this lesson that demonstrates it. If your intro or closing checklist lists
+N steps/culprits/causes, you must have built a real query for every single
+one of them — don't list a step you didn't actually build just because it
+was part of the original concept. Two well-demonstrated causes beats three
+where one is just asserted.
+
 PRONUNCIATION — say identifiers the way a person would say them out loud,
 never as raw code syntax. This is about spoken FORM only; the underlying
 fact must still be the real, grounded name.
@@ -995,6 +1006,73 @@ def _extract_decimal_mentions(text: str) -> list:
     return found
 
 
+_COVERAGE_CONCEPTS = {
+    'fan-out': ['fan-out', 'fanout', 'fan out', 'duplicate row', 'duplicate join'],
+    'filters': ['filter', 'where clause', 'test account', 'test order', 'refunded'],
+    'nulls': ['null', 'coalesce'],
+    'timezone': ['time zone', 'timezone', 'utc', 'eastern', 'boundary'],
+    'metric definition': ['metric definition', 'revenue definition', 'line item'],
+}
+
+_COVERAGE_CLAIM_VERBS = ('matched', 'fixed', 'handled', 'solved', 'resolved',
+                          'done', 'covered', 'addressed', 'checked')
+
+
+def check_unbuilt_concept_claims(card_yaml: str) -> list:
+    """
+    Catches a specific failure mode a numeric section-count check can't see:
+    narration asserting a concept is "matched"/"fixed"/"handled" (e.g. "fan-out's
+    fixed, filters are matched") when no real query anywhere in the lesson
+    actually covers that concept. This happens when scope-capping forces
+    dropping a cause's query, but transitional/closing narration still
+    references it as if it were taught. Counting real query sections doesn't
+    catch this: a lesson can have 4 real sections that only cover 2 concepts,
+    while still claiming a 3rd.
+    """
+    parsed = yaml.safe_load(card_yaml)
+    events = parsed.get('events', [])
+
+    # Narration tied to an actual run_query (i.e., backed by a real, verified
+    # query) vs. all narration (which includes intro/transition/closing text
+    # that isn't necessarily backed by anything real).
+    query_backed_narration = []
+    for i, e in enumerate(events):
+        if e.get('type') == 'run_query':
+            # narration usually lives on the following show_result event
+            for j in range(i, min(i + 3, len(events))):
+                if events[j].get('narration'):
+                    query_backed_narration.append(events[j]['narration'].lower())
+
+    query_backed_text = ' '.join(query_backed_narration)
+    all_text = ' '.join((e.get('narration') or '') for e in events).lower()
+
+    issues = []
+    claim_pattern = re.compile(
+        r'([a-z][a-z \-]{2,30}?)(?:\'s|\s+is|\s+are|\s+was|\s+were)?\s+(?:' +
+        '|'.join(_COVERAGE_CLAIM_VERBS) + r')\b'
+    )
+
+    for concept, keywords in _COVERAGE_CONCEPTS.items():
+        # Is this concept CLAIMED as handled anywhere in the full narration?
+        claimed = any(
+            re.search(rf'\b{re.escape(kw)}s?\b.{{0,20}}\b(?:' + '|'.join(_COVERAGE_CLAIM_VERBS) + r')\b', all_text)
+            or re.search(rf'\b(?:' + '|'.join(_COVERAGE_CLAIM_VERBS) + rf')\b.{{0,20}}\b{re.escape(kw)}s?\b', all_text)
+            for kw in keywords
+        )
+        if not claimed:
+            continue
+        # Is it actually backed by a real query anywhere?
+        backed = any(re.search(rf'\b{re.escape(kw)}s?\b', query_backed_text) for kw in keywords)
+        if not backed:
+            issues.append(
+                f"Narration claims '{concept}' is matched/fixed/handled, but no "
+                f"run_query event's narration actually demonstrates it — this "
+                f"concept was referenced as covered without a real query behind "
+                f"it. Either add a real query for it, or remove the claim."
+            )
+    return issues
+
+
 def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
     """
     Compare narration in a drafted card against REAL, verified query results.
@@ -1252,8 +1330,10 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
 
         # Verified-number check only applies to SQL lessons with real results
         number_issues = check_number_mismatches(raw, query_results) if query_results else []
+        concept_issues = check_unbuilt_concept_claims(raw) if query_results else []
+        number_issues = number_issues + concept_issues
         if number_issues:
-            console.print(f"  [yellow]Warning - number mismatches vs. real database (attempt {attempt}):[/yellow]")
+            console.print(f"  [yellow]Warning - issues found (attempt {attempt}):[/yellow]")
             for iss in number_issues:
                 console.print(f"    - {iss}")
             if attempt < 3:
