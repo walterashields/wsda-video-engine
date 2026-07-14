@@ -1,6 +1,6 @@
 schema_version: '3.0'
 lesson_id: video_1_1
-title: Diagnosing the five silent reasons your GROUP BY total drifts from the dashboard
+title: Three reasons your GROUP BY total never matches the dashboard
 course: Why your GROUP BY total doesn't match the dashboard
 assets:
   database: assets/why_your_group_by_total_doesn_t_match_th.db
@@ -11,31 +11,30 @@ events:
   target: sql_viewer
   asset: assets/why_your_group_by_total_doesn_t_match_th.db
   transition: new_concept
-  narration: 'Alright, this lesson''s for you if you''ve ever pulled a GROUP BY query, walked into a meeting
-    feeling confident, and then someone says, "that''s not what the dashboard shows." Instant credibility
-    hit. By the end of this lesson, you''ll be able to diagnose the five most common reasons your S-Q-L
-    total drifts from the dashboard number, and you''ll know exactly how to fix each one. We''re talking
-    duplicate rows from joins, missing filters, NULL handling, time zone boundaries, and metric definition
-    drift. Let''s get into it.
+  narration: 'Hey, if you''re a data analyst who writes S-Q-L every day and you''ve ever had that stomach-dropping
+    moment where your GROUP BY total doesn''t match the dashboard, this lesson''s for you. By the end,
+    you''ll be able to spot and fix the three sneakiest reasons your numbers disagree: fan-out joins inflating
+    your rows, hidden dashboard filters quietly excluding data, and metric definitions that drifted apart
+    when nobody was looking. Let''s get into it.
 
     '
 - id: e01_pause
   type: pause
-  duration: 43.4
+  duration: 42.1
   transition: continuation
 - id: e02
   type: show_schema
   target: sql_viewer
   transition: new_concept
-  narration: 'Here''s our database. We''ve got two tables. The orders table has order ID, region, order
-    date, gross revenue, subtotal, discount amount, refund amount, is test order, and status. Then there''s
-    a shipments table with shipment ID, order ID, shipped date, and carrier. Pretty standard e-commerce
-    setup. The trouble starts when these two tables meet in a JOIN.
+  narration: 'Here''s what we''re working with. Two tables. First, we''ve got the orders table, with columns
+    for order ID, region, order date, and order total. Then there''s the order items table, which has
+    item ID, order ID, product name, line item price, quantity, and discount. Classic one-to-many setup,
+    right? One order, multiple line items. And that relationship is exactly where our first trap is hiding.
 
     '
 - id: e02_pause
   type: pause
-  duration: 33.5
+  duration: 35.5
   transition: continuation
 - id: e03
   type: open_file
@@ -44,27 +43,29 @@ events:
   transition: new_concept
 - id: e03_pause
   type: pause
-  duration: 1.5
+  duration: 1.4
   transition: continuation
 - id: e04
   type: highlight_section
   target: sql_viewer
-  section: scene1_group_by_total
+  section: fanout_wrong
   transition: new_concept
   clears: []
-  narration: 'Let''s start by reproducing the mismatch. This query groups orders by region and sums up
-    the gross revenue. Simple stuff, the kind of query you''d write in thirty seconds. Let''s see what
-    it gives us.
+  narration: 'Alright, here''s the query that gets everyone in trouble. We''re joining orders to order
+    items and then doing a GROUP BY on region, summing order total, and counting rows. Seems totally reasonable,
+    right? But here''s the problem. When you join orders to order items, every order row gets duplicated
+    once per line item. So if an order has three line items, that order total gets summed three times.
+    Let''s run it and see the damage.
 
     '
 - id: e04_pause
   type: pause
-  duration: 19.8
+  duration: 40.4
   transition: continuation
 - id: e05
   type: run_query
   target: sql_viewer
-  query_ref: scene1_group_by_total
+  query_ref: fanout_wrong
 - id: e05_pause
   type: pause
   duration: 2.2
@@ -73,39 +74,37 @@ events:
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: 'Okay, look at this. Midwest comes in at 120,925.00. Northeast at 199,825.00. Southeast,
-    154,200.00. West is the big spender at 290,110.25. Grand total, 765,060.25. You''d feel great about
-    this number, right? Except imagine your dashboard says something completely different for the same
-    date range. Your stomach drops. Your instinct says the dashboard is wrong. Spoiler: it usually isn''t.
-    Let''s figure out where this gap lives, starting with the most common culprit, something lurking in
-    your FROM clause.
+  narration: 'Look at this. The West region shows eight rows and an inflated revenue of two thousand two
+    hundred forty-one point seven three. East has six rows coming in at one thousand four hundred ninety-five
+    point four zero. And Central shows four rows at five hundred seventy-two point four zero. Those row
+    counts are way too high, and those revenue numbers are bloated. That''s our fan-out in action, every
+    order total getting counted once per line item.
 
     '
 - id: e06_pause
   type: pause
-  duration: 44.1
+  duration: 39.8
   transition: continuation
 - id: e07
   type: highlight_section
   target: sql_viewer
-  section: scene2a_inflated_join
+  section: fanout_fixed
   transition: new_concept
   clears:
-  - scene1_group_by_total
-  narration: 'Cause number one: duplicate rows from joins. Here we''re joining orders to the shipments
-    table and counting all rows with COUNT star, plus summing the total revenue. If an order shipped in
-    multiple packages, it''ll appear once per shipment. Your SUM inflates silently. Nobody warns you.
-    Let''s run it.
+  - fanout_wrong
+  narration: 'Now here''s the fix. Instead of joining and summing blindly, we pre-aggregate the orders
+    in a subquery first, then join to order items separately. This way each order total only gets counted
+    once, and we pick up the line item count on its own. Let''s run this corrected version.
 
     '
 - id: e07_pause
   type: pause
-  duration: 29.4
+  duration: 26.6
   transition: continuation
 - id: e08
   type: run_query
   target: sql_viewer
-  query_ref: scene2a_inflated_join
+  query_ref: fanout_fixed
 - id: e08_pause
   type: pause
   duration: 2.2
@@ -114,403 +113,133 @@ events:
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: 'There it is. The inflated count star gives us 19 rows and a total revenue of 1,125,150.75.
-    That''s way higher than the 765,060.25 we just saw. The join to shipments created extra rows, and
-    SUM happily counted every duplicate. This is what''s called fan-out, and it''s the number one silent
-    killer of accurate GROUP BY totals.
+  narration: 'Now we''re talking. The West region has three orders, true revenue of seven hundred seventy-seven
+    point two four, and eight line items. East shows three orders, seven hundred forty-seven point seven
+    zero in true revenue, six line items. Central has two orders at two hundred fifty-five point six zero
+    with four line items. See how the order counts dropped way down compared to those inflated row counts
+    from before? West went from eight rows to three actual orders. That''s the fan-out completely gone.
+    Your row counts are your best friend when debugging this stuff.
 
     '
 - id: e09_pause
   type: pause
-  duration: 31.8
+  duration: 48.1
   transition: continuation
 - id: e10
-  type: highlight_section
+  type: compare_results
   target: sql_viewer
-  section: scene2b_distinct_check
-  transition: new_concept
-  clears:
-  - scene2a_inflated_join
-  narration: 'Here''s the diagnostic query. We''re comparing total rows to the count of distinct order
-    IDs. This tells us exactly how many extra rows the join created.
+  transition: emphasis
+  narration: 'Let''s just appreciate the difference side by side for a second. West''s inflated revenue
+    was two thousand two hundred forty-one point seven three. The real number? Seven hundred seventy-seven
+    point two four. That''s nearly three times too high. If you''d put that inflated number in a report,
+    you''d have some very confused stakeholders. Fan-out joins are sneaky because the query runs fine,
+    no errors, no warnings, just quietly wrong numbers. Always check your row counts before and after
+    a join.
 
     '
 - id: e10_pause
   type: pause
-  duration: 17.7
+  duration: 42.7
   transition: continuation
 - id: e11
+  type: highlight_section
+  target: sql_viewer
+  section: metric_drift_order_total
+  transition: new_concept
+  clears:
+  - fanout_fixed
+  narration: 'Okay, fan-out''s fixed, filters are matched, but there''s one more gremlin. Culprit three
+    is metric definition drift, and it''s the most annoying one because everyone thinks they''re calculating
+    "revenue" but nobody agreed on what revenue actually means. This first query sums the order total
+    column from the orders table. That''s one definition of revenue. Let''s see what it gives us.
+
+    '
+- id: e11_pause
+  type: pause
+  duration: 33.6
+  transition: continuation
+- id: e12
   type: run_query
   target: sql_viewer
-  query_ref: scene2b_distinct_check
-- id: e11_pause
+  query_ref: metric_drift_order_total
+- id: e12_pause
   type: pause
   duration: 2.2
   transition: continuation
-- id: e12
+- id: e13
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: '19 total rows, but only 14 distinct orders. That''s 5 extra rows the join invented. Five
-    rows that inflated your SUM without leaving a trace. The fix? Either aggregate before you join, or
-    use DISTINCT carefully. But now let''s tackle cause number two, filter gaps.
-
-    '
-- id: e12_pause
-  type: pause
-  duration: 27.9
-  transition: continuation
-- id: e13
-  type: highlight_section
-  target: sql_viewer
-  section: scene2c_filter_gap_visible
-  transition: new_concept
-  clears:
-  - scene2b_distinct_check
-  narration: 'Dashboards love hidden default filters, test accounts, internal orders, refunded transactions.
-    They''re baked in so deeply that nobody remembers they''re there. This query pulls orders that a dashboard
-    would typically exclude. Let''s see who the offenders are.
+  narration: 'Using order total, we get Central at two hundred fifty-five point six zero, East at seven
+    hundred forty-seven point seven zero, and West at seven hundred seventy-seven point two four. These
+    are the gross order totals. Now let''s see what happens when we calculate revenue the way a dashboard
+    might.
 
     '
 - id: e13_pause
   type: pause
-  duration: 24.3
+  duration: 27.0
   transition: continuation
 - id: e14
+  type: highlight_section
+  target: sql_viewer
+  section: metric_drift_line_math
+  transition: new_concept
+  clears:
+  - metric_drift_order_total
+  narration: 'This second query calculates revenue from the order items table instead, using line item
+    price times quantity minus the discount. That''s net revenue after discounts, a totally different
+    animal. If your dashboard''s using this formula but you''re summing order total, you''ll never match.
+    Let''s run it and see the gap.
+
+    '
+- id: e14_pause
+  type: pause
+  duration: 28.6
+  transition: continuation
+- id: e15
   type: run_query
   target: sql_viewer
-  query_ref: scene2c_filter_gap_visible
-- id: e14_pause
+  query_ref: metric_drift_line_math
+- id: e15_pause
   type: pause
   duration: 2.2
   transition: continuation
-- id: e15
+- id: e16
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: 'Two rows jump out. Order 1012 in the West region, gross revenue 99,999.00, and look at that
-    is test order column, it''s flagged as 1. That''s a test order someone forgot to clean up. Then order
-    1013 in the Northeast, 54,350.00, with a status of refunded. The dashboard silently excludes both
-    of these. Your S-Q-L didn''t. That''s a gap of over 154,000 dollars right there.
-
-    '
-- id: e15_pause
-  type: pause
-  duration: 36.0
-  transition: continuation
-- id: e16
-  type: highlight_section
-  target: sql_viewer
-  section: scene2d_filtered_total
-  transition: new_concept
-  clears:
-  - scene2c_filter_gap_visible
-  narration: 'Now let''s add those filters, exclude test orders and refunded rows, and re-run our GROUP
-    BY to see the corrected totals.
+  narration: 'There it is. Revenue from line items gives us Central at two hundred three point three zero,
+    East at four hundred eighty-two point zero four, and West at five hundred twenty-three point eight
+    six. Compare that to the order total numbers we just saw. East dropped from seven hundred forty-seven
+    point seven zero down to four hundred eighty-two point zero four. That''s a big gap, and it''s entirely
+    because discounts are being subtracted in one formula but not the other. Neither number is wrong,
+    they''re just answering different questions. The fix is simple: find out which formula your dashboard
+    uses and match it exactly in your S-Q-L.
 
     '
 - id: e16_pause
   type: pause
-  duration: 14.3
-  transition: continuation
-- id: e17
-  type: run_query
-  target: sql_viewer
-  query_ref: scene2d_filtered_total
-- id: e17_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e18
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'Much better. Midwest holds steady at 120,925.00, it had no test or refunded orders. Northeast
-    dropped from 199,825.00 down to 145,475.00 because we kicked out that refunded order. Southeast stays
-    at 154,200.00. And the West fell hard, from 290,110.25 to 190,111.25, thanks to removing that 99,999
-    dollar test order. Grand total is now 610,711.25. We''ve already closed a huge chunk of the gap just
-    by matching the dashboard''s filters. Two causes down, three to go. The next one''s invisible unless
-    you know to look for it.
-
-    '
-- id: e18_pause
-  type: pause
-  duration: 46.6
-  transition: continuation
-- id: e19
-  type: highlight_section
-  target: sql_viewer
-  section: scene3a_sum_with_nulls
-  transition: new_concept
-  clears:
-  - scene2d_filtered_total
-  narration: 'Cause number three: NULLs silently excluded from aggregation. This is one of those S-Q-L
-    standard behaviors that trips people up forever. SUM, AVG, and COUNT of a column all skip NULL values
-    entirely. If your dashboard treats NULLs as zero, or vice versa, your totals diverge. Let''s look
-    at the discount amount column.
-
-    '
-- id: e19_pause
-  type: pause
-  duration: 31.1
-  transition: continuation
-- id: e20
-  type: run_query
-  target: sql_viewer
-  query_ref: scene3a_sum_with_nulls
-- id: e20_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e21
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'We''ve got 12 total rows, but only 10 have a discount value. The total discount ignoring
-    NULLs is 30,756.25. Two rows are just missing from that calculation entirely. Let''s find them.
-
-    '
-- id: e21_pause
-  type: pause
-  duration: 23.2
-  transition: continuation
-- id: e22
-  type: highlight_section
-  target: sql_viewer
-  section: scene3b_show_null_rows
-  transition: new_concept
-  clears:
-  - scene3a_sum_with_nulls
-  narration: 'This query pulls every row where discount amount is NULL. Let''s see which orders are hiding.
-
-    '
-- id: e22_pause
-  type: pause
-  duration: 13.1
-  transition: continuation
-- id: e23
-  type: run_query
-  target: sql_viewer
-  query_ref: scene3b_show_null_rows
-- id: e23_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e24
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'There they are. Order 1003 in the Southeast, gross revenue 18,990.00, discount amount is
-    NULL. And order 1011, also Southeast, 46,890.00, also NULL. These aren''t zero-discount orders, they''re
-    orders where the discount was never recorded. Big difference. If the dashboard treats those as zero
-    and your S-Q-L skips them entirely, you''ll get different totals.
-
-    '
-- id: e24_pause
-  type: pause
-  duration: 33.0
-  transition: continuation
-- id: e25
-  type: highlight_section
-  target: sql_viewer
-  section: scene3c_coalesce_fix
-  transition: new_concept
-  clears:
-  - scene3b_show_null_rows
-  narration: 'Here''s the fix. We wrap discount amount in COALESCE, defaulting NULLs to zero. Let''s see
-    if it changes anything.
-
-    '
-- id: e25_pause
-  type: pause
-  duration: 15.1
-  transition: continuation
-- id: e26
-  type: run_query
-  target: sql_viewer
-  query_ref: scene3c_coalesce_fix
-- id: e26_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e27
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'Interesting. 12 total rows, total discount with COALESCE is 30,756.25, total discount without
-    COALESCE is also 30,756.25, and the difference is 0.00. In this case, adding COALESCE didn''t change
-    the sum because the NULL rows had no numeric value to add. But here''s the point, you didn''t know
-    that until you checked. And with AVG it would''ve mattered, because AVG divides by the count of non-NULL
-    values. Fewer values in the denominator means a higher average. Always check, always decide explicitly.
-
-    '
-- id: e27_pause
-  type: pause
-  duration: 45.7
-  transition: continuation
-- id: e28
-  type: highlight_section
-  target: sql_viewer
-  section: scene4a_utc_vs_eastern
-  transition: new_concept
-  clears:
-  - scene3c_coalesce_fix
-  narration: 'Cause number four: time zone boundaries. This one only shows up at the edges of your date
-    range, which makes it maddeningly hard to spot. If your database stores timestamps in UTC but the
-    dashboard renders in US Eastern, orders near midnight shift across date boundaries. Let''s look at
-    the evidence.
-
-    '
-- id: e28_pause
-  type: pause
-  duration: 30.3
-  transition: continuation
-- id: e29
-  type: run_query
-  target: sql_viewer
-  query_ref: scene4a_utc_vs_eastern
-- id: e29_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e30
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'Look at this. Order 1001, UTC timestamp January 1st at 3:14 AM. Convert that to Eastern
-    and it''s December 31st at 10:14 PM. The UTC date says January 1st, but Eastern says December 31st.
-    Gross revenue, 42,750.00. That order lives in January if you''re in UTC, but December if you''re in
-    Eastern. Same story with order 1014, UTC January 1st at 2:30 AM becomes December 31st at 9:30 PM Eastern,
-    with 38,740.00 in revenue. And then there''s order 1015, UTC February 1st at 4:15 AM, which becomes
-    January 31st at 11:15 PM Eastern, 27,580.00. That one shifts into January when you switch to Eastern.
-    Order 1008 also shifts, UTC January 18th at 1:10 AM becomes January 17th at 8:10 PM Eastern, gross
-    revenue 14,760.00.
-
-    '
-- id: e30_pause
-  type: pause
-  duration: 67.8
-  transition: continuation
-- id: e31
-  type: highlight_section
-  target: sql_viewer
-  section: scene4b_boundary_impact
-  transition: new_concept
-  clears:
-  - scene4a_utc_vs_eastern
-  narration: 'Let''s quantify the damage. This query tallies up how many orders shift in and out of January
-    because of the time zone difference.
-
-    '
-- id: e31_pause
-  type: pause
-  duration: 15.1
-  transition: continuation
-- id: e32
-  type: run_query
-  target: sql_viewer
-  query_ref: scene4b_boundary_impact
-- id: e32_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e33
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'Two orders shift out of January, that''s 81,490.00 in revenue disappearing from your January
-    total. But one order shifts in, bringing 27,580.00 with it. Net impact, you''re losing about 53,910
-    dollars from your January number just because of time zones. That''s not a rounding error, that''s
-    a real discrepancy that''ll have someone questioning your work.
-
-    '
-- id: e33_pause
-  type: pause
-  duration: 33.0
-  transition: continuation
-- id: e34
-  type: highlight_section
-  target: sql_viewer
-  section: scene4c_metric_definition_drift
-  transition: new_concept
-  clears:
-  - scene4b_boundary_impact
-  narration: 'And now cause number five, the most frustrating one of all: metric definition drift. Someone
-    redefined "revenue" last quarter and nobody sent you the memo. Your S-Q-L uses gross revenue. The
-    dashboard now uses subtotal minus refunds. Let''s see how big that gap gets.
-
-    '
-- id: e34_pause
-  type: pause
-  duration: 27.7
-  transition: continuation
-- id: e35
-  type: run_query
-  target: sql_viewer
-  query_ref: scene4c_metric_definition_drift
-- id: e35_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e36
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'Every single region has a gap. Midwest, your S-Q-L says 120,925.00, the dashboard says 110,000.00,
-    that''s a definition gap of 10,925.00. Northeast, 145,475.00 versus 134,075.00, gap of 11,400.00.
-    Southeast, 154,200.00 versus 145,200.00, 9,000.00 apart. And the West, 190,111.25 versus 170,850.00,
-    a definition gap of 19,261.25. Grand total, your analyst revenue is 610,711.25, the dashboard shows
-    560,125.00, and the total definition gap is 50,586.25. That''s over 50,586 dollars of difference explained
-    entirely by which column someone decided "revenue" means. Always check the semantic layer or documentation
-    before you query.
-
-    '
-- id: e36_pause
-  type: pause
-  duration: 55.6
-  transition: continuation
-- id: e37
-  type: highlight_section
-  target: sql_viewer
-  section: scene4d_final_matching_query
-  transition: new_concept
-  clears:
-  - scene4c_metric_definition_drift
-  narration: 'Let''s bring it all together. This final query applies every fix, no fan-out, proper filters,
-    NULLs handled, correct time zone, and the right metric definition. Let''s see if we can match the
-    dashboard.
-
-    '
-- id: e37_pause
-  type: pause
-  duration: 22.8
-  transition: continuation
-- id: e38
-  type: run_query
-  target: sql_viewer
-  query_ref: scene4d_final_matching_query
-- id: e38_pause
-  type: pause
-  duration: 2.2
-  transition: continuation
-- id: e39
-  type: show_result
-  target: sql_viewer
-  transition: continuation
-  narration: 'There we go. Midwest, 73,500.00. Northeast, 93,950.00. Southeast, 171,200.00. West, 170,850.00.
-    Grand total, 509,500.00. Those are the dashboard''s numbers. We got there by systematically working
-    through all five causes. No guessing, no finger-pointing, just methodical diagnosis.
-
-    '
-- id: e39_pause
-  type: pause
-  duration: 29.7
+  duration: 50.4
   transition: continuation
 - id: e_close
   type: zoom_result
   target: sql_viewer
   transition: emphasis
-  narration: So here's your five-point checklist. One, check for row duplication from joins. Two, replicate
-    all dashboard filters. Three, handle NULLs explicitly. Four, align time zones and date boundaries.
-    Five, confirm the metric definition hasn't changed. Before you message your analytics engineer, before
-    you question the dashboard, run through these five. Nine times out of ten
+  narration: 'Alright, here''s your thirty-second debug checklist for every time your numbers don''t match
+    the dashboard. Step one, check for fan-out. Compare row counts before and after your joins. If they
+    jump, you''ve got duplicates inflating your totals. Step two, match every dashboard filter in your
+    WHERE clause, date ranges, status exclusions, test accounts, all of it. Step three, confirm the metric
+    formula. Is the dashboard using order total or line item price times quantity minus discount? They''re
+    not the same thing. Do these three checks in order, every time, and you''ll stop chasing phantom mismatches.
+    Grab the exercise files linked in the description and try it yourself.
+
+    '
+- id: e_close_pause
+  type: pause
+  duration: 56.5
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis
