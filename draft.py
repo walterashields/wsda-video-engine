@@ -1138,12 +1138,15 @@ def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
 
 
 def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
-                               db_name: str, sql_name: str) -> tuple:
+                               db_name: str, sql_name: str, max_sections: int = 4) -> tuple:
     """
     Generate a self-contained SQL file, execute it to build a REAL database,
     run every teaching query against it, and return (sql_content, db_path,
     query_results). Retries generation if the SQL fails to build or run.
     Raises RuntimeError if it can't produce a working database after retries.
+    max_sections caps how many teaching queries are allowed - scaled down
+    for micro-format lessons where even 4 queries is far too much content
+    for a 1-3 minute video.
     """
     scenes = lesson.get('scenes', [])
     sql_scenes = [s for s in scenes if s.get('visual_type') == 'sql_viewer']
@@ -1191,14 +1194,14 @@ def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
             console.print(f"  [yellow]Warning - no teaching query sections found[/yellow]")
             continue
 
-        if len(sections) > 4:
+        if len(sections) > max_sections:
             prior_errors = [
                 f"Generated {len(sections)} teaching query sections "
-                f"({', '.join(sections.keys())}) — this exceeds the 4-section "
-                f"limit. This is almost always a scope problem, not a SQL "
-                f"problem: pick ONE clear root cause / narrative thread for "
-                f"this lesson and consolidate down to at most 4 queries "
-                f"total. Do not try to cover every possible angle."
+                f"({', '.join(sections.keys())}) — this exceeds the "
+                f"{max_sections}-section limit. This is almost always a scope "
+                f"problem, not a SQL problem: pick ONE clear root cause / "
+                f"narrative thread for this lesson and consolidate down to at "
+                f"most {max_sections} queries total. Do not try to cover every possible angle."
             ]
             console.print(
                 f"  [yellow]Warning - too many query sections ({len(sections)}), "
@@ -1241,6 +1244,7 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     slug = brief.get('slug', 'lesson')
     adapter_type = detect_adapter(lesson, brief)
     prod_notes = brief.get('production_notes', {})
+    lesson_format = brief.get("format", "course")
 
     db_name = f"{slug}.db" if adapter_type == 'sql_viewer' else 'none'
     sql_name = f"lesson_{lesson_num}_queries.sql" if adapter_type == 'sql_viewer' else 'none'
@@ -1253,8 +1257,10 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     query_results = {}
     verified_data_block = ""
     if adapter_type == 'sql_viewer':
+        max_sections = 1 if lesson_format == "micro" else 4
         _, db_path, query_results = build_verified_sql_and_db(
-            lesson, lesson['title'], assets_dir, db_name, sql_name
+            lesson, lesson['title'], assets_dir, db_name, sql_name,
+            max_sections=max_sections,
         )
         schema = get_real_schema(db_path)
         verified_data_block = format_verified_data_block(schema, query_results)
@@ -1273,6 +1279,25 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
             "The AI responses should contain the core teaching content - definitions, "
             "examples, comparisons - formatted clearly for on-screen reading. "
             "The narration explains and deepens what the learner sees on screen."
+        )
+    if lesson_format == "micro":
+        lesson_context_parts.append(
+            "CRITICAL - THIS IS A MICRO/SHORT-FORM VIDEO (1-3 minutes total, feed-scroll "
+            "context - TikTok/Reels/Shorts). Everything about this lesson must be built "
+            "for extreme brevity without losing clarity:\n"
+            "- ONE idea, one payoff. Not a framework, not a checklist, not multiple causes. "
+            "Pick the single most surprising or useful angle and build the whole thing "
+            "around just that.\n"
+            "- Hook in the first 3 seconds - no warm-up, no 'let's start by...', open on "
+            "the surprising thing itself.\n"
+            "- Every sentence has to earn its place. If a sentence doesn't advance the "
+            "point or land the joke, cut it, even if it feels informative.\n"
+            "- Funny and fast beats thorough. This is entertainment-shaped education, not "
+            "a tutorial. A viewer should smile or go 'oh no' at least once.\n"
+            "- No recap, no checklist ending. Land the point and get out. If there's a "
+            "closing line, it's a punchline or a sharp final beat, not a summary.\n"
+            "- Never sacrifice the GROUNDING RULE for brevity - it's fine to show fewer "
+            "numbers, but every number you do show must still be exactly real."
         )
     lesson_context = "\n".join(lesson_context_parts)
 
@@ -1349,10 +1374,9 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         # Enforce duration limit based on format — compress buffer slack only,
         # never below what the narration actually needs to be spoken safely.
         format_limits = {
-            "short-video": 5, "tutorial": 12,
+            "micro": 3, "short-video": 5, "tutorial": 12,
             "lesson": 10, "course": 15,
         }
-        lesson_format = brief.get("format", "course")
         max_min = format_limits.get(lesson_format, 15)
         max_s = max_min * 60
 

@@ -159,6 +159,7 @@ STUDIO_HTML = '''<!DOCTYPE html>
         <div class="chip" data-val="short-video">Short video</div>
         <div class="chip" data-val="tutorial">Tutorial</div>
         <div class="chip" data-val="lesson">Single lesson</div>
+        <div class="chip" data-val="micro">Micro (1-3 min)</div>
       </div>
     </div>
 
@@ -266,9 +267,22 @@ document.querySelectorAll('.chip-group').forEach(group => {
       } else {
         chip.classList.toggle('selected');
       }
+      if (group.id === 'format-chips') updateLengthFieldState();
     });
   });
 });
+
+function updateLengthFieldState() {
+  const fmt = getSelected('format-chips')[0] || 'course';
+  const lengthEl = document.getElementById('length');
+  const isMicro = fmt === 'micro';
+  lengthEl.disabled = isMicro;
+  lengthEl.parentElement.style.opacity = isMicro ? '.4' : '1';
+  lengthEl.parentElement.title = isMicro
+    ? "Micro format has its own fixed 1-3 minute length — this doesn't apply"
+    : '';
+}
+updateLengthFieldState();
 
 function getSelected(groupId) {
   return [...document.querySelectorAll(`#${groupId} .chip.selected`)]
@@ -431,6 +445,7 @@ def run_production(job_id: str, payload: dict):
         tools   = payload.get('tools', [])
         audience= payload.get('audience', '')
         notes   = payload.get('notes', '')
+        handson = payload.get('handson', 'moderate')
 
         # Build enriched topic string for research
         enriched = topic
@@ -438,6 +453,36 @@ def run_production(job_id: str, payload: dict):
             enriched += f" for {audience}"
         if tools and 'none' not in tools:
             enriched += f" using {', '.join(tools)}"
+
+        length_labels = {
+            "short": "keep it on the shorter end of the format's typical range",
+            "medium": "a moderate, typical-length treatment for this format",
+            "long": "a longer, more thorough treatment on the deeper end of the format's range",
+        }
+        level_labels = {
+            "beginner": "written for a complete beginner with no prior knowledge",
+            "intermediate": "written for someone with some hands-on experience already",
+            "advanced": "written for an advanced, professional-level audience",
+        }
+        handson_labels = {
+            "heavy": "hands-on exercises woven throughout, not just at the end",
+            "moderate": "a hands-on exercise at the end",
+            "light": "mostly watching, minimal hands-on requirement",
+        }
+
+        guidance_parts = []
+        if level in level_labels:
+            guidance_parts.append(level_labels[level])
+        if fmt != "micro" and length in length_labels:
+            # Length guidance doesn't apply to micro - that format has its
+            # own hard 1-3 minute cap regardless of this dropdown.
+            guidance_parts.append(length_labels[length])
+        if handson in handson_labels:
+            guidance_parts.append(handson_labels[handson])
+        if guidance_parts:
+            enriched += f" ({'; '.join(guidance_parts)})"
+        if notes:
+            enriched += f". Additional guidance: {notes}"
 
         # ── Step 1: Research ────────────────────────────────────────
         update('research', 'active', f'Researching: {topic}', 5)

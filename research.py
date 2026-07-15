@@ -17,6 +17,7 @@ Formats:
   short-video   Single 3-5 minute video (4-6 scenes)
   tutorial      Single hands-on tutorial (6-10 scenes)
   lesson        One lesson from a larger course (4-8 scenes)
+  micro         Single 1-3 minute video (1-2 scenes, ONE idea only)
 
 Output:
   research/TOPIC_SLUG/brief.json    Machine-readable brief for draft.py
@@ -125,6 +126,7 @@ Return a JSON object with this exact structure:
 }}
 
 Limit to a maximum of 5 lessons for a course, 1 lesson for other formats. Each lesson has 3-5 scenes maximum. Keep descriptions concise. Scene durations should add up to lesson duration.
+If format is "micro": this is a 1-3 minute video with exactly ONE idea. Maximum 2 scenes. duration_minutes must be 2 or less. Do not design a multi-step framework or checklist - one clear point, one payoff, done. Pick the single most surprising or useful angle on the topic, not a comprehensive overview.
 Exercise files should be things a real learner would actually use.
 The hook must be compelling enough to make someone stop scrolling.
 Adapters needed must only include: sql_viewer, excel, browser, terminal, slides."""
@@ -135,6 +137,8 @@ FORMAT_PLATFORM_NOTES = {
     "short-video": "YouTube or LinkedIn feed — must deliver value in under 5 minutes, hook in first 10 seconds, one clear takeaway",
     "tutorial": "YouTube or blog embed — hands-on from minute one, learner follows along with their own files, practical outcome",
     "lesson": "Part of a larger course — assumes prior context, builds on previous lesson, bridges to next",
+    "micro": "TikTok/Reels/Shorts feed — 1-3 minutes total, ONE single idea only, hook in the first 3 seconds, no framework or "
+             "checklist, funny and fast, gone before the viewer can scroll away",
 }
 
 
@@ -260,7 +264,7 @@ def save_brief(brief: dict, topic: str) -> tuple[Path, Path]:
 @click.command()
 @click.argument("topic")
 @click.option("--format", "fmt", default="course",
-              type=click.Choice(["course", "short-video", "tutorial", "lesson"]),
+              type=click.Choice(["course", "short-video", "tutorial", "lesson", "micro"]),
               help="Content format")
 @click.option("--open-brief", is_flag=True, help="Open the markdown brief after generation")
 def research(topic, fmt, open_brief):
