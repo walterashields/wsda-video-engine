@@ -636,6 +636,13 @@ def run_verified_queries(db_path: Path, sections: dict) -> tuple[dict, list[str]
                             display_row.append(val)
                     display_rows.append(display_row)
                 results[name] = {"columns": cols, "rows": display_rows}
+                if not display_rows:
+                    errors.append(
+                        f"Query '{name}' ran successfully but returned ZERO rows. "
+                        f"An empty result set demonstrates nothing to a viewer - this "
+                        f"is a real failure even though it's not a SQL error. Fix the "
+                        f"seed data or the query so it returns actual rows."
+                    )
             except Exception as e:
                 errors.append(f"Query '{name}' failed: {e}")
     finally:
@@ -1078,6 +1085,84 @@ _COVERAGE_CLAIM_VERBS = ('matched', 'fixed', 'handled', 'solved', 'resolved',
                           'done', 'covered', 'addressed', 'checked')
 
 
+REVIEW_SYSTEM = """You are a ruthless content-accuracy reviewer for short instructional videos.
+Your ONLY job is to find real, concrete mismatches between what a lesson
+claims to teach and what it actually demonstrates. You are not a copy
+editor and you don't care about style, wit, prose quality, or pacing -
+only fidelity between claim and demonstration.
+
+Check specifically for:
+- Does every SQL construct or technique the title, hook, or narration says
+  it will show ACTUALLY appear in the real SQL and get demonstrated?
+- Does the visual sequence (schema, queries, results) match what the
+  narration describes happening, in the right order?
+- Are there any claims of "the fix" or "here's what changed" where the
+  actual before/after queries don't show a meaningful, real difference?
+- Is there any point where narration promises something is coming next
+  that never actually appears anywhere in the lesson?
+- Is the core teaching point (the title's claim) actually, clearly proven
+  by the real query results a viewer will see on screen?
+
+Do NOT flag: writing style, humor choices, pacing, whether it's funny
+enough, or minor phrasing. Only flag concrete mismatches between what's
+claimed and what's actually demonstrated.
+
+If you find real issues, list each as a single concise sentence, one per
+line. If there are truly no issues, respond with exactly: NONE"""
+
+
+REVIEW_PROMPT = """Lesson title: {title}
+Hook: {hook}
+Key takeaway: {key_takeaway}
+
+REAL SQL FILE (this is the only thing that will actually execute):
+{sql_content}
+
+FULL NARRATION (in order):
+{narration_text}
+
+Does this lesson's SQL and narration actually deliver on what the title,
+hook, and key takeaway promise? List concrete mismatches only, one per
+line. If none, respond with exactly: NONE"""
+
+
+def review_lesson_fidelity(lesson_title: str, hook: str, key_takeaway: str,
+                            sql_content: str, card_yaml: str) -> list:
+    """
+    A holistic quality check, distinct from every other check in this file.
+    The number/concept/section checks above are all narrow pattern-matchers
+    for specific failure modes already observed - each one only catches the
+    exact thing it was written for. This is different: it asks a fresh
+    model to actually read the lesson as a skeptical viewer would and judge
+    whether it delivers on its own promise, catching mismatches nobody
+    specifically anticipated. This costs one extra API call per attempt -
+    worth it because "does this lesson actually teach what it claims to"
+    is the single most important question and nothing else here asks it.
+    """
+    parsed = yaml.safe_load(card_yaml)
+    narration_text = '\n'.join(
+        f"[{e.get('id')}] {e.get('narration')}"
+        for e in parsed.get('events', []) if e.get('narration')
+    )
+
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=1000,
+        system=REVIEW_SYSTEM,
+        messages=[{
+            "role": "user",
+            "content": REVIEW_PROMPT.format(
+                title=lesson_title, hook=hook, key_takeaway=key_takeaway,
+                sql_content=sql_content, narration_text=narration_text,
+            )
+        }]
+    )
+    text = response.content[0].text.strip()
+    if not text or text.upper().startswith("NONE"):
+        return []
+    return [line.lstrip('-• ').strip() for line in text.splitlines() if line.strip()]
+
+
 def check_unbuilt_concept_claims(card_yaml: str) -> list:
     """
     Catches a specific failure mode a numeric section-count check can't see:
@@ -1197,8 +1282,49 @@ def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
     return issues
 
 
+_TOPIC_SQL_CONSTRUCTS = {
+    'where': (r'\bwhere\b', 'WHERE clause'),
+    'join': (r'\bjoin\b', 'JOIN'),
+    'left join': (r'\bleft\s+join\b', 'LEFT JOIN'),
+    'group by': (r'\bgroup\s+by\b', 'GROUP BY'),
+    'having': (r'\bhaving\b', 'HAVING'),
+    'distinct': (r'\bdistinct\b', 'DISTINCT'),
+    'union': (r'\bunion\b', 'UNION'),
+    'subquery': (r'\bselect\b[\s\S]*\bselect\b', 'a subquery'),
+    'case when': (r'\bcase\s+when\b', 'CASE WHEN'),
+    'window function': (r'\bover\s*\(', 'a window function'),
+    'null': (r'\bis\s+null\b|\bcoalesce\b', 'NULL handling'),
+    'duplicate': (r'\bcount\s*\(', 'a COUNT to reveal duplicates'),
+}
+
+
+def check_sql_matches_topic(sql_content: str, lesson_title: str, hook: str = "") -> list:
+    """
+    If the lesson's own title/hook centers on a specific SQL construct
+    (e.g. "why your WHERE clause...", "LEFT JOIN traps"), the generated SQL
+    must actually contain that construct. Catches lessons that claim to
+    teach one thing but only build a query demonstrating something else
+    entirely (e.g. a "WHERE clause" lesson whose query has no WHERE clause,
+    just a GROUP BY).
+    """
+    text = f"{lesson_title} {hook}".lower()
+    sql_lower = sql_content.lower()
+    issues = []
+    for keyword, (pattern, label) in _TOPIC_SQL_CONSTRUCTS.items():
+        if keyword in text:
+            if not re.search(pattern, sql_lower):
+                issues.append(
+                    f"The lesson title/hook centers on '{keyword}', but the "
+                    f"generated SQL doesn't actually contain {label} anywhere. "
+                    f"The SQL must demonstrate the exact construct the lesson "
+                    f"claims to teach."
+                )
+    return issues
+
+
 def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
-                               db_name: str, sql_name: str, max_sections: int = 4) -> tuple:
+                               db_name: str, sql_name: str, max_sections: int = 4,
+                               hook: str = "") -> tuple:
     """
     Generate a self-contained SQL file, execute it to build a REAL database,
     run every teaching query against it, and return (sql_content, db_path,
@@ -1246,6 +1372,14 @@ def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
         if not ok:
             prior_errors = [f"Database build failed: {build_err}"]
             console.print(f"  [yellow]Warning - DB build failed:[/yellow] {build_err}")
+            continue
+
+        topic_issues = check_sql_matches_topic(sql_content, lesson_title, hook)
+        if topic_issues:
+            prior_errors = topic_issues
+            console.print(f"  [yellow]Warning - SQL doesn't match the lesson's own topic:[/yellow]")
+            for iss in topic_issues:
+                console.print(f"    - {iss}")
             continue
 
         sections = parse_sql_sections(sql_content)
@@ -1316,11 +1450,12 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     # will be on screen. This is the fix for the narration-visual disconnect.
     query_results = {}
     verified_data_block = ""
+    sql_content = ""
     if adapter_type == 'sql_viewer':
         max_sections = 1 if lesson_format == "micro" else 4
-        _, db_path, query_results = build_verified_sql_and_db(
+        sql_content, db_path, query_results = build_verified_sql_and_db(
             lesson, lesson['title'], assets_dir, db_name, sql_name,
-            max_sections=max_sections,
+            max_sections=max_sections, hook=brief.get('hook', ''),
         )
         schema = get_real_schema(db_path)
         verified_data_block = format_verified_data_block(schema, query_results)
@@ -1421,6 +1556,19 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         number_issues = check_number_mismatches(raw, query_results) if query_results else []
         concept_issues = check_unbuilt_concept_claims(raw) if query_results else []
         number_issues = number_issues + concept_issues
+
+        # Holistic fidelity review - a fresh model reads the lesson as a
+        # skeptical viewer and judges whether it delivers on its own title/
+        # hook/takeaway. Only run once the cheaper checks above pass, since
+        # this costs an extra API call and there's no point spending it on
+        # a card that's already going to be rejected for other reasons.
+        if not number_issues and query_results:
+            fidelity_issues = review_lesson_fidelity(
+                lesson['title'], brief.get('hook', ''),
+                lesson.get('key_takeaway', ''), sql_content, raw,
+            )
+            number_issues = number_issues + fidelity_issues
+
         if number_issues:
             console.print(f"  [yellow]Warning - issues found (attempt {attempt}):[/yellow]")
             for iss in number_issues:
