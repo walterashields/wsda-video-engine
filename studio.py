@@ -80,6 +80,8 @@ STUDIO_HTML = '''<!DOCTYPE html>
   .chip:hover { border-color: var(--blue); }
   .chip.selected { background: var(--blue); border-color: var(--blue); color: #000;
                    font-weight: 700; }
+  .chip.disabled { opacity: .35; cursor: not-allowed; }
+  .chip.disabled:hover { border-color: var(--border); }
 
   .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;
          border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
@@ -186,10 +188,10 @@ STUDIO_HTML = '''<!DOCTYPE html>
       <label>Tools or software featured</label>
       <div class="chip-group" id="tools-chips">
         <div class="chip" data-val="chatgpt">ChatGPT</div>
-        <div class="chip" data-val="excel">Excel</div>
         <div class="chip" data-val="sql">SQL / databases</div>
-        <div class="chip" data-val="python">Python</div>
-        <div class="chip" data-val="powerbi">Power BI</div>
+        <div class="chip disabled" data-val="excel" title="No Excel adapter yet — selecting this will not produce an accurate Excel demo">Excel (coming soon)</div>
+        <div class="chip disabled" data-val="python" title="No Python adapter yet — selecting this will not produce an accurate Python demo">Python (coming soon)</div>
+        <div class="chip disabled" data-val="powerbi" title="No Power BI adapter yet — selecting this will not produce an accurate Power BI demo">Power BI (coming soon)</div>
         <div class="chip" data-val="none">No specific tool</div>
       </div>
     </div>
@@ -261,6 +263,7 @@ document.querySelectorAll('.chip-group').forEach(group => {
   const multi = group.id === 'tools-chips' || group.id === 'handson-chips';
   group.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
+      if (chip.classList.contains('disabled')) return;
       if (!multi) {
         group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
         chip.classList.add('selected');

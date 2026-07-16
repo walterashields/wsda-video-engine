@@ -390,9 +390,23 @@ NARRATION VOICE REQUIREMENT:
 - First 30 seconds must state who this lesson is for and what they'll be able to do
 - Never sound like a textbook or a corporate training manual
 
+CLARITY TECHNIQUE — REQUIRED — before any query or number, translate the
+technical concept into a plain, physical, everyday image in the SAME
+breath you introduce it. Never state a technical term and move on assuming
+it lands. "GROUP BY collapses rows that share a value" means nothing to
+someone learning it — "GROUP BY is basically dumping everyone with the
+same last name into one pile" does. If a sentence has a technical term in
+it, the next clause (not the next sentence, the same sentence) should
+translate it into something physical: piles, buckets, a shared group
+chat, a receipt, a lineup, a filing cabinet. This is not optional
+decoration — it's the actual mechanism by which a viewer understands the
+concept. A lesson can be funny and still confusing; it can also be totally
+serious and still clear. Clarity comes from the analogy, not the jokes.
+
 WIT AND PERSONALITY — narration must have an opinion and a sense of humor,
 not just accurately describe what's on screen. Flat, competent-but-boring
-narration is a failure state even if every fact is correct. Concretely:
+narration is a failure state even if every fact is correct and even if it
+technically contains an analogy. Concrete mechanisms that actually work:
 - React to the data like a person would, not a script. Instead of "Row one:
   Greenfield Industries, total spend 23950.00" try "Greenfield Industries
   is out here spending like it's going out of style — 23950.00 in 2024 alone."
@@ -400,13 +414,35 @@ narration is a failure state even if every fact is correct. Concretely:
   8 grand more than the next customer"). If a query result confirms
   something, have a small moment of satisfaction, not a flat "the numbers
   match."
-- Use a running bit or callback where natural (e.g. treating the AI's query
-  like a suspect being cross-examined: "the alibi checks out").
+- Treat the bug/problem like a character: give it a personality, catch it
+  in the act, let the narrator be a little smug when they nail it.
+- Self-aware asides land well in short-form: "yes, again," "shocking, I
+  know," "you saw this coming." Use sparingly — one per lesson, not one
+  per sentence.
+- Understatement beats exaggeration. "That's... not great" lands harder
+  than "This is a DISASTER."
 - Vary sentence rhythm. Don't narrate every table row in the same
   "Name, region, count, total" cadence — that's what makes it feel like a
   script being read, not a person talking.
 - Still every fact must obey the GROUNDING RULE above. Wit is in the
   delivery, never in the numbers.
+
+WORKED EXAMPLE — this is the target voice, not a topic to copy. Notice the
+analogy lands in the SAME breath as the technical term, the hook is a
+scenario not a topic statement, and the humor comes from character/timing,
+not jokes bolted onto the end:
+
+"Okay so your JOIN just invited someone to the party who wasn't on the
+list. Every order in this table is about to get matched to a customer —
+except one of them doesn't have a match, so SQL just shrugs and hands it a
+name tag that says NULL. Watch: nine orders go in... [run query]
+...and one of them comes back with no customer name at all. That's not a
+bug, that's LEFT JOIN doing exactly what you asked — keep every order,
+even the friendless ones. The bug is if you didn't know that was coming."
+
+Notice: "invited someone to the party who wasn't on the list" IS the
+analogy for an unmatched join key — it's not a joke added after the
+explanation, it replaces the dry technical explanation entirely.
 
 Additional context:
 - Database: {database}
@@ -654,16 +690,40 @@ def detect_adapter(lesson: dict, brief: dict) -> str:
     chat_demo: ONLY when the lesson is literally about using ChatGPT/AI tools
     sql_viewer: when the lesson involves SQL, databases, or data analysis
     slides: conceptual lessons (fallback to chat_demo with Q&A format for now)
+
+    Only sql_viewer and chat_demo are real, built adapters. If a lesson's
+    own scenes explicitly call for a tool with no adapter (excel, powerbi,
+    python, terminal), silently falling back to chat_demo would produce a
+    lesson where the screen shows a chat interface while narration
+    describes clicking through completely different software - a direct
+    content-accuracy mismatch. Fail loudly instead so this gets caught at
+    draft time, not discovered by a viewer.
     """
     scenes = lesson.get('scenes', [])
     visual_types = [s.get('visual_type', '') for s in scenes]
     title = lesson.get('title', '').lower()
     objective = lesson.get('learning_objective', '').lower()
-    
+
     # SQL viewer: explicit SQL content
     if 'sql_viewer' in visual_types:
         return 'sql_viewer'
-    
+
+    # No adapter exists for these yet - fail loudly rather than silently
+    # substituting a mismatched visual.
+    unbuilt_adapters = {'excel', 'powerbi', 'power_bi', 'python', 'terminal'}
+    unbuilt_requested = [v for v in visual_types if v in unbuilt_adapters]
+    if unbuilt_requested:
+        raise RuntimeError(
+            f"This lesson's scenes call for {unbuilt_requested}, but no "
+            f"adapter exists for {unbuilt_requested} yet — only sql_viewer "
+            f"and chat_demo are built. Producing this lesson would show a "
+            f"chat interface or SQL viewer on screen while narration "
+            f"describes different software, which is a real accuracy "
+            f"mismatch, not a cosmetic one. Choose a topic that uses SQL or "
+            f"ChatGPT, or wait until an adapter for "
+            f"{unbuilt_requested[0]} is built."
+        )
+
     # Chat demo: ONLY for lessons explicitly about using ChatGPT or AI tools
     chat_keywords = ['chatgpt', 'prompt', 'hands on with', 'first ai conversation',
                      'using chatgpt', 'ai conversation', 'prompt engineering']
@@ -1297,7 +1357,11 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
             "- No recap, no checklist ending. Land the point and get out. If there's a "
             "closing line, it's a punchline or a sharp final beat, not a summary.\n"
             "- Never sacrifice the GROUNDING RULE for brevity - it's fine to show fewer "
-            "numbers, but every number you do show must still be exactly real."
+            "numbers, but every number you do show must still be exactly real.\n"
+            "- Brevity pressure is exactly when clarity gets sacrificed first - don't let "
+            "it. The CLARITY TECHNIQUE (translate the technical term into a physical "
+            "image in the same breath) matters MORE here, not less, because there's no "
+            "time for a second explanation if the first one doesn't land."
         )
     lesson_context = "\n".join(lesson_context_parts)
 
