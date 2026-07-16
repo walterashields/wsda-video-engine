@@ -562,10 +562,23 @@ def run_production(job_id: str, payload: dict):
 
             update('record', 'active', f'{label}: recording + narrating...', draft_pct)
 
-            code, out = run_cmd([
+            el_key = os.environ.get("ELEVENLABS_API_KEY")
+            el_voice = os.environ.get("ELEVENLABS_VOICE_ID", "E5wNdHqDxPAZRB8qRbQh")
+            produce_cmd = [
                 sys.executable, 'produce.py', str(card_path),
                 '--format', fmt,
-            ])
+            ]
+            if el_key:
+                produce_cmd += ['--el-key', el_key, '--el-voice', el_voice]
+            else:
+                job['logs'].append(
+                    f'{label}: WARNING - ELEVENLABS_API_KEY not set in this '
+                    f'environment, falling back to a different (non-cloned) '
+                    f'voice for narration.'
+                )
+                job['new_logs'].append(job['logs'][-1])
+
+            code, out = run_cmd(produce_cmd)
 
             if 'Production complete' in out or 'final.mp4' in out:
                 update('record',  'done', None, done_pct)
