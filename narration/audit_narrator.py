@@ -244,6 +244,7 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     work_dir.mkdir(exist_ok=True)
 
     console.print(f"\n[bold]Synthesizing {len(schedule)} clips...[/bold]")
+    synth_failures = []
     for i, entry in enumerate(schedule):
         wav = work_dir / f"clip_{i:03d}_{entry['event_id']}.wav"
         try:
@@ -259,6 +260,36 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
             )
         except Exception as e:
             console.print(f"  [red]Failed {entry['event_id']}: {e}[/red]")
+            synth_failures.append((entry['event_id'], str(e)))
+
+    # A completely (or mostly) silent video that still reports "Production
+    # complete" is worse than an obvious crash — it wastes a full recording
+    # cycle and looks like success until someone actually watches it. Halt
+    # here instead of proceeding to render.
+    if synth_failures:
+        failure_rate = len(synth_failures) / len(schedule)
+        if failure_rate >= 0.5:
+            console.print(Panel(
+                f"[bold red]Narration synthesis failed for {len(synth_failures)} "
+                f"of {len(schedule)} clips ({failure_rate:.0%}).[/bold red]\n\n"
+                f"This would produce a silent or near-silent video. Halting "
+                f"instead of rendering one and calling it complete.\n\n"
+                f"First failure: {synth_failures[0][0]} — {synth_failures[0][1]}\n\n"
+                + ("This looks like an ElevenLabs authentication or quota "
+                   "problem (check your API key and account) — it's an "
+                   "account issue, not a code bug."
+                   if "401" in synth_failures[0][1] or "Unauthorized" in synth_failures[0][1]
+                   else "Check the errors above for the specific cause."),
+                title="Narration synthesis failed",
+                border_style="red",
+            ))
+            sys.exit(1)
+        else:
+            console.print(
+                f"  [yellow]Warning: {len(synth_failures)} of {len(schedule)} "
+                f"clips failed to synthesize. Proceeding, but this video will "
+                f"have gaps of silence at: {', '.join(f[0] for f in synth_failures)}[/yellow]"
+            )
 
     # Build and render
     # ── Auto QA before render ──────────────────────────────────

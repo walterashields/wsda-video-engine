@@ -162,6 +162,17 @@ def produce(card_path, el_key, el_voice, voice, max_retries, skip_precheck, fmt)
 
         code, out = run_step("Step 3/5 — Narrating + QA", narrate_cmd)
 
+        if code != 0 and not ("QA found critical timing issues" in out):
+            # A nonzero exit that ISN'T the known timing-retry case is a
+            # real failure (e.g. narration synthesis failed for most/all
+            # clips) - don't fall through to checking whether a file
+            # happens to exist, since a silent video can still get written.
+            console.print(
+                f"[red]Narration step exited with an error (code {code}). "
+                f"See output above for the cause.[/red]"
+            )
+            sys.exit(1)
+
         critical_fail = "QA found critical timing issues" in out
         rendered = narrated_path.exists()
 
