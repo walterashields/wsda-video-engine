@@ -246,7 +246,7 @@ def check(card_path, db):
         mentioned = extract_decimal_mentions(narr)
 
         for raw_text, num in mentioned:
-            match = any(abs(num - v) < 0.005 for v in allowed)
+            match = any(abs(num - v) < (1.0 if abs(v) >= 100 else 0.005) for v in allowed)
             if not match:
                 issues.append({
                     'event': e['id'],

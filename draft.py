@@ -330,6 +330,11 @@ fact must still be the real, grounded name.
   every number in narration: dollar amounts, row counts, percentages, all
   of it. The exact value must still match GROUNDING RULE exactly — spelling
   it out doesn't change what number it is, only how it's written for speech.
+- Exception: for dollar amounts of $100 or more, rounding to the nearest
+  whole dollar is fine and expected — nobody says "eleven thousand eight
+  hundred forty eight dollars and seventy five cents" out loud. Say "eleven
+  thousand eight hundred forty eight dollars." Cents only matter for
+  amounts under $100 where they're a meaningful fraction of the total.
 
 PACING — this is instructional video, not a lecture. Keep it moving.
 - Prefer shorter narration blocks over long explanatory ones. If a sentence
@@ -1290,7 +1295,7 @@ def check_number_mismatches(card_yaml: str, query_results: dict) -> list:
             preceding = narr_lower[max(0, idx - 25):idx] if idx >= 0 else ''
             if any(q in preceding for q in approx_qualifiers):
                 continue
-            if not any(abs(num - v) < 0.01 for v in allowed_values):
+            if not any(abs(num - v) < (1.0 if abs(v) >= 100 else 0.01) for v in allowed_values):
                 issues.append(
                     f"Event {e.get('id')}: narration says '{raw_text}' ({num}) "
                     f"but this doesn't match any query result revealed so far "
