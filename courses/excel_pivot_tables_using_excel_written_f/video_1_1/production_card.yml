@@ -1,0 +1,265 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: 10,000 Rows to a Perfect Summary in 5 Seconds Flat
+course: Excel Pivot Tables
+assets:
+  demo: chat
+events:
+- id: e01
+  type: open_chat
+  target: chat_demo
+  user_name: Pivot Coach
+  initials: PC
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e02
+  type: highlight_region
+  target: chat_demo
+  region: chat-area
+  callout: Your Pivot Table crash course starts here
+  transition: new_concept
+  narration: 'Alright, here''s the scenario. You''re early in your career, maybe still in school, and
+    your boss just dropped a spreadsheet on you with ten thousand rows of data. Ten. Thousand. Rows. And
+    they want a summary by end of day. You don''t know formulas. You don''t know VLOOKUP. You''re about
+    to spiral. Don''t. By the end of this lesson, you''ll know that a Pivot Table is created by selecting
+    your data, clicking Insert, then Pivot Table, and dragging fields into Rows and Values. That''s it.
+    That''s the whole trick. Let''s go.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 45.7
+  transition: continuation
+- id: e02b
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e02b_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e03
+  type: new_conversation
+  target: chat_demo
+  title: The Panic Moment
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e04
+  type: show_message
+  target: chat_demo
+  text: I have a spreadsheet with 10,000 rows of coffee shop sales — columns for Date, Store, Product,
+    and Amount. My boss wants total sales by store. I don't know any formulas. What do I do?
+  region: prompt-1
+  transition: continuation
+- id: e04_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e05
+  type: show_response
+  target: chat_demo
+  text: 'Don''t panic — you need a Pivot Table. Here''s the good news: no formulas required.
+
+
+    **Your data has 4 columns:**
+
+    • Date
+
+    • Store
+
+    • Product
+
+    • Amount
+
+
+    **What a Pivot Table does:**
+
+    It takes thousands of rows and instantly groups and totals them for you. You just tell it WHAT to
+    group by and WHAT to add up.
+
+
+    You won''t type a single formula. You''ll just drag and drop field names into boxes. Excel does all
+    the math.'
+  region: response-1
+  transition: continuation
+- id: e05_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e05b
+  type: highlight_region
+  target: chat_demo
+  region: response-1
+  callout: No formulas — just drag and drop
+  transition: continuation
+  narration: 'Look at what''s on screen. Your data has four columns, Date, Store, Product, and Amount.
+    That''s ten thousand rows of coffee shop sales, and it looks terrifying. But a Pivot Table doesn''t
+    care how big your data is. It just needs you to tell it two things: what to group by, and what to
+    add up. No formulas. No filters. No tears. You''re literally going to drag field names into boxes.
+    That''s the secret nobody told you.
+
+    '
+- id: e05b_pause
+  type: pause
+  duration: 39.9
+  transition: continuation
+- id: e05c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e05c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e06
+  type: new_conversation
+  target: chat_demo
+  title: The Magic Three Clicks
+  transition: new_concept
+- id: e06_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e07
+  type: show_message
+  target: chat_demo
+  text: OK I'm ready. Walk me through it step by step. How do I actually create the Pivot Table?
+  region: prompt-2
+  transition: continuation
+- id: e07_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e08
+  type: show_response
+  target: chat_demo
+  text: '**Step 1 — Select & Insert**
+
+    Click any cell inside your data. Go to Insert > Pivot Table. Click OK.
+
+
+    **Step 2 — Drag Store into Rows**
+
+    In the field list on the right, drag "Store" into the Rows area.
+
+
+    **Step 3 — Drag Amount into Values**
+
+    Drag "Amount" into the Values area.
+
+
+    ✅ **Done.** You now have total sales per store. 10,000 rows summarized instantly.'
+  region: response-2
+  transition: continuation
+- id: e08_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e08b
+  type: highlight_region
+  target: chat_demo
+  region: response-2
+  callout: Three steps — that's genuinely it
+  transition: continuation
+  narration: 'Three steps. I''m not exaggerating. Step one, click any cell in your data, go to Insert,
+    click Pivot Table, click OK. Step two, you''ll see a field list on the right side of your screen.
+    Drag Store into the Rows area. Step three, drag Amount into the Values area. And just like that, Excel
+    crunches all ten thousand rows and gives you a clean little summary showing total sales per store.
+    You didn''t write a formula. You didn''t filter anything. You dragged two words into two boxes. Your
+    boss thinks you''re a genius.
+
+    '
+- id: e08b_pause
+  type: pause
+  duration: 46.5
+  transition: continuation
+- id: e08c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e08c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e09
+  type: show_message
+  target: chat_demo
+  text: What if I also want to see the breakdown by product within each store?
+  region: prompt-3
+  transition: continuation
+- id: e09_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e10
+  type: show_response
+  target: chat_demo
+  text: "Just drag \"Product\" into the Rows area too — right below Store.\n\nNow your Pivot Table shows:\n\
+    • Each store\n  • Broken down by each product\n    • With the total Amount for each\n\n**Before:**\
+    \ 10,000 rows of chaos\n**After:** A tidy summary grouped by store and product\n\nNo formulas. No\
+    \ filters. No tears. Just drag and drop."
+  region: response-3
+  transition: continuation
+- id: e10_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e10b
+  type: highlight_region
+  target: chat_demo
+  region: response-3
+  callout: Adding a second field — instant deeper breakdown
+  transition: continuation
+  narration: 'Here''s the part that''ll make you grin. Want to break it down further by product? Just
+    drag Product into the Rows area too, right below Store. Now you''ve got each store, broken down by
+    each product, with totals for every combination. You went from ten thousand rows of chaos to a tidy,
+    readable summary in seconds. And if you want to rearrange it, you just drag those fields around. It''s
+    like playing with building blocks except the blocks do your job for you.
+
+    '
+- id: e10b_pause
+  type: pause
+  duration: 42.3
+  transition: continuation
+- id: e10c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e10c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e11
+  type: highlight_region
+  target: chat_demo
+  region: chat-area
+  callout: Key takeaway
+  transition: emphasis
+  narration: 'So here''s what you''re walking away with. A Pivot Table isn''t scary. It''s literally just
+    dragging field names into boxes and letting Excel do all the math for you. Select your data, click
+    Insert, Pivot Table, OK, then drag your fields in. That''s the whole thing. Now go open that coffee
+    shop sales file and try it yourself. You''ve got this.
+
+    '
+- id: e11_pause
+  type: pause
+  duration: 33.2
+  transition: continuation
+- id: e11b
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e11b_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

@@ -1,0 +1,188 @@
+schema_version: "3.0"
+lesson_id: "video_2_1"
+title: "Duplicate Rows — The Silent Inflator"
+course: "Why Your GROUP BY Total Doesn't Match the Dashboard"
+assets:
+  database: "assets/why_your_group_by_total_doesn_t_match_th.db"
+  sql_file: "assets/lesson_2_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/why_your_group_by_total_doesn_t_match_th.db"
+    transition: "new_concept"
+    narration: >
+      Welcome back. This lesson's for anyone who's ever summed up a column, compared it to a dashboard, and thought, wait, why is my number way too high? If that's you, you're in the right place. By the end of this one, you'll know how to spot duplicate rows hiding in your joins, and you'll know exactly how to squash them before they blow up your totals.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 33.0
+    transition: "continuation"
+
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Alright, here's what we're working with. Two tables. The orders table has order ID, customer ID, order date, and order total. Then there's a payments table with payment ID, order ID, payment date, amount, and method. Notice that both tables share order ID. That's our join key. But here's the thing, one order can have multiple payments. Someone might pay half on a credit card and half on a debit card. That one-to-many relationship is exactly where duplicates sneak in.
+  - id: "e02_pause"
+    type: "pause"
+    duration: 46.0
+    transition: "continuation"
+
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_2_queries.sql"
+    transition: "new_concept"
+  - id: "e03_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "duplicate_join_raw_rows"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Let's see the damage. This query joins orders to payments on order ID and just dumps out every raw row. No grouping, no summing, just show me everything the join produces. This is the single most important diagnostic habit you can build. Before you aggregate anything, look at the raw rows.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "duplicate_join_raw_rows"
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      And there it is. Look at order ID one thousand one. It shows up three times, each row carrying an order total of two hundred forty-nine point nine five. That's because this order had three separate payments, payment IDs one, two, and three. One for a hundred, another for a hundred, and a third for forty-nine point nine five. The join did exactly what we asked, it matched every payment row to its order. But now that order total of two hundred forty-nine point nine five is sitting there three times. If we sum order total right now, we'd count that value three times instead of once. Same story with order one thousand eight, it appears three times. And orders one thousand three and one thousand five each appear twice. That's fourteen rows total for just eight orders.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 68.0
+    transition: "continuation"
+
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "inflated_sum"
+    transition: "new_concept"
+    clears: ["duplicate_join_raw_rows"]
+    narration: >
+      Now let's see what happens when we actually sum on this joined mess. This query calculates three numbers side by side: the inflated order total from summing order total across all those duplicated rows, the correct payment total from summing the payment amounts, and the true order total using distinct values. Let's run it.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 32.0
+    transition: "continuation"
+
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "inflated_sum"
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Ouch. The inflated order total comes in at two thousand eight hundred forty-six point nine nine. The correct payment total? One thousand four hundred eighty-nine point four nine. And the true order total, also one thousand four hundred eighty-nine point four nine. So that naive sum nearly doubled our real number. If you shipped this to a dashboard, your stakeholder would see a revenue number that's almost twice what it should be. That's the kind of mistake that erodes trust fast.
+  - id: "e09_pause"
+    type: "pause"
+    duration: 46.0
+    transition: "continuation"
+
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "fixed_with_subquery"
+    transition: "new_concept"
+    clears: ["inflated_sum"]
+    narration: >
+      Time to fix it. This query uses a subquery to pre-aggregate payments by order ID before joining back to orders. That way, each order only appears once in the result, with its total paid already rolled up. We also calculate a balance remaining column so we can confirm everything ties out. Let's see if the numbers behave.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 33.0
+    transition: "continuation"
+
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "fixed_with_subquery"
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e12"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Now that's what clean data looks like. Eight orders, eight rows, exactly what we'd expect. Every single balance remaining column shows zero point zero zero. Order one thousand one, order total two hundred forty-nine point nine five, total paid two hundred forty-nine point nine five. Order one thousand three, four hundred twelve point zero zero paid in full. Even order one thousand eight, which had three payments, shows a hundred twenty-eight point three zero on both sides. Everything ties out perfectly. The trick was aggregating payments in a subquery first, so by the time we join, each order ID appears exactly once. No duplication, no inflation.
+  - id: "e12_pause"
+    type: "pause"
+    duration: 62.0
+    transition: "continuation"
+
+  - id: "e13"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "diagnose_duplicates"
+    transition: "new_concept"
+    clears: ["fixed_with_subquery"]
+    narration: >
+      Last thing. Here's a diagnostic pattern I want burned into your muscle memory. This query groups by order ID and order total, counts the rows, and then uses HAVING to only show orders where the count is greater than one. It's your duplicate detector. Two lines of S-Q-L that'll save you hours of debugging. Let's run it.
+  - id: "e13_pause"
+    type: "pause"
+    duration: 34.0
+    transition: "continuation"
+
+  - id: "e14"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "diagnose_duplicates"
+  - id: "e14_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+
+  - id: "e15"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Four rows come back, and these are our repeat offenders. Order one thousand eight with an order total of a hundred twenty-eight point three zero shows a row count of three. Order one thousand one at two hundred forty-nine point nine five, also three rows. Then orders one thousand five at a hundred eighty-nine point zero zero and one thousand three at four hundred twelve point zero zero come in at two rows each. If this query returns anything at all, you've got duplicates. Zero results means you're clean. Run this before every SUM and you'll catch the problem before it reaches your dashboard.
+  - id: "e15_pause"
+    type: "pause"
+    duration: 52.0
+    transition: "continuation"
+
+  - id: "e_close"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Here's your takeaway. A one-to-many join is the number one reason your SUM comes back too high. Always check for duplicates before aggregating, either with that HAVING COUNT diagnostic or by eyeballing raw rows. And when you find them, fix the grain, aggregate in a subquery first, then join. Next up, we're tackling hidden filters, the ones your dashboard applies silently that your query doesn't know about.
+  - id: "e_close_pause"
+    type: "pause"
+    duration: 40.0
+    transition: "continuation"
+
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

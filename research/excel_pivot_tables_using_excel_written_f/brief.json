@@ -1,0 +1,69 @@
+{
+  "topic": "Excel Pivot Tables using excel (written for a complete beginner with no prior knowledge; mostly watching, minimal hands-on requirement)",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "Excel remains the most-used business tool on earth, and Pivot Tables are the single feature that separates people who spend hours on reports from people who finish in 30 seconds. Short-form Excel content is exploding on TikTok and Reels as Gen Z enters the workforce and discovers spreadsheets for the first time.",
+    "target_learner": "A complete beginner \u2014 likely 18-28, early career or still in school \u2014 who has heard the phrase Pivot Table but assumes it is complicated and has never touched one.",
+    "learner_goal": "Understand that a Pivot Table is just dragging fields to instantly summarize messy data, and feel confident enough to try it once on their own.",
+    "competition_gap": "Most Pivot Table content online is 10-20 minute tutorials that start with definitions and bore beginners before the payoff. Nobody shows the jaw-dropping before-and-after in under 60 seconds with humor and energy.",
+    "platform_fit": "TikTok, Instagram Reels, and YouTube Shorts \u2014 the visual before-and-after transformation of messy data into a clean summary is inherently satisfying and shareable, perfect for short-form dopamine-driven feeds."
+  },
+  "content_structure": {
+    "hook": "Your boss just sent you 10,000 rows and wants a summary by lunch \u2014 here is how you do it in literally 5 seconds.",
+    "core_promise": "You will see a giant ugly spreadsheet turn into a clean summary with three mouse clicks, no formulas, no crying.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "10,000 Rows to a Perfect Summary in 5 Seconds Flat",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to recognize that a Pivot Table is created by selecting data, clicking Insert > Pivot Table, and dragging fields into Rows and Values \u2014 and will feel motivated to try it themselves.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The Panic Moment",
+            "duration_seconds": 25,
+            "visual_type": "excel",
+            "what_learner_sees": "A massive, intimidating Excel spreadsheet with 10,000 rows of fake coffee shop sales data \u2014 columns for Date, Store, Product, and Amount. The creator rapidly scrolls down to show how enormous it is. A zoomed-in reaction face or emoji overlay shows mock horror.",
+            "what_learner_hears": "Your boss sends you THIS and says \u2014 give me total sales by store by end of day. You do not know formulas. You do not know VLOOKUP. You are about to panic. Do not. Watch this.",
+            "exercise_file": null,
+            "transition_to_next": "Hard cut with a dramatic sound effect \u2014 now watch."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The Magic Three Clicks",
+            "duration_seconds": 65,
+            "visual_type": "excel",
+            "what_learner_sees": "Step 1: Creator clicks any cell in the data, hits Insert > Pivot Table, clicks OK. Step 2: Drags Store into the Rows area. Step 3: Drags Amount into the Values area. Instantly a clean summary table appears showing total sales per store. Creator then drags Product into Rows as well, and the table breaks down further \u2014 another gasp moment. A final side-by-side shows the before (10,000 rows of chaos) and after (a tidy 8-row summary). Text overlay: No formulas. No filter. No tears.",
+            "what_learner_hears": "Select your data. Insert. Pivot Table. OK. Now drag Store here and Amount here. That is it. That is the whole thing. You just summarized 10,000 rows. Want it broken down by product too? Just drag it in. Your boss thinks you are a genius. You are welcome.",
+            "exercise_file": "coffee_shop_sales.xlsx",
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "coffee_shop_sales.xlsx"
+        ],
+        "key_takeaway": "A Pivot Table is not scary \u2014 it is literally just dragging field names into boxes and Excel does all the math for you."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "coffee_shop_sales.xlsx",
+      "type": "xlsx",
+      "purpose": "A ready-made dataset with 10,000 rows of fake coffee shop transactions (Date, Store, Product, Amount) so curious viewers can download and try the exact same Pivot Table themselves.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "beginner",
+    "hands_on_ratio": "5% \u2014 this is almost entirely a watch-and-be-amazed experience with an optional file linked in bio for anyone who wants to try",
+    "adapters_needed": [
+      "excel"
+    ]
+  }
+}

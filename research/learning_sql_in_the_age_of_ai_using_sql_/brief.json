@@ -1,0 +1,59 @@
+{
+  "topic": "Learning SQL in the age of AI using sql",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "AI tools like ChatGPT can now write SQL for you, which makes beginners question whether learning SQL is pointless \u2014 but the irony is that AI makes SQL MORE valuable because you still need to know if the AI got it right. This paradox is a perfect viral hook right now.",
+    "target_learner": "Complete beginners who have heard of SQL but assume AI has made it obsolete \u2014 likely 18-30, scrolling career content on TikTok or Reels, possibly considering a data or tech career switch",
+    "learner_goal": "Understand one crystal-clear reason why learning SQL still matters even when AI can write it for you",
+    "competition_gap": "Most SQL content on short-form is either dry syntax tutorials or hot takes with no proof. Nobody is actually SHOWING a side-by-side of AI-generated SQL going wrong to make the point land visually and memorably.",
+    "platform_fit": "TikTok, Instagram Reels, YouTube Shorts \u2014 this is a hot-take-with-proof format that thrives on controversy and a fast visual payoff"
+  },
+  "content_structure": {
+    "hook": "I asked ChatGPT to write me a SQL query and it looked perfect \u2014 until it deleted my entire database.",
+    "core_promise": "You will see exactly why blindly trusting AI-written SQL is dangerous and why knowing even basic SQL is your superpower.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "AI wrote perfect SQL \u2014 then nuked my data",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to explain why understanding SQL basics is essential even when using AI to generate queries",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI trap",
+            "duration_seconds": 50,
+            "visual_type": "browser",
+            "what_learner_sees": "Split screen: left side shows a ChatGPT conversation where the creator asks it to remove duplicate customer records from a table. ChatGPT confidently returns a DELETE query that looks clean. Right side shows a SQL viewer with a customers table containing 50 rows. The creator pastes the AI query and runs it. The row count drops from 50 to 3. Dramatic zoom on the row count. The AI query used the wrong condition and wiped almost everything.",
+            "what_learner_hears": "So I asked ChatGPT to clean up duplicate customers in my database. Look at this query \u2014 it looks beautiful, right? Professional. Confident. I ran it. Fifty rows became three. Three. ChatGPT did not remove duplicates. It removed my customers. This is what happens when you copy-paste SQL you do not understand.",
+            "exercise_file": null,
+            "transition_to_next": "Hard cut with a record scratch sound effect"
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The one-line fix you would have caught",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The bad DELETE query is shown with the flawed WHERE clause highlighted in red. A simple SELECT version of the same query is shown first, returning the wrong rows \u2014 making the mistake obvious before anything gets deleted. The creator points at the screen and circles the problematic condition. Text overlay appears: ALWAYS SELECT BEFORE YOU DELETE. Final frame: the customers table still has all 50 rows because this time they checked first.",
+            "what_learner_hears": "Here is the thing \u2014 if you knew literally one SQL concept, SELECT, you would have caught this in five seconds. Before you delete anything, you run a SELECT with the same WHERE clause. You SEE what it is about to destroy. That is it. That is the whole trick. AI is your copilot, not your pilot. Learn the basics. Save your data. You are welcome.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [],
+        "key_takeaway": "Always run a SELECT before a DELETE \u2014 AI can write SQL but only you can verify it will not destroy your data"
+      }
+    ]
+  },
+  "exercise_file_plan": [],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "beginner",
+    "hands_on_ratio": "0% \u2014 this is a pure watch-and-absorb micro video designed to spark curiosity, not teach syntax",
+    "adapters_needed": [
+      "browser",
+      "sql_viewer"
+    ]
+  }
+}

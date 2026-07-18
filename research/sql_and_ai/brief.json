@@ -1,6 +1,6 @@
 {
   "topic": "SQL and AI",
-  "format": "short-video",
+  "format": "tutorial",
   "market_analysis": {
     "demand_level": "high",
     "why_now": "Generative AI tools like ChatGPT and GitHub Copilot are fundamentally changing how people write and optimize SQL, and professionals who combine SQL fluency with AI prompting skills are outperforming peers who rely on either skill alone. Companies are actively seeking analysts and engineers who can leverage AI to accelerate data workflows.",

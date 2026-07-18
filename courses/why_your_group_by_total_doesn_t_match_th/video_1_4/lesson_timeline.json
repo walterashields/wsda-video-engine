@@ -1,0 +1,457 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_4_1",
+  "title": "Date Ranges and Timezone Traps \u2014 When Tuesday is Still Monday",
+  "course": "Why Your GROUP BY Total Doesn't Match the Dashboard",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_4/production_card.yml",
+  "total_duration_ms": 384783,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 29883,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_4/assets/why_your_group_by_total_doesn_t_match_th.db"
+      },
+      "narration": "Welcome back. This lesson's for you if you've ever written a date filter in S-Q-L, gotten a revenue number, and then watched the dashboard show something completely different for the exact same month. It's maddening. By the end of this one, you'll know exactly why date boundaries and timezones cause GROUP BY totals to shift between days, weeks, or months, and you'll have a bulletproof pattern to stop it from happening.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 30783,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 37.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 59766,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Let's look at what we're working with. We've got two tables. First, the orders table, with order ID, customer ID, order total, and order date. Then there's orders UTC, which has order ID, customer ID, order total, and created at UTC. Notice that difference, one stores a plain order date, the other stores a UTC timestamp. That distinction is going to matter a lot in a few minutes.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 60666,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 36.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 61416,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_group_by_total_doesn_t_match_th/video_1_4/assets/lesson_4_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 62316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 100366,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "between_boundary_bug"
+      },
+      "narration": "Here's trap number one, and honestly it's one of the most common mistakes in all of S-Q-L. This query uses BETWEEN to filter the orders table for January twenty twenty-four. It looks totally reasonable, right? WHERE order date BETWEEN January first and January thirty-first. The problem is that if order date stores datetimes, not just plain dates, then BETWEEN only catches January thirty-first at exactly midnight. Any order placed at, say, two PM on January thirty-first has a timestamp after midnight, so it gets silently dropped. Let's see the damage.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 101266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 45.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 102116,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "between_boundary_bug"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 103016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 121766,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There it is. The BETWEEN approach, labeled \"BETWEEN (buggy)\" right there on screen, gives us seven orders and a revenue of six hundred five point nine four. Seven orders. Remember that number, because we're about to see what January actually looks like.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 122216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 25.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 150683,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "half_open_range_fix"
+      },
+      "narration": "Now here's the fix. Instead of BETWEEN, we're using what's called a half-open interval. Order date greater than or equal to January first, AND order date strictly less than February first. That \"less than\" is the key. It catches everything up to but not including February first, which means every single timestamp on January thirty-first, whether it's midnight or eleven fifty-nine PM, gets included. Let's run it.",
+      "transition": "new_concept",
+      "clears": [
+        "between_boundary_bug"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 151583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 35.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 152433,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "half_open_range_fix"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 153333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 187083,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Look at that. \"Half-open range (correct)\" gives us twelve orders and one thousand nine point two nine in revenue. Twelve versus seven. That's five whole orders the BETWEEN version just threw away. And the revenue jumped from six hundred five point nine four to one thousand nine point two nine. If you took the BETWEEN number to a stakeholder meeting, you'd be understating January revenue by a huge margin. That's not a rounding error, that's a career moment.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 187533,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 40.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 203583,
+      "type": "compare_results",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Side by side, the lesson is crystal clear. BETWEEN with datetimes is a trap. The half-open interval pattern, greater than or equal to the start, strictly less than the next period, that's your new default. Always.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 204233,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.9
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 230200,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "utc_monthly_totals_naive"
+      },
+      "narration": "Okay, boundary problem solved. But here's where it gets sneaky. What if the dates themselves are technically correct, but they're in the wrong timezone? This next query hits the orders UTC table and groups by month using the raw created at UTC column. No timezone conversion at all. We're just trusting whatever the database stored. Let's see what that gives us.",
+      "transition": "new_concept",
+      "clears": [
+        "half_open_range_fix"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 231100,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 33.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 231950,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "utc_monthly_totals_naive"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 232850,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 265349,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "According to UTC, January twenty twenty-four has three orders and one hundred seventy-eight point nine zero in revenue. February twenty twenty-four has nineteen orders and one thousand three hundred forty-nine point seven three. So January looks tiny and February looks huge. But hold on, your company's based on the East Coast. Your dashboard runs on US Eastern time. Those UTC timestamps might be lying about which day, and which month, an order actually belongs to.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 265799,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 39.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 289266,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "utc_to_eastern_fix"
+      },
+      "narration": "This query does the timezone conversion. We're taking created at UTC and converting it to US Eastern time before grouping by month. An order placed at, say, one AM UTC on February first is actually eight PM Eastern on January thirty-first. Same order, different month entirely. Let's run it and see how the totals shift.",
+      "transition": "new_concept",
+      "clears": [
+        "utc_monthly_totals_naive"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 290166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 30.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 291016,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "utc_to_eastern_fix"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 291916,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 333999,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Wow. The picture completely flips. January Eastern now shows seventeen orders and one thousand sixty-two point nine three in revenue. February Eastern drops to five orders and four hundred sixty-five point seven zero. Compare that to the UTC version, where January had only three orders and February had nineteen. The timezone conversion moved fourteen orders from February back into January where they actually belong. If your dashboard uses Eastern time and your query uses raw UTC, you'll never match. And you'll spend hours blaming the dashboard when the real problem is sitting right there in your WHERE clause.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 334449,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 48.6
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17",
+      "time_offset_ms": 377483,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "So here's your two-step checklist from this lesson. First, always use the half-open interval pattern for date ranges, greater than or equal to the start, strictly less than the next period. Never trust BETWEEN with datetime columns. Second, before you group by day, week, or month, find out whether your database stores UTC or local time, and convert to match whatever timezone the dashboard uses. Get those two things right, and your GROUP BY totals won't mysteriously drift anymore. Next up, we'll tackle the trickiest root cause of all, when the metric itself means something different than you think it does.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e17_pause",
+      "time_offset_ms": 378133,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 49.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 379783,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

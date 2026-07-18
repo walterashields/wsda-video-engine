@@ -1,0 +1,240 @@
+schema_version: "3.0"
+lesson_id: "video_3_1"
+title: "Hidden Filters, NULLs, and Status Codes — What the Dashboard Excludes"
+course: "Why Your GROUP BY Total Doesn't Match the Dashboard"
+assets:
+  database: "assets/why_your_group_by_total_doesn_t_match_th.db"
+  sql_file: "assets/lesson_3_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/why_your_group_by_total_doesn_t_match_th.db"
+    transition: "new_concept"
+    narration: >
+      Welcome back. If you're a new analyst staring at a dashboard number that
+      doesn't match your S-Q-L query, this lesson's going to save you a lot of
+      frustration. By the end, you'll know how to spot the hidden filters,
+      NULL exclusions, and status code tricks that dashboards apply behind the
+      scenes, and you'll be able to replicate them in your own queries so
+      your numbers finally line up. We're working with an orders table today,
+      and it's got columns for order ID, customer name, order total, region,
+      status, and order date. Simple enough, but there's a lot hiding in
+      plain sight. Let's dig in.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 58.0
+    transition: "continuation"
+  - id: "e02"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_3_queries.sql"
+    transition: "new_concept"
+  - id: "e02_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+  - id: "e03"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Here's our schema. One table called orders. Six columns: order ID,
+      customer name, order total, region, status, and order date. That status
+      column and that region column are where all the trouble lives. Dashboards
+      love to filter on both of them without telling you.
+  - id: "e03_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "dashboard_revenue_by_region"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Let's start with the big picture. This query groups every order by region
+      and sums up the revenue, no WHERE clause at all. No filters. We're just
+      asking the database to show us everything. If a dashboard had a status
+      filter set to "Completed" behind the scenes, you'd never see some of
+      these rows. But we're not filtering yet, so let's see what the raw
+      data actually looks like.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 38.0
+    transition: "continuation"
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "dashboard_revenue_by_region"
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Okay, five rows. We've got Midwest with two orders and one thousand
+      three hundred thirty-six point three five in revenue. Northeast, two
+      orders, two hundred eighty-one point eight zero. Southeast, two orders,
+      five hundred ninety-nine point nine nine. West, two orders, five
+      hundred thirty-eight point four zero. But look at that top row. The
+      region is blank, it's NULL, and it's got seven orders totaling one
+      thousand three hundred twenty-seven point three four. Seven orders!
+      That's more than any other region. If your dashboard groups by region
+      and quietly drops that NULL bucket, you've just lost over one thousand
+      three hundred dollars from your total. That's a big deal.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 68.0
+    transition: "continuation"
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "null_region_orders"
+    transition: "new_concept"
+    clears: ["dashboard_revenue_by_region"]
+    narration: >
+      Let's zoom in on those missing region orders specifically. This query
+      counts how many orders have a NULL region and sums up the revenue
+      we'd lose if the dashboard ignores them.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 20.0
+    transition: "continuation"
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "null_region_orders"
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      There it is. Seven orders with no region assigned, and the missing
+      revenue is one thousand three hundred twenty-seven point three four.
+      That's money that exists in the database but doesn't show up on the
+      dashboard's region breakdown. It just vanishes. And nobody gets an
+      error message, nobody gets a warning. The dashboard just quietly
+      pretends those orders don't exist. The fix is straightforward. You can
+      use COALESCE on the region column to replace NULLs with a label like
+      "Unassigned" so those orders get their own visible group instead of
+      falling into the void.
+  - id: "e09_pause"
+    type: "pause"
+    duration: 55.0
+    transition: "continuation"
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "distinct_status_values"
+    transition: "new_concept"
+    clears: ["null_region_orders"]
+    narration: >
+      Now let's talk about the other sneaky filter, status codes. Before you
+      ever write a WHERE clause on a status column, you need to know exactly
+      what values live in there. This query runs a SELECT DISTINCT on the
+      status column from the orders table. Always do this first. Always.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 33.0
+    transition: "continuation"
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "distinct_status_values"
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e12"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Seven distinct status values. Cancelled, Completed, Fulfilled, Pending,
+      Refunded, Returned, and Shipped. Seven! Now here's the trap. A dashboard
+      might say it's showing "completed orders," and you'd think, great, I'll
+      filter WHERE status equals Completed. But what about Fulfilled? What
+      about Shipped? Those sound like they should count too, right? An order
+      that shipped definitely happened. But you won't know which ones the
+      dashboard includes unless you ask the person who built it, or dig into
+      the dashboard's filter definition yourself.
+  - id: "e12_pause"
+    type: "pause"
+    duration: 58.0
+    transition: "continuation"
+  - id: "e13"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "status_revenue_comparison"
+    transition: "new_concept"
+    clears: ["distinct_status_values"]
+    narration: >
+      This last query is the money shot. It breaks the revenue into three
+      buckets so we can see exactly what we'd include or miss depending on
+      which status codes we filter on. Let's run it.
+  - id: "e13_pause"
+    type: "pause"
+    duration: 24.0
+    transition: "continuation"
+  - id: "e14"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "status_revenue_comparison"
+  - id: "e14_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e15"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Look at this. Row one, the dashboard counts, Completed plus Fulfilled,
+      that's eight orders and two thousand one hundred fifty-three point nine
+      nine in revenue. That's what the dashboard is reporting. Row two, missing,
+      Shipped orders, three orders and one thousand two hundred thirty-eight
+      point zero zero. That's one thousand two hundred thirty-eight dollars
+      sitting right there in the database, but the dashboard doesn't count
+      Shipped as a "completed" order. That's a judgment call someone made,
+      and if you don't know about it, your query total will be off by that
+      much. Row three, the other statuses like Cancelled, Pending, Refunded,
+      and Returned, four orders, six hundred ninety-one point eight nine.
+      Those probably shouldn't count in a revenue total, but you still need
+      to know they're there so you can deliberately exclude them instead of
+      accidentally excluding them.
+  - id: "e15_pause"
+    type: "pause"
+    duration: 82.0
+    transition: "continuation"
+  - id: "e16"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Here's your takeaway. Before you compare your S-Q-L to a dashboard,
+      you've got to replicate every filter the dashboard applies. Run a
+      SELECT DISTINCT on any column the dashboard filters on, especially
+      status. Check for NULLs in your grouping columns, because those rows
+      will silently disappear from the results. And ask the dashboard owner
+      which values they include, don't guess. The difference between
+      Completed and Shipped cost us one thousand two hundred thirty-eight
+      dollars in this example. That's the kind of gap that makes people
+      lose trust in your numbers. Next up, we're tackling dates and
+      timezones, the sneakiest culprit of all. I'll see you there.
+  - id: "e16_pause"
+    type: "pause"
+    duration: 70.0
+    transition: "continuation"
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

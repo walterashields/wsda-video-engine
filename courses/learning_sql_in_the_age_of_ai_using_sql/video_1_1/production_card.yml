@@ -1,0 +1,222 @@
+schema_version: "3.0"
+lesson_id: "video_1_1"
+title: "The AI's SQL looked perfect — until I checked who it would delete"
+course: "Learning SQL in the age of AI"
+assets:
+  database: "assets/learning_sql_in_the_age_of_ai_using_sql.db"
+  sql_file: "assets/lesson_1_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/learning_sql_in_the_age_of_ai_using_sql.db"
+    transition: "new_concept"
+    narration: >
+      Alright, this one's for you if you've ever thought, "Why would I learn
+      S-Q-L when ChatGPT can just write it for me?" Totally fair question.
+      By the end of this lesson, you'll see exactly how A-I generated S-Q-L
+      can look perfectly clean and still target the wrong rows for deletion.
+      The fix is simple, and you'll know it cold by the time we're done.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 37.0
+    transition: "continuation"
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Here's our database. We've got one table called customers. It's got
+      columns for customer ID, full name, email, signup date, last order date,
+      and status. Think of it like a spreadsheet with one row per customer
+      and those six columns tracking everything about them.
+  - id: "e02_pause"
+    type: "pause"
+    duration: 33.0
+    transition: "continuation"
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_1_queries.sql"
+    transition: "new_concept"
+  - id: "e03_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "bad_select_before_delete"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      So here's the scenario. You asked ChatGPT, "Hey, clean up my inactive
+      customers who haven't ordered in a while." And it gave you a DELETE
+      query. Looks clean, looks confident. But before we blow anything up,
+      we're gonna swap that DELETE for a SELECT, same WHERE clause, so we
+      can peek at who's about to get removed. Think of it like checking the
+      guest list before you kick people out of the party.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 46.0
+    transition: "continuation"
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "bad_select_before_delete"
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Three rows come back. All three are inactive. At first glance that
+      might seem fine, but look closer. Priya Sharma's last order date is
+      January fifteenth, twenty twenty-three. That's recent. She's inactive,
+      sure, but she ordered just weeks past the cutoff. Deleting her means
+      throwing away a customer who might come back. And Fatima Al-Rashid?
+      Her last order date is completely blank, it's null. We have no idea
+      when she last ordered. That's not "definitely stale," that's "we
+      don't know." Only Amara Johnson, with a last order date of December
+      first, twenty twenty-two, looks like someone you'd actually want to
+      clean up. Two out of three rows here are questionable deletes.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 66.0
+    transition: "continuation"
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "why_its_wrong"
+    transition: "new_concept"
+    clears: ["bad_select_before_delete"]
+    narration: >
+      Let's prove it. This next query adds a diagnosis column, like a
+      doctor's note for each row, telling us whether it's actually safe
+      to delete.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 22.0
+    transition: "continuation"
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "why_its_wrong"
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Three rows, each with a diagnosis. Priya Sharma's diagnosis says
+      inactive but recent order. She's inactive, yes, but her last order
+      date of January fifteenth, twenty twenty-three, is after the cutoff,
+      so deleting her would be a mistake. Fatima Al-Rashid also gets flagged
+      as inactive but recent order. Now, that label isn't quite right for
+      her situation, her last order date is null, not recent, but the key
+      point is the same: we can't confirm she's stale, so she shouldn't be
+      auto-deleted either. Only Amara Johnson earns the truly cleanup target
+      flag. Two out of three would've been wrong deletes.
+  - id: "e09_pause"
+    type: "pause"
+    duration: 58.0
+    transition: "continuation"
+  - id: "e10"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "fixed_select_before_delete"
+    transition: "new_concept"
+    clears: ["why_its_wrong"]
+    narration: >
+      Here's the fix. We tighten the WHERE clause so it only catches
+      customers who are inactive and whose last order date is either
+      before the cutoff or null. That way we're deliberate about who
+      we include. Let's SELECT first, because we've learned our lesson.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+  - id: "e11"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "fixed_select_before_delete"
+  - id: "e11_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e12"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Two rows. Fatima Al-Rashid with a null last order date, and Amara
+      Johnson with a last order date of December first, twenty twenty-two.
+      Notice who's gone? Priya Sharma. She's inactive, but her last order
+      date is January fifteenth, twenty twenty-three, which is after the
+      cutoff, so the tighter logic correctly keeps her safe. Now, you
+      might look at Fatima and wonder whether a null last order date really
+      means she's stale. That's a fair question, and in a real cleanup you'd
+      want a business rule for nulls. But the point is, this query makes
+      that a conscious choice instead of an accident.
+  - id: "e12_pause"
+    type: "pause"
+    duration: 54.0
+    transition: "continuation"
+  - id: "e13"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "confirm_table_intact"
+    transition: "new_concept"
+    clears: ["fixed_select_before_delete"]
+    narration: >
+      And just to prove nobody got hurt during this lesson, let's
+      count the customers table.
+  - id: "e13_pause"
+    type: "pause"
+    duration: 16.0
+    transition: "continuation"
+  - id: "e14"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "confirm_table_intact"
+  - id: "e14_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e15"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Twelve. Total customers still safe, twelve. Everyone's still here
+      because we looked before we leaped.
+  - id: "e15_pause"
+    type: "pause"
+    duration: 16.0
+    transition: "continuation"
+  - id: "e_close"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Here's the whole lesson in one sentence. Always SELECT before you
+      DELETE. The A-I's query looked fine on the surface, but when we
+      checked the results, two out of three rows were customers we
+      shouldn't be deleting. You don't need to be an S-Q-L expert. You
+      just need to preview the results and ask, "Does every row here
+      actually belong on the chopping block?" That one habit will save
+      you from the scariest A-I mistakes.
+  - id: "e_close_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

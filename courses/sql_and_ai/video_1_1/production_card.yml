@@ -12,38 +12,35 @@ events:
   asset: assets/sql_and_ai.db
   transition: new_concept
   narration: 'Hey, welcome in. If you''re a data analyst, a junior data engineer, or anyone in B-I who''s
-    started using A-I tools to write S-Q-L, this one''s for you. Here''s the deal: by the end of the next
-    five minutes, you''ll know how to prompt an A-I tool to generate a S-Q-L query, you''ll know exactly
-    where A-I-generated S-Q-L commonly fails, and you''ll have a quick validation technique you can run
-    in under sixty seconds to confirm the answer is actually correct. Because here''s the thing nobody
-    warns you about: A-I-generated S-Q-L almost always looks right. It''s syntactically clean, it runs
-    without errors, and the results look totally plausible. But "plausible" and "correct" are not the
-    same thing, and the gap between them is where careers get embarrassing. So let''s fix that.
+    started using A-I tools to write S-Q-L, this lesson''s for you. By the end of these five minutes,
+    you''ll be able to prompt an A-I tool to generate a S-Q-L query, spot where A-I-generated S-Q-L commonly
+    fails, and apply a quick validation technique to confirm your results are actually correct. Here''s
+    the thing nobody warns you about: A-I-generated S-Q-L almost always looks right. The syntax is clean,
+    the JOINs make sense, and the results come back without a single error. But "no errors" and "correct"
+    aren''t the same thing. Let''s dig into why, and more importantly, let''s fix it.
 
     '
 - id: e01_pause
   type: pause
-  duration: 62.2
+  duration: 56.0
   transition: continuation
 - id: e02
   type: show_schema
   target: sql_viewer
   transition: new_concept
-  narration: 'Alright, let''s look at what we''re working with. We''ve got two tables in this database.
-    First up is the customers table, with three columns: customer_id, customer_name, and region. Simple
-    stuff, just a list of who our customers are and where they''re located. Then we''ve got the orders
-    table, with four columns: order_id, customer_id, order_date, and total_amount. So each row is one
-    order, tied back to a customer through customer_id. That''s the entire schema. Two tables, seven columns
-    total. And this is exactly what you''d paste into an A-I tool before asking it to write anything.
-    Don''t skip this step. The single biggest prompt mistake people make is asking for S-Q-L without giving
-    the A-I the table structure. Without it, the A-I is literally guessing column names. With it, the
-    A-I knows the relationships, the data types, everything. So step one of our workflow: always prompt
-    with schema context.
+  narration: 'Alright, here''s the database we''re working with today. Two tables, nice and simple. First,
+    we''ve got a customers table with four columns: customer_id, customer_name, region, and signup_date.
+    Then we''ve got an orders table with five columns: order_id, customer_id, order_date, total_amount,
+    and status. Notice that status column on orders. That''s going to be the star of today''s cautionary
+    tale. Because if you ask an A-I to find your top customers by revenue and you don''t mention that
+    status column, guess what? The A-I doesn''t know that some of those orders might be cancelled. It''ll
+    happily add up every single order, cancelled or not, and hand you a number that looks perfectly reasonable
+    but is quietly, dangerously wrong.
 
     '
 - id: e02_pause
   type: pause
-  duration: 69.2
+  duration: 61.0
   transition: continuation
 - id: e03
   type: open_file
@@ -60,19 +57,20 @@ events:
   section: ai_generated_top5_query
   transition: new_concept
   clears: []
-  narration: 'Okay, here''s the query our A-I generated after we gave it the schema and asked: "Show me
-    the top five customers by total revenue." Let''s read through it before we run anything. It''s selecting
-    customer_name and region from the customers table, then counting orders as total_orders and summing
-    total_amount as total_revenue from the orders table. It joins customers to orders on customer_id,
-    groups by customer_name and region, orders by total_revenue descending, and limits to five. Honestly,
-    this looks solid. The join logic is correct, it''s grouping properly, it''s sorting the right direction.
-    If you just glanced at this, you''d think, "great, ship it." But we''re not shipping anything until
-    we verify. That''s step two. Let''s run it and see what comes back.
+  narration: 'Okay, step one of our three-step workflow: prompt with schema context. Instead of just asking
+    "find my top five customers by revenue," we pasted our CREATE TABLE statements for customers and orders
+    right into the chat. That way the A-I knows about customer_name, region, total_amount, and crucially,
+    that status column. What came back is this query right here. It''s joining customers to orders on
+    customer_id, filtering the status column to exclude cancelled orders, grouping by customer_name and
+    region, and ordering by total revenue descending with a limit of five. This is miles better than what
+    you''d get from a lazy prompt. The A-I actually built in the WHERE clause for status because we gave
+    it the schema to work with. But here''s where most people stop. They see a clean query, they see results,
+    and they move on. We''re not most people. Let''s run it and see what we get.
 
     '
 - id: e04_pause
   type: pause
-  duration: 58.5
+  duration: 77.6
   transition: continuation
 - id: e05
   type: run_query
@@ -86,24 +84,22 @@ events:
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: 'Alright, results are in, let''s dig through this. Five rows, four columns: customer_name,
-    region, total_orders, and total_revenue. Row one, sitting at the top of the leaderboard: Greenfield
-    Manufacturing, out of the Northeast, with six orders and a total revenue of ninety-four thousand eight
-    hundred seventy point zero zero. Greenfield is not messing around. Row two: Pinnacle Health Systems,
-    also Northeast, four orders, eighty-nine thousand one hundred twenty-four point zero zero. That''s
-    almost six thousand less than Greenfield, so the top spot isn''t even close. Row three: Apex Logistics,
-    Southeast region, four orders, seventy-eight thousand four hundred eleven point two five. Notice that
-    decimal, point two five, so we''ve got some partial dollar amounts in the data. Row four: Vanguard
-    Retail Group, Northeast again, four orders, seventy-two thousand three hundred eighty point zero zero.
-    And row five: Bridgewater Solutions, Midwest, three orders, sixty-seven thousand two hundred ninety-five
-    point zero zero. So the Northeast is absolutely dominating this top five, three out of five customers.
-    Now, these results look perfectly reasonable. But "looks reasonable" is exactly the trap. Step two
-    says we pick one row and independently verify it. Let''s cross-examine the A-I''s work.
+  narration: 'Alright, results are in. Let''s read through every single row because the details matter.
+    Row one: Greenfield Manufacturing, out of the Northeast region, five total orders, and a total revenue
+    of forty-eight thousand seven hundred thirty-five point five zero. That''s our top spender and it''s
+    not even close. Row two: Apex Digital Solutions from the West, four orders, forty-one thousand nine
+    hundred eighty point zero zero. Solid, but that''s almost seven thousand dollars behind Greenfield.
+    Row three: Lakewood Medical Group, Southeast, also four orders, thirty-seven thousand six hundred
+    fifteen point seven five. Row four: Summit Financial Partners, Midwest, three orders, thirty-three
+    thousand one hundred twenty-five point zero zero. And row five: Coastal Freight Logistics, West region,
+    four orders, twenty-nine thousand eight hundred seventy point two five. So we''ve got our top five.
+    The query ran clean. The numbers look believable. But do we trust them? Not yet. That brings us to
+    step two.
 
     '
 - id: e06_pause
   type: pause
-  duration: 87.4
+  duration: 85.6
   transition: continuation
 - id: e07
   type: highlight_section
@@ -112,19 +108,19 @@ events:
   transition: new_concept
   clears:
   - ai_generated_top5_query
-  narration: 'Here''s our micro-query, and I want you to notice how dead simple this is. We''re writing
-    the smallest possible S-Q-L to independently verify just one value from the A-I''s results. We''re
-    summing total_amount from the orders table, joining to customers on customer_id, and filtering where
-    customer_name equals Greenfield Manufacturing. That''s it. No grouping by five customers, no ordering,
-    no limit. Just one question: what''s the actual total revenue for Greenfield Manufacturing according
-    to the raw data? If this number matches what the A-I query returned, our confidence goes way up. If
-    it doesn''t match, we just caught a bug before it hit a dashboard or a stakeholder''s inbox. This
-    is the micro-query technique, and it takes about fifteen seconds to write. Let''s run it.
+  narration: 'Step two: run a micro-query to spot-check. Here''s the idea. We''re not going to verify
+    all five rows. We''re going to pick one, just one, and write the simplest possible query to independently
+    check that single value. We''re going after Greenfield Manufacturing because it''s our number one
+    result. If the A-I got the top row wrong, everything else is suspect. This micro-query is dead simple.
+    It''s just a SUM of total_amount from orders, joined to customers, filtered to only Greenfield Manufacturing
+    and only non-cancelled orders. No fancy grouping, no ordering, no limit. Just one number. Think of
+    it like cross-examining a witness. The A-I gave us its answer, and now we''re checking the alibi with
+    a completely independent query. Let''s run it.
 
     '
 - id: e07_pause
   type: pause
-  duration: 59.3
+  duration: 63.2
   transition: continuation
 - id: e08
   type: run_query
@@ -138,19 +134,20 @@ events:
   type: show_result
   target: sql_viewer
   transition: continuation
-  narration: 'One column, one row: verified_total, ninety-four thousand eight hundred seventy point zero
-    zero. And what did the A-I query say for Greenfield Manufacturing? Ninety-four thousand eight hundred
-    seventy point zero zero. The numbers match exactly. The alibi checks out. Now look, does this guarantee
-    the entire query is perfect? No. But it means the join logic is working, the aggregation is correct,
-    and for at least this one customer, the A-I nailed it. That''s a massive confidence boost from a query
-    that took fifteen seconds to write. And if the numbers hadn''t matched? You''d know immediately that
-    something''s off in the join, the filter, or the grouping, and you''d debug it right here instead
-    of finding out three weeks later when your VP asks why the revenue numbers don''t add up.
+  narration: 'One column, one row, one number: verified_total comes back as forty-eight thousand seven
+    hundred thirty-five point five zero. And what did our A-I query say for Greenfield Manufacturing''s
+    total revenue? Forty-eight thousand seven hundred thirty-five point five zero. The alibi checks out.
+    Those numbers match exactly, and that feels good. That''s not a coincidence, that''s confirmation.
+    This micro-query took about fifteen seconds to write and maybe two seconds to run, and now we''ve
+    got real confidence that the A-I''s logic is sound, at least for this row. If those numbers hadn''t
+    matched, we''d know the A-I made a silent mistake somewhere, maybe in the JOIN, maybe in the WHERE
+    clause, maybe in the grouping. And we''d have caught it before it ended up in a dashboard or a stakeholder
+    presentation. That''s the whole point.
 
     '
 - id: e09_pause
   type: pause
-  duration: 62.2
+  duration: 67.5
   transition: continuation
 - id: e10
   type: highlight_section
@@ -159,39 +156,38 @@ events:
   transition: new_concept
   clears:
   - micro_query_spot_check
-  narration: 'Now let''s talk about step three, the one most people skip, and honestly it''s the most
-    valuable. After your micro-query confirms the numbers, you take this query and paste it back into
-    your A-I tool with one simple follow-up: "Explain this query step by step, including any assumptions
-    you made." When you do that, the A-I will walk through every clause and, crucially, it''ll call out
-    its own assumptions. For example, it might tell you it assumed order_date means the date the order
-    was placed, not the date it was shipped. In our case, that assumption happens to be fine. But in a
-    real-world scenario with shipped_date and placed_date columns? That assumption could silently wreck
-    your numbers. The point is, you won''t know what the A-I assumed unless you ask. And now you know
-    to ask.
+  narration: 'Step three, and this is the one most people skip: go back to your A-I tool and ask it to
+    explain the query step by step, including any assumptions it made. When you do this, the A-I will
+    surface things you didn''t think to ask about. For example, it might tell you it assumed order_date
+    means the date the order was placed, not the date it was shipped. In our case that assumption''s correct,
+    but imagine a scenario where your company defines revenue recognition based on ship date. That one
+    hidden assumption could throw off your entire analysis. You won''t catch that by staring at the S-Q-L.
+    You catch it by asking the A-I to show its work. It takes ten seconds, and it''s the most underrated
+    step in the whole workflow.
 
     '
 - id: e10_pause
   type: pause
-  duration: 64.3
+  duration: 62.6
   transition: continuation
 - id: e_close
   type: zoom_result
   target: sql_viewer
   transition: emphasis
-  narration: 'Let''s recap the whole workflow. Step one: prompt with schema context. Paste your CREATE
-    TABLE statements so the A-I knows your column names, data types, and relationships. Step two: run
-    the query and spot-check with a micro-query. Pick one row from the result, write the simplest possible
-    S-Q-L to verify that single value independently. If Greenfield Manufacturing shows ninety-four thousand
-    eight hundred seventy point zero zero in the A-I result, your micro-query better return ninety-four
-    thousand eight hundred seventy point zero zero too. Step three: ask the A-I to explain its own query
-    and surface its hidden assumptions. These three steps take under a minute, and they prevent hours
-    of debugging wrong data. You can download the sample database and the prompt template in the description.
-    Now go build something you can actually trust.
+  narration: 'Let''s wrap it up. Three steps, under a minute each. Step one: prompt with schema context.
+    Paste your CREATE TABLE statements so the A-I knows your columns, your data types, and especially
+    tricky columns like status. Step two: run the query and spot-check with a micro-query. Pick one row,
+    write the simplest possible S-Q-L to verify that single value. We checked Greenfield Manufacturing''s
+    total revenue of forty-eight thousand seven hundred thirty-five point five zero, and it matched perfectly.
+    Step three: ask the A-I to explain its own query and call out its assumptions. That''s where hidden
+    business logic errors get caught. These three steps don''t slow you down. They save you from hours
+    of debugging bad data downstream. Grab the sample database and the prompt template from the description,
+    and try this workflow on your own data. You''ll never blindly trust A-I-generated S-Q-L again.
 
     '
 - id: e_close_pause
   type: pause
-  duration: 63.4
+  duration: 71.7
   transition: continuation
 - id: e_end
   type: fade_out

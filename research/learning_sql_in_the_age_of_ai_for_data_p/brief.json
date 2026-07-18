@@ -1,0 +1,59 @@
+{
+  "topic": "Learning SQL in the age of AI for data professionals using sql (written for a complete beginner with no prior knowledge; mostly watching, minimal hands-on requirement)",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "AI tools like ChatGPT can now write SQL for you, and beginners are wondering if learning SQL is even worth it anymore \u2014 but the dirty secret is that AI-generated SQL is wrong just often enough to destroy your data if you cannot read it yourself.",
+    "target_learner": "A complete beginner in a data-adjacent role (marketing analyst, ops coordinator, product manager) who has heard SQL is important but also heard AI can just do it for them, and is not sure what to believe.",
+    "learner_goal": "Understand in under two minutes exactly why they still need to learn SQL even though AI can write it, and feel motivated (not intimidated) to start.",
+    "competition_gap": "Most SQL content either ignores AI entirely or hypes it as a full replacement. Nobody is showing a beginner, in a funny and fast way, a real example of AI-written SQL silently returning wrong data \u2014 which is the most convincing argument to actually learn the language.",
+    "platform_fit": "TikTok, Instagram Reels, and YouTube Shorts \u2014 this is a hot-take opinion piece backed by a live demo moment, which performs extremely well in short-form feeds where controversy and surprise drive shares."
+  },
+  "content_structure": {
+    "hook": "I asked ChatGPT to write me a SQL query and it returned the wrong answer \u2014 and the scary part is it LOOKED completely right.",
+    "core_promise": "You will see exactly how AI-generated SQL can silently give you wrong data, and why learning to read SQL is the one skill AI cannot replace for you.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The SQL query AI got wrong (and why you would never have caught it)",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to explain why blindly trusting AI-generated SQL is dangerous and why learning to read SQL yourself is non-negotiable.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI gets it wrong",
+            "duration_seconds": 50,
+            "visual_type": "browser",
+            "what_learner_sees": "Split screen: on the left, a ChatGPT window where the prompt says 'Write a SQL query to find total revenue per customer last month.' On the right, the AI-generated SQL query appears. It looks clean and professional. The presenter runs it in a SQL viewer and gets a results table showing revenue numbers. Then a big red highlight appears on the JOIN clause \u2014 the AI used an inner join instead of a left join, silently dropping 40 percent of customers who had zero revenue. A side-by-side comparison flashes: AI result says 112 customers, correct result says 187 customers. Big text overlay: '75 customers just vanished.'",
+            "what_learner_hears": "So I asked ChatGPT to write me a SQL query \u2014 total revenue per customer, last month, super basic. And look, it came back with this beautiful query. Looks legit. I ran it. Got my numbers. Shipped it to my boss. One problem \u2014 it quietly dropped 75 customers from the results. See this JOIN right here? AI used an INNER JOIN instead of a LEFT JOIN. That one word difference erased 40 percent of my customer base from the report. And the terrifying part? The output looked completely normal. No error. No warning. Just... wrong.",
+            "exercise_file": null,
+            "transition_to_next": "Quick beat of silence, then energy shift to the punchline."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The one-line takeaway",
+            "duration_seconds": 40,
+            "visual_type": "slides",
+            "what_learner_sees": "Presenter talking directly to camera with bold text overlays animating in. First: 'AI writes SQL.' Then: 'YOU have to know if it is right.' Final frame: 'Learn SQL. Not because AI cannot write it. Because AI cannot be accountable for it.' End card with a follow prompt.",
+            "what_learner_hears": "Look, AI is amazing at writing SQL. I use it every day. But here is the thing nobody tells beginners \u2014 AI is not responsible for your data. YOU are. Your boss is not going to accept 'well ChatGPT wrote it' as an excuse. You do not need to become a SQL wizard. But you absolutely need to learn enough SQL to read what AI gives you and spot when it is lying to your face. That is the skill. That is the job security. Go learn SQL.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [],
+        "key_takeaway": "AI can write SQL but it cannot guarantee correctness \u2014 learning to read and verify SQL is the essential human skill that protects your data and your credibility."
+      }
+    ]
+  },
+  "exercise_file_plan": [],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "beginner",
+    "hands_on_ratio": "0% \u2014 this is a pure watch-and-absorb motivation piece designed to hook beginners into caring about SQL",
+    "adapters_needed": [
+      "browser",
+      "slides"
+    ]
+  }
+}

@@ -1,0 +1,255 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: The SQL query AI got wrong (and why you would never have caught it)
+course: Learning SQL in the age of AI
+assets:
+  demo: chat
+events:
+- id: e01
+  type: open_chat
+  target: chat_demo
+  user_name: Instructor
+  initials: IN
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e01b
+  type: highlight_region
+  target: chat_demo
+  region: chat-area
+  callout: Can AI write your SQL for you?
+  transition: new_concept
+  narration: 'Alright, here''s the deal. If you''re a marketing analyst, an ops coordinator, a product
+    manager, basically anyone who touches data but hasn''t written a line of S-Q-L in your life, this
+    lesson''s for you. By the end of the next ninety seconds, you''ll be able to explain exactly why blindly
+    trusting A-I-generated S-Q-L is dangerous, and why learning to read S-Q-L yourself isn''t optional.
+    Let''s jump in.
+
+    '
+- id: e01b_pause
+  type: pause
+  duration: 35.7
+  transition: continuation
+- id: e02
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e02_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e03
+  type: new_conversation
+  target: chat_demo
+  title: Total revenue per customer
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e04
+  type: show_message
+  target: chat_demo
+  text: Write a SQL query to find total revenue per customer last month.
+  region: prompt-1
+  transition: continuation
+- id: e04_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e05
+  type: show_response
+  target: chat_demo
+  text: 'SELECT c.customer_id, c.customer_name, SUM(o.amount) AS total_revenue
+
+    FROM customers c
+
+    INNER JOIN orders o ON c.customer_id = o.customer_id
+
+    WHERE o.order_date >= DATE_TRUNC(''month'', CURRENT_DATE - INTERVAL ''1 month'')
+
+    AND o.order_date < DATE_TRUNC(''month'', CURRENT_DATE)
+
+    GROUP BY c.customer_id, c.customer_name
+
+    ORDER BY total_revenue DESC;'
+  region: response-1
+  transition: continuation
+- id: e05_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e05b
+  type: highlight_region
+  target: chat_demo
+  region: response-1
+  callout: Looks clean. Looks professional. But...
+  transition: continuation
+  narration: 'Look at that. Beautiful S-Q-L. Clean formatting, nice aliases, even threw in an ORDER BY
+    for us. If you''re new to this, you''d look at that and think, perfect, ship it. And honestly? That''s
+    exactly what I did the first time I got something like this back. I ran it. Got my numbers. Sent it
+    to my boss. Done. Except it wasn''t done, because this query has a silent, invisible problem hiding
+    in plain sight.
+
+    '
+- id: e05b_pause
+  type: pause
+  duration: 39.0
+  transition: continuation
+- id: e06
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e06_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e07
+  type: show_message
+  target: chat_demo
+  text: Wait — that query uses INNER JOIN. Wouldn't that drop customers who had zero orders last month?
+    Should it be a LEFT JOIN instead?
+  region: prompt-2
+  transition: new_concept
+- id: e07_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e08
+  type: show_response
+  target: chat_demo
+  text: 'You''re right! An INNER JOIN only returns customers who have matching rows in the orders table.
+    Customers with zero orders last month are silently excluded.
+
+
+    • INNER JOIN result: 112 customers
+
+    • LEFT JOIN result: 187 customers
+
+    • Customers silently dropped: 75 (40% of the customer base)
+
+
+    The corrected query should use LEFT JOIN and COALESCE to show zero-revenue customers:
+
+
+    SELECT c.customer_id, c.customer_name, COALESCE(SUM(o.amount), 0) AS total_revenue
+
+    FROM customers c
+
+    LEFT JOIN orders o ON c.customer_id = o.customer_id
+
+    AND o.order_date >= DATE_TRUNC(''month'', CURRENT_DATE - INTERVAL ''1 month'')
+
+    AND o.order_date < DATE_TRUNC(''month'', CURRENT_DATE)
+
+    GROUP BY c.customer_id, c.customer_name
+
+    ORDER BY total_revenue DESC;'
+  region: response-2
+  transition: continuation
+- id: e08_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e08b
+  type: highlight_region
+  target: chat_demo
+  region: response-2
+  callout: 75 customers vanished — no error, no warning
+  transition: emphasis
+  narration: 'There it is. That one word, INNER instead of LEFT, silently erased seventy-five customers
+    from the results. The A-I''s query returned one hundred twelve customers. The correct query returns
+    one hundred eighty-seven. That''s forty percent of the entire customer base, just gone. And here''s
+    the terrifying part, there was no error message, no warning, no red flag. The output looked completely
+    normal. Just a nice clean table of numbers. Completely wrong numbers.
+
+    '
+- id: e08b_pause
+  type: pause
+  duration: 42.9
+  transition: continuation
+- id: e09
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e09_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e10
+  type: new_conversation
+  target: chat_demo
+  title: The real takeaway
+  transition: new_concept
+- id: e10_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e11
+  type: show_message
+  target: chat_demo
+  text: So should I stop using AI to write SQL?
+  region: prompt-3
+  transition: continuation
+- id: e11_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e12
+  type: show_response
+  target: chat_demo
+  text: 'No! AI is a powerful SQL writing tool. But you need the skill to verify what it gives you.
+
+
+    🔑 The essential skill:
+
+    • AI writes SQL → fast, convenient
+
+    • YOU read SQL → accurate, accountable
+
+
+    ❌ Your boss won''t accept: "ChatGPT wrote it"
+
+    ✅ Your boss will respect: "I checked the logic myself"
+
+
+    You don''t need to become a SQL wizard. You need to learn enough SQL to read what AI gives you and
+    spot when it''s wrong. That''s the skill. That''s the job security.'
+  region: response-3
+  transition: continuation
+- id: e12_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e12b
+  type: highlight_region
+  target: chat_demo
+  region: response-3
+  callout: Learn SQL. Not because AI can't write it. Because AI can't be accountable for it.
+  transition: emphasis
+  narration: 'Look, A-I''s amazing at writing S-Q-L. I use it every single day. But here''s the thing
+    nobody tells beginners. A-I isn''t responsible for your data. You are. Your boss isn''t going to accept
+    "well, ChatGPT wrote it" as an excuse when seventy-five customers vanish from a report. You don''t
+    need to become a S-Q-L wizard. But you absolutely need to learn enough S-Q-L to read what A-I gives
+    you and spot when it''s lying to your face. That''s the skill. That''s the job security. Let''s go
+    learn S-Q-L.
+
+    '
+- id: e12b_pause
+  type: pause
+  duration: 44.4
+  transition: continuation
+- id: e13
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e13_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

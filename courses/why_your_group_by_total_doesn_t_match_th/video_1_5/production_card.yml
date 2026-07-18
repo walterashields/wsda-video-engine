@@ -1,0 +1,273 @@
+schema_version: "3.0"
+lesson_id: "video_5_5"
+title: "Metric Definitions and the Capstone Debugging Exercise"
+course: "Why Your GROUP BY Total Doesn't Match the Dashboard"
+assets:
+  database: "assets/why_your_group_by_total_doesn_t_match_th.db"
+  sql_file: "assets/lesson_5_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/why_your_group_by_total_doesn_t_match_th.db"
+    transition: "new_concept"
+    narration: >
+      Welcome to lesson five, the finale. If you're a beginner analyst who's been
+      staring at a query result that just won't match your dashboard, this one's
+      for you. By the end of this lesson, you'll be able to spot when a metric
+      definition difference is the real culprit, and you'll have a debugging
+      checklist you can use on any mismatch you ever run into. Let's wrap this
+      course up right.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 38.0
+    transition: "continuation"
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Quick refresher on what we're working with. We've got an orders table with
+      order ID, customer ID, order date, order total, discount, tax, and status.
+      We've got order items with item ID, order ID, product ID, quantity, and unit
+      price. There's a refunds table with refund ID, order ID, refund amount, and
+      refund date. And a regions table linking customer ID to region. Same tables
+      we've been using all course, but today they're going to teach us the sneakiest
+      mismatch of all.
+  - id: "e02_pause"
+    type: "pause"
+    duration: 49.0
+    transition: "continuation"
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_5_queries.sql"
+    transition: "new_concept"
+  - id: "e03_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "gross_revenue"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Here's our first query. It's dead simple. We're summing the order total
+      column from the orders table, and we're labeling that result "Gross Revenue."
+      No discounts subtracted. No tax removed. Just the raw total of every order.
+      This is the kind of query you'd write on day one, and it feels like the
+      obvious answer to "what's our revenue?" But watch what happens when we
+      compare it to other definitions of the exact same word.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "gross_revenue"
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      There it is. Gross Revenue, three hundred twenty-five thousand thirty
+      point five zero. That's our number. Remember it, because in about thirty
+      seconds you're going to see two other numbers that are also called
+      "revenue," and they're both different. That's the whole problem.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 33.0
+    transition: "continuation"
+  - id: "e07"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "net_revenue"
+    transition: "new_concept"
+    clears: ["gross_revenue"]
+    narration: >
+      Now here's where it gets interesting. This next query calculates three
+      different versions of revenue side by side. First, gross revenue, same
+      as before, just the sum of order total. Second, net revenue after
+      discounts, which is the sum of order total minus discount. And third,
+      net-net revenue after both discounts and tax, the sum of order total
+      minus discount minus tax. Three formulas, three answers, and every
+      single one of them could legitimately be called "Revenue" on a dashboard.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 49.0
+    transition: "continuation"
+  - id: "e08"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "net_revenue"
+  - id: "e08_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e09"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Look at these three rows. Gross Revenue comes in at three hundred
+      twenty-five thousand thirty point five zero, exactly what we saw before.
+      Net Revenue after discounts drops to two hundred eighty-eight thousand
+      three hundred ninety point nine seven. And Net-Net Revenue after
+      discounts and tax falls all the way to two hundred sixty-two thousand
+      four hundred thirty-five point zero eight. That's a spread of over
+      sixty-two thousand five hundred ninety-five between the highest and
+      lowest number, and every one of them is technically correct. The
+      problem isn't the math. The problem is that the dashboard just says
+      "Revenue" with no definition. If your query uses one formula and
+      the dashboard uses another, you'll chase a mismatch that doesn't
+      exist. The fix here isn't S-Q-L. It's communication. Always ask
+      for the metric definition document, or the exact formula the
+      dashboard is using, before you start debugging.
+  - id: "e09_pause"
+    type: "pause"
+    duration: 70.0
+    transition: "continuation"
+  - id: "e10"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Alright, so now you've seen the causes of a GROUP BY versus dashboard
+      mismatch across this course. Duplicates from JOINs. Date range and
+      timezone issues. And metric definition mismatches. Let's put those
+      together into a checklist you can actually use, and then we'll stress
+      test it in a capstone exercise.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+  - id: "e11"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "capstone_broken_query"
+    transition: "new_concept"
+    clears: ["net_revenue"]
+    narration: >
+      Here's our capstone. Imagine your manager sends you a dashboard
+      screenshot showing Q1 2024 revenue. You don't know the exact number
+      yet, but someone on the team wrote this S-Q-L query, and it's
+      supposed to reproduce the dashboard figure. Let's run it and see
+      what it gives us.
+  - id: "e11_pause"
+    type: "pause"
+    duration: 30.0
+    transition: "continuation"
+  - id: "e12"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "capstone_broken_query"
+  - id: "e12_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e13"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Ouch. The broken query reports five hundred seven thousand seven
+      hundred ninety point five zero. That's labeled "Broken Dashboard
+      Revenue," and it's way too high. Something is seriously wrong here,
+      and honestly, it's probably not just one thing. This is the kind of
+      mess where multiple problems are stacking on top of each other. So
+      let's walk through the first fix together, and then I want you to
+      pause the video and try fixing the rest yourself.
+  - id: "e13_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+  - id: "e14"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Step one on the checklist, check for duplicate rows from JOINs.
+      If this broken query is joining orders to order items without
+      being careful, every order with multiple line items gets its order
+      total counted once per item. That's a classic inflation trap. The
+      fix is to either aggregate before joining or make sure you're
+      summing the right column at the right grain. That's your first
+      fix. Now here's where I want you to pause the video. Think about
+      what else could be wrong. Check the date range boundaries and
+      timezone handling. And confirm the metric definition, is the
+      dashboard showing gross or net revenue? Go fix the remaining
+      problems, then come back and we'll compare answers.
+  - id: "e14_pause"
+    type: "pause"
+    duration: 54.0
+    transition: "continuation"
+  - id: "e15"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "capstone_fixed_query"
+    transition: "new_concept"
+    clears: ["capstone_broken_query"]
+    narration: >
+      Welcome back. Let's reveal the corrected query. Here's what we
+      fixed. First, we removed the duplicate inflation from the JOIN.
+      Second, we switched to a proper date interval for Q1 2024.
+      And third, we changed from summing order total to summing order
+      total minus discount, because the dashboard's metric definition
+      is net revenue, not gross revenue. Three problems, three fixes.
+      Let's run it.
+  - id: "e15_pause"
+    type: "pause"
+    duration: 37.0
+    transition: "continuation"
+  - id: "e16"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "capstone_fixed_query"
+  - id: "e16_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e17"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      There it is. Corrected Net Revenue for Q1 2024, two hundred
+      sixty-seven thousand nine hundred eighty-two point six four.
+      That matches the dashboard exactly. We went from five hundred
+      seven thousand seven hundred ninety point five zero all the way
+      down to two hundred sixty-seven thousand nine hundred eighty-two
+      point six four, and every single step of that correction came
+      from our checklist.
+  - id: "e17_pause"
+    type: "pause"
+    duration: 37.0
+    transition: "continuation"
+  - id: "e18"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      That's the whole course. When your GROUP BY total doesn't match
+      the dashboard, don't panic and don't start rewriting your query
+      from scratch. Work through the checklist in order. One, check for
+      duplicate rows from JOINs. Two, verify your date range boundaries
+      and timezone. Three, confirm the metric definition matches exactly.
+      You do those steps, you'll find the cause every time. Thanks for
+      sticking with me through all five lessons. Now go make your
+      numbers match.
+  - id: "e18_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

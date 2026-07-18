@@ -1,0 +1,322 @@
+{
+  "topic": "Why your GROUP BY total doesn't match the dashboard for data analyst",
+  "format": "course",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "Companies are hiring record numbers of junior data analysts who are expected to validate dashboard numbers on day one, and GROUP BY mismatches are the single most common source of panic and lost credibility in the first 90 days on the job.",
+    "target_learner": "A complete beginner who has just started learning SQL or recently landed their first data analyst role and is trying to reconcile query results with existing dashboards in tools like Tableau, Looker, or Power BI.",
+    "learner_goal": "Confidently diagnose and fix the five most common reasons a GROUP BY query returns a different total than the dashboard, and explain the discrepancy to a stakeholder without sounding unsure.",
+    "competition_gap": "Existing SQL courses teach GROUP BY syntax in isolation. Almost none address the real-world scenario where the learner runs a correct query but gets a number that does not match the dashboard \u2014 leaving beginners to assume they are wrong. This course bridges the gap between textbook SQL and workplace reality.",
+    "platform_fit": "LinkedIn Learning and Udemy are ideal because learners on these platforms are actively upskilling for analyst roles, expect downloadable exercise files they can run locally, and value a certificate that signals practical SQL debugging ability to hiring managers."
+  },
+  "content_structure": {
+    "hook": "You wrote a perfectly valid GROUP BY query, the syntax is clean, it runs without errors \u2014 and the total is off by thousands. Before you decide SQL is broken, let me show you the five hidden reasons this happens to every analyst.",
+    "core_promise": "You will be able to systematically diagnose why your GROUP BY total does not match a dashboard number and fix or explain the discrepancy every time.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The Mismatch Moment \u2014 Setting Up the Problem You Will Solve",
+        "duration_minutes": 5,
+        "learning_objective": "By the end of this lesson the learner will be able to describe the common scenario where a GROUP BY total diverges from a dashboard total and identify the five root-cause categories they will investigate throughout the course.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The Slack Message Every Analyst Dreads",
+            "duration_seconds": 90,
+            "visual_type": "slides",
+            "what_learner_sees": "A simulated Slack conversation where a manager asks why the analyst report shows $1.2M but the dashboard shows $1.35M, followed by a bullet list of the five root-cause categories: duplicate rows, filter mismatches, NULL handling, date or timezone logic, and metric definition differences.",
+            "what_learner_hears": "Narration sets the emotional scene \u2014 you have run your query, it looks right, but the number does not match. The instructor reassures the learner this is normal and previews the five causes they will master.",
+            "exercise_file": null,
+            "transition_to_next": "Let us load the sample database and dashboard screenshot so you can see this mismatch with your own eyes."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Loading the Sample Data and Seeing the Gap",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The instructor opens the sample SQLite database in a SQL viewer, runs a simple SELECT SUM(order_total) FROM orders GROUP BY region query, and places the result side by side with a static dashboard screenshot showing different regional totals.",
+            "what_learner_hears": "Walk-through of the sample database schema \u2014 an orders table with columns order_id, order_date, region, order_total, customer_id, status, and created_at_utc. The instructor highlights that the query ran without errors yet the totals diverge.",
+            "exercise_file": "sample_orders.db",
+            "transition_to_next": "The query is syntactically perfect. So what is going on? The first suspect is duplicate rows."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Quick Orientation \u2014 Course Roadmap",
+            "duration_seconds": 90,
+            "visual_type": "slides",
+            "what_learner_sees": "A simple five-step roadmap graphic showing Lesson 2 through Lesson 5 titles, each mapped to one root cause, ending with a hands-on capstone exercise.",
+            "what_learner_hears": "Brief overview of what each upcoming lesson covers and a reminder that by the end the learner will have a reusable checklist they can pull out any time a number does not match.",
+            "exercise_file": null,
+            "transition_to_next": "Let us start with the most common culprit \u2014 duplicate rows inflating your totals."
+          }
+        ],
+        "exercise_files": [
+          "sample_orders.db",
+          "dashboard_screenshot.pdf"
+        ],
+        "key_takeaway": "A syntactically correct GROUP BY query can still return wrong totals \u2014 the problem is almost never the SQL engine, it is a mismatch between what your query includes and what the dashboard includes."
+      },
+      {
+        "lesson_number": 2,
+        "title": "Duplicate Rows \u2014 The Silent Inflator",
+        "duration_minutes": 6,
+        "learning_objective": "By the end of this lesson the learner will be able to detect duplicate rows caused by JOINs or dirty data and use DISTINCT or proper join logic to eliminate them before aggregating.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "How a JOIN Creates Duplicates",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The instructor joins orders to a payments table that has multiple payment rows per order. A SELECT showing raw rows reveals order_id 1001 appearing three times. Then a GROUP BY SUM shows an inflated total.",
+            "what_learner_hears": "Explanation of one-to-many joins: when one order has three payments, the join produces three rows, and SUM counts the order_total three times instead of once. This is the number-one reason totals blow up.",
+            "exercise_file": "lesson2_duplicates.sql",
+            "transition_to_next": "Now that we can see the duplicates, let us fix them."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "Fix 1 \u2014 Using DISTINCT and Subqueries",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The instructor rewrites the query using a subquery that deduplicates the orders table before joining. Then shows an alternative using SELECT DISTINCT. Side-by-side result comparison with the dashboard number \u2014 they now match.",
+            "what_learner_hears": "Step-by-step narration of how to isolate the aggregation to the correct grain before joining, and when DISTINCT is sufficient versus when a subquery is necessary.",
+            "exercise_file": "lesson2_duplicates.sql",
+            "transition_to_next": "But what if your row count is correct and the total is still off? The next suspect is filters."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Quick Check \u2014 Counting Before Summing",
+            "duration_seconds": 120,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A diagnostic query pattern: SELECT order_id, COUNT(*) AS row_count FROM joined_table GROUP BY order_id HAVING COUNT(*) > 1. The instructor shows how this instantly reveals duplicates.",
+            "what_learner_hears": "The instructor teaches a habit: always run a row-count diagnostic before trusting any SUM. This two-line query should become muscle memory.",
+            "exercise_file": "lesson2_duplicates.sql",
+            "transition_to_next": "Duplicates are handled. Next up \u2014 hidden filters the dashboard applies that your query does not."
+          }
+        ],
+        "exercise_files": [
+          "lesson2_duplicates.sql"
+        ],
+        "key_takeaway": "Always check for duplicate rows before aggregating \u2014 a one-to-many JOIN is the most common reason your SUM is too high."
+      },
+      {
+        "lesson_number": 3,
+        "title": "Hidden Filters, NULLs, and Status Codes \u2014 What the Dashboard Excludes",
+        "duration_minutes": 6,
+        "learning_objective": "By the end of this lesson the learner will be able to identify WHERE clause filters, NULL exclusions, and status-code logic that dashboards apply silently, and replicate them in their own queries.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The Dashboard Has a WHERE Clause You Cannot See",
+            "duration_seconds": 120,
+            "visual_type": "browser",
+            "what_learner_sees": "A mock dashboard filter panel showing Status = Completed selected. The instructor then switches to the SQL viewer and runs the query without a WHERE clause, showing it includes cancelled and pending orders.",
+            "what_learner_hears": "Dashboards almost always have default filters \u2014 status, date range, region \u2014 that the analyst does not realize are active. The instructor shows how to find and document these filters.",
+            "exercise_file": "lesson3_filters.sql",
+            "transition_to_next": "Filters explain a lot, but NULLs can silently drop rows too."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "NULLs That Vanish from Your Total",
+            "duration_seconds": 100,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A query showing SUM(order_total) returns a value, then a second query with WHERE region IS NULL reveals 47 orders with no region. The GROUP BY on region silently groups them into a NULL bucket that the dashboard ignores.",
+            "what_learner_hears": "Explanation of how GROUP BY handles NULLs \u2014 they form their own group. Some dashboards exclude that group. The instructor shows COALESCE to assign a label and IFNULL to include them.",
+            "exercise_file": "lesson3_filters.sql",
+            "transition_to_next": "One more filter trap \u2014 the status codes that look similar but are not."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Status Codes \u2014 Completed vs Fulfilled vs Shipped",
+            "duration_seconds": 140,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A SELECT DISTINCT status FROM orders query reveals seven status values. The instructor highlights that the dashboard counts Completed and Fulfilled but not Shipped, and shows the corrected WHERE clause.",
+            "what_learner_hears": "Real-world databases have messy status codes. The instructor advises always running a distinct-values check on any column used as a filter and asking the dashboard owner exactly which values are included.",
+            "exercise_file": "lesson3_filters.sql",
+            "transition_to_next": "Filters and NULLs are sorted. Next, the sneakiest culprit \u2014 dates and timezones."
+          }
+        ],
+        "exercise_files": [
+          "lesson3_filters.sql"
+        ],
+        "key_takeaway": "Before comparing your query to a dashboard, replicate every filter the dashboard applies \u2014 including status codes, NULL handling, and default selections you cannot see at first glance."
+      },
+      {
+        "lesson_number": 4,
+        "title": "Date Ranges and Timezone Traps \u2014 When Tuesday is Still Monday",
+        "duration_minutes": 5,
+        "learning_objective": "By the end of this lesson the learner will be able to identify date-range boundary errors and timezone conversion issues that cause GROUP BY totals to shift between days, weeks, or months.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "Off-by-One Day \u2014 The Boundary Problem",
+            "duration_seconds": 100,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "Two queries side by side: one uses WHERE order_date BETWEEN 2024-01-01 AND 2024-01-31, the other uses WHERE order_date >= 2024-01-01 AND order_date < 2024-02-01. Results differ because timestamps on Jan 31 after midnight are excluded by the first query.",
+            "what_learner_hears": "Explanation of how BETWEEN with dates can miss or include boundary records depending on whether the column stores a date or a datetime. The instructor recommends the half-open interval pattern as the safest approach.",
+            "exercise_file": "lesson4_dates.sql",
+            "transition_to_next": "The boundary is fixed, but what if the dates themselves are in the wrong timezone?"
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "UTC vs Local Time \u2014 Orders That Jump Between Days",
+            "duration_seconds": 100,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A query converting created_at_utc to US Eastern time, showing that 14 orders timestamped on Feb 1 UTC actually belong to Jan 31 Eastern. The GROUP BY month total shifts by those 14 orders after conversion.",
+            "what_learner_hears": "The instructor explains that databases often store timestamps in UTC while dashboards display local time. This means the same order can fall into different months depending on which timezone you group by.",
+            "exercise_file": "lesson4_dates.sql",
+            "transition_to_next": "Dates are now under control. The last root cause is the trickiest \u2014 the metric itself means something different."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Quick Reference \u2014 Date Pattern Cheat Sheet",
+            "duration_seconds": 100,
+            "visual_type": "slides",
+            "what_learner_sees": "A one-page cheat sheet graphic showing the half-open interval pattern, a timezone conversion template, and a checklist: 1) Is the column date or datetime? 2) What timezone is stored? 3) What timezone does the dashboard use?",
+            "what_learner_hears": "The instructor walks through the cheat sheet and tells learners this is included in their exercise files for future reference.",
+            "exercise_file": "date_cheatsheet.pdf",
+            "transition_to_next": "One more lesson to go \u2014 what happens when your definition of revenue is not the same as the dashboard definition."
+          }
+        ],
+        "exercise_files": [
+          "lesson4_dates.sql",
+          "date_cheatsheet.pdf"
+        ],
+        "key_takeaway": "Always use the half-open interval pattern for date ranges and confirm whether your database stores UTC or local time before grouping by day, week, or month."
+      },
+      {
+        "lesson_number": 5,
+        "title": "Metric Definitions and the Capstone Debugging Exercise",
+        "duration_minutes": 6,
+        "learning_objective": "By the end of this lesson the learner will be able to identify when a metric definition difference is the root cause of a mismatch and apply a systematic five-step checklist to debug any GROUP BY versus dashboard discrepancy from scratch.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "Revenue vs Gross Revenue vs Net Revenue \u2014 Same Word, Different Numbers",
+            "duration_seconds": 100,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "Three queries: SUM(order_total) as gross revenue, SUM(order_total - discount) as net revenue, and SUM(order_total - discount - tax) as net-net revenue. Each returns a different total. A callout shows the dashboard label just says Revenue.",
+            "what_learner_hears": "The instructor explains that the most frustrating mismatch is when both queries are correct but they measure different things. The fix is not technical \u2014 it is communication. Always ask for the metric definition document or the exact formula the dashboard uses.",
+            "exercise_file": "lesson5_capstone.sql",
+            "transition_to_next": "Now you know all five causes. Let us put them together in a hands-on exercise."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The Five-Step Debugging Checklist",
+            "duration_seconds": 60,
+            "visual_type": "slides",
+            "what_learner_sees": "A clean checklist graphic: 1) Check for duplicate rows from JOINs. 2) Compare WHERE clause filters to dashboard filters. 3) Look for NULLs excluded by the dashboard. 4) Verify date range boundaries and timezone. 5) Confirm the metric definition matches exactly.",
+            "what_learner_hears": "The instructor reads through each step and emphasizes that this checklist should be taped to the monitor \u2014 it will save hours of confusion.",
+            "exercise_file": "debugging_checklist.pdf",
+            "transition_to_next": "Time to use the checklist yourself."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "Hands-On Capstone \u2014 Find and Fix All Five Problems",
+            "duration_seconds": 200,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The instructor opens capstone_start.sql which contains a broken query that produces a total of $1,203,447. The dashboard screenshot shows $987,220. The instructor walks through the first problem \u2014 a duplicate caused by a JOIN \u2014 fixes it, and then pauses, telling the learner to find and fix the remaining four problems on their own using the checklist. A final reveal shows the corrected query and matching total.",
+            "what_learner_hears": "Guided walkthrough of the first fix, then encouragement to pause and try the rest independently. After a pause prompt, the instructor reveals each fix: adding a WHERE status filter, handling NULLs, switching to a half-open date interval with timezone conversion, and changing SUM(order_total) to SUM(order_total - discount). The final number matches the dashboard.",
+            "exercise_file": "lesson5_capstone.sql",
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "lesson5_capstone.sql",
+          "debugging_checklist.pdf",
+          "capstone_solution.sql"
+        ],
+        "key_takeaway": "When your number does not match, work through the five-step checklist in order \u2014 duplicates, filters, NULLs, dates, metric definition \u2014 and you will find the cause every time."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "sample_orders.db",
+      "type": "db",
+      "purpose": "SQLite database containing orders, payments, and customers tables with intentional data quality issues for the learner to discover and fix throughout the course.",
+      "lesson_used_in": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    {
+      "filename": "dashboard_screenshot.pdf",
+      "type": "pdf",
+      "purpose": "Static screenshot of a mock dashboard showing regional revenue totals that the learner must match by correcting their SQL queries.",
+      "lesson_used_in": [
+        1,
+        5
+      ]
+    },
+    {
+      "filename": "lesson2_duplicates.sql",
+      "type": "sql",
+      "purpose": "SQL file with starter queries that demonstrate duplicate rows from JOINs, diagnostic count queries, and corrected versions using subqueries and DISTINCT.",
+      "lesson_used_in": [
+        2
+      ]
+    },
+    {
+      "filename": "lesson3_filters.sql",
+      "type": "sql",
+      "purpose": "SQL file with queries that show the impact of missing WHERE clauses, NULL grouping, and status code filtering on GROUP BY totals.",
+      "lesson_used_in": [
+        3
+      ]
+    },
+    {
+      "filename": "lesson4_dates.sql",
+      "type": "sql",
+      "purpose": "SQL file with date boundary comparison queries and timezone conversion examples that show how totals shift between months.",
+      "lesson_used_in": [
+        4
+      ]
+    },
+    {
+      "filename": "date_cheatsheet.pdf",
+      "type": "pdf",
+      "purpose": "One-page reference showing the half-open interval pattern, timezone conversion template, and a three-question date diagnostic checklist.",
+      "lesson_used_in": [
+        4
+      ]
+    },
+    {
+      "filename": "lesson5_capstone.sql",
+      "type": "sql",
+      "purpose": "Capstone exercise file containing a broken query with all five root-cause issues embedded. The learner uses the checklist to find and fix each one until the total matches the dashboard.",
+      "lesson_used_in": [
+        5
+      ]
+    },
+    {
+      "filename": "capstone_solution.sql",
+      "type": "sql",
+      "purpose": "Fully corrected version of the capstone query with inline comments explaining each fix, for the learner to check their work.",
+      "lesson_used_in": [
+        5
+      ]
+    },
+    {
+      "filename": "debugging_checklist.pdf",
+      "type": "pdf",
+      "purpose": "Printable five-step debugging checklist the learner can reference on the job whenever a GROUP BY total does not match a dashboard.",
+      "lesson_used_in": [
+        5
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "conversational",
+    "pacing": "moderate",
+    "complexity": "beginner",
+    "hands_on_ratio": "45% doing, 55% watching \u2014 weighted toward watching in early lessons and toward doing in lessons 4 and 5",
+    "adapters_needed": [
+      "sql_viewer",
+      "browser",
+      "slides"
+    ]
+  }
+}

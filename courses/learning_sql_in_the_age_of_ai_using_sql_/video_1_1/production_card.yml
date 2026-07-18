@@ -1,0 +1,133 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: The one SQL mistake AI will not catch for you
+course: Learning SQL in the age of AI
+assets:
+  database: assets/learning_sql_in_the_age_of_ai_using_sql_.db
+  sql_file: assets/lesson_1_queries.sql
+events:
+- id: e01
+  type: open_database
+  target: sql_viewer
+  asset: assets/learning_sql_in_the_age_of_ai_using_sql_.db
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e02
+  type: show_schema
+  target: sql_viewer
+  transition: new_concept
+  narration: 'You asked A-I to get your Q four revenue. It wrote a query, you ran it, got a big number,
+    sent it to your boss, felt like a genius. One problem, that number was the entire year. The A-I forgot
+    a single line, a WHERE clause, and you didn''t know enough S-Q-L to catch it. If you''re a marketer,
+    a founder, a student, anyone who''s thinking A-I means you''ll never need to learn S-Q-L, this is
+    the one minute that''ll change your mind. Here''s a sales table with columns like rep name, client,
+    quarter, and amount, basically a receipt book for every deal your team closed all year.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 52.7
+  transition: continuation
+- id: e03
+  type: open_file
+  target: sql_viewer
+  asset: assets/lesson_1_queries.sql
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e04
+  type: highlight_section
+  target: sql_viewer
+  section: total_no_filter
+  transition: new_concept
+  clears: []
+  narration: 'Here''s the query A-I gave you. SELECT SUM of amount FROM sales. That''s it. No filter,
+    no nothing. SUM is like dumping every receipt from the whole year into one pile and adding them up.
+    Sounds fine, except you asked for Q four, and this query doesn''t know that. It''s grabbing everything.
+
+    '
+- id: e04_pause
+  type: pause
+  duration: 29.5
+  transition: continuation
+- id: e05
+  type: run_query
+  target: sql_viewer
+  query_ref: total_no_filter
+- id: e05_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e06
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'There''s your number. Looks legit. Feels legit. But this is every deal from Q one through
+    Q four, all in one big pile. It''s not what you asked for.
+
+    '
+- id: e06_pause
+  type: pause
+  duration: 20.0
+  transition: continuation
+- id: e07
+  type: highlight_section
+  target: sql_viewer
+  section: where_clause_impact
+  transition: new_concept
+  clears:
+  - total_no_filter
+  narration: 'Now here''s the fix. We add a WHERE clause, think of it like a bouncer at the door. WHERE
+    quarter equals Q four means only Q four receipts get into the pile. Everything else stays outside.
+    And while we''re at it, let''s break it down by quarter so you can see exactly what each quarter contributed.
+
+    '
+- id: e07_pause
+  type: pause
+  duration: 31.2
+  transition: continuation
+- id: e08
+  type: run_query
+  target: sql_viewer
+  query_ref: where_clause_impact
+- id: e08_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e09
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Look at this. Q one, two deals, twenty one thousand fifty. Q two, three deals, thirty thousand
+    four hundred twenty five. Q three, three deals, twenty eight thousand seventy five. And Q four, four
+    deals, eighty thousand eight hundred five. So your actual Q four number? Eighty thousand eight hundred
+    five. That''s about half the total you reported. You would''ve told your boss revenue was roughly
+    double what it actually was. That''s not great.
+
+    '
+- id: e09_pause
+  type: pause
+  duration: 38.6
+  transition: continuation
+- id: e10
+  type: zoom_result
+  target: sql_viewer
+  transition: emphasis
+  narration: 'A-I''s your co-pilot, not your pilot. It''ll never raise its hand and say hey, I forgot
+    a filter. You''ve gotta know enough S-Q-L to read what it wrote. And that starts with knowing what
+    WHERE does.
+
+    '
+- id: e10_pause
+  type: pause
+  duration: 22.9
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

@@ -1,0 +1,433 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The AI's SQL looked perfect \u2014 until I checked who it would delete",
+  "course": "Learning SQL in the age of AI",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql/video_1_1/production_card.yml",
+  "total_duration_ms": 310583,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 26966,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql/video_1_1/assets/learning_sql_in_the_age_of_ai_using_sql.db"
+      },
+      "narration": "Alright, this one's for you if you've ever thought, \"Why would I learn S-Q-L when ChatGPT can just write it for me?\" Totally fair question. By the end of this lesson, you'll see exactly how A-I generated S-Q-L can look perfectly clean and still target the wrong rows for deletion. The fix is simple, and you'll know it cold by the time we're done.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 27866,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 37.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 46850,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Here's our database. We've got one table called customers. It's got columns for customer ID, full name, email, signup date, last order date, and status. Think of it like a spreadsheet with one row per customer and those six columns tracking everything about them.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 47750,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 33.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 48500,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 49400,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 80366,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "bad_select_before_delete"
+      },
+      "narration": "So here's the scenario. You asked ChatGPT, \"Hey, clean up my inactive customers who haven't ordered in a while.\" And it gave you a DELETE query. Looks clean, looks confident. But before we blow anything up, we're gonna swap that DELETE for a SELECT, same WHERE clause, so we can peek at who's about to get removed. Think of it like checking the guest list before you kick people out of the party.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 81266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 46.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 82116,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "bad_select_before_delete"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 83016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 130516,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Three rows come back. All three are inactive. At first glance that might seem fine, but look closer. Priya Sharma's last order date is January fifteenth, twenty twenty-three. That's recent. She's inactive, sure, but she ordered just weeks past the cutoff. Deleting her means throwing away a customer who might come back. And Fatima Al-Rashid? Her last order date is completely blank, it's null. We have no idea when she last ordered. That's not \"definitely stale,\" that's \"we don't know.\" Only Amara Johnson, with a last order date of December first, twenty twenty-two, looks like someone you'd actually want to clean up. Two out of three rows here are questionable deletes.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 130966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 66.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 141933,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "why_its_wrong"
+      },
+      "narration": "Let's prove it. This next query adds a diagnosis column, like a doctor's note for each row, telling us whether it's actually safe to delete.",
+      "transition": "new_concept",
+      "clears": [
+        "bad_select_before_delete"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 142833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 143683,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "why_its_wrong"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 144583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 187500,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Three rows, each with a diagnosis. Priya Sharma's diagnosis says inactive but recent order. She's inactive, yes, but her last order date of January fifteenth, twenty twenty-three, is after the cutoff, so deleting her would be a mistake. Fatima Al-Rashid also gets flagged as inactive but recent order. Now, that label isn't quite right for her situation, her last order date is null, not recent, but the key point is the same: we can't confirm she's stale, so she shouldn't be auto-deleted either. Only Amara Johnson earns the truly cleanup target flag. Two out of three would've been wrong deletes.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 187950,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 58.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 206833,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "fixed_select_before_delete"
+      },
+      "narration": "Here's the fix. We tighten the WHERE clause so it only catches customers who are inactive and whose last order date is either before the cutoff or null. That way we're deliberate about who we include. Let's SELECT first, because we've learned our lesson.",
+      "transition": "new_concept",
+      "clears": [
+        "why_its_wrong"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 207733,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 30.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 208583,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "fixed_select_before_delete"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 209483,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 253233,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Two rows. Fatima Al-Rashid with a null last order date, and Amara Johnson with a last order date of December first, twenty twenty-two. Notice who's gone? Priya Sharma. She's inactive, but her last order date is January fifteenth, twenty twenty-three, which is after the cutoff, so the tighter logic correctly keeps her safe. Now, you might look at Fatima and wonder whether a null last order date really means she's stale. That's a fair question, and in a real cleanup you'd want a business rule for nulls. But the point is, this query makes that a conscious choice instead of an accident.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 253683,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 54.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 260483,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "confirm_table_intact"
+      },
+      "narration": "And just to prove nobody got hurt during this lesson, let's count the customers table.",
+      "transition": "new_concept",
+      "clears": [
+        "fixed_select_before_delete"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 261383,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 16.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 262233,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "confirm_table_intact"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 263133,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 270633,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Twelve. Total customers still safe, twelve. Everyone's still here because we looked before we leaped.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 271083,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 16.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close",
+      "time_offset_ms": 303283,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Here's the whole lesson in one sentence. Always SELECT before you DELETE. The A-I's query looked fine on the surface, but when we checked the results, two out of three rows were customers we shouldn't be deleting. You don't need to be an S-Q-L expert. You just need to preview the results and ask, \"Does every row here actually belong on the chopping block?\" That one habit will save you from the scariest A-I mistakes.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_close_pause",
+      "time_offset_ms": 303933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 41.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 305583,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

@@ -1,0 +1,277 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The one SQL mistake AI will not catch for you",
+  "course": "Learning SQL in the age of AI",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql_/video_1_1/production_card.yml",
+  "total_duration_ms": 170366,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 300,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql_/video_1_1/assets/learning_sql_in_the_age_of_ai_using_sql_.db"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 46850,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "You asked A-I to get your Q four revenue. It wrote a query, you ran it, got a big number, sent it to your boss, felt like a genius. One problem, that number was the entire year. The A-I forgot a single line, a WHERE clause, and you didn't know enough S-Q-L to catch it. If you're a marketer, a founder, a student, anyone who's thinking A-I means you'll never need to learn S-Q-L, this is the one minute that'll change your mind. Here's a sales table with columns like rep name, client, quarter, and amount, basically a receipt book for every deal your team closed all year.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 47750,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 52.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 48500,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_using_sql_/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 49400,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 71616,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "total_no_filter"
+      },
+      "narration": "Here's the query A-I gave you. SELECT SUM of amount FROM sales. That's it. No filter, no nothing. SUM is like dumping every receipt from the whole year into one pile and adding them up. Sounds fine, except you asked for Q four, and this query doesn't know that. It's grabbing everything.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 72516,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 73366,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "total_no_filter"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 74266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 87600,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There's your number. Looks legit. Feels legit. But this is every deal from Q one through Q four, all in one big pile. It's not what you asked for.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 88050,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 20.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 111933,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "where_clause_impact"
+      },
+      "narration": "Now here's the fix. We add a WHERE clause, think of it like a bouncer at the door. WHERE quarter equals Q four means only Q four receipts get into the pile. Everything else stays outside. And while we're at it, let's break it down by quarter so you can see exactly what each quarter contributed.",
+      "transition": "new_concept",
+      "clears": [
+        "total_no_filter"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 112833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 31.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 113683,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "where_clause_impact"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 114583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 146666,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Look at this. Q one, two deals, twenty one thousand fifty. Q two, three deals, thirty thousand four hundred twenty five. Q three, three deals, twenty eight thousand seventy five. And Q four, four deals, eighty thousand eight hundred five. So your actual Q four number? Eighty thousand eight hundred five. That's about half the total you reported. You would've told your boss revenue was roughly double what it actually was. That's not great.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 147116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 38.6
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 163066,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "A-I's your co-pilot, not your pilot. It'll never raise its hand and say hey, I forgot a filter. You've gotta know enough S-Q-L to read what it wrote. And that starts with knowing what WHERE does.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 163716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.9
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 165366,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

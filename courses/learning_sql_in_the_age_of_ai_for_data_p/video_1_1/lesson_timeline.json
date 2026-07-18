@@ -1,0 +1,468 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The SQL query AI got wrong (and why you would never have caught it)",
+  "course": "Learning SQL in the age of AI",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/learning_sql_in_the_age_of_ai_for_data_p/video_1_1/production_card.yml",
+  "total_duration_ms": 156783,
+  "narration_locked": false,
+  "adapter_type": "chat_demo",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 400,
+      "type": "open_chat",
+      "target": "chat_demo",
+      "params": {
+        "user_name": "Instructor",
+        "initials": "IN"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1300,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01b",
+      "time_offset_ms": 30066,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "chat-area",
+        "callout": "Can AI write your SQL for you?"
+      },
+      "narration": "Alright, here's the deal. If you're a marketing analyst, an ops coordinator, a product manager, basically anyone who touches data but hasn't written a line of S-Q-L in your life, this lesson's for you. By the end of the next ninety seconds, you'll be able to explain exactly why blindly trusting A-I-generated S-Q-L is dangerous, and why learning to read S-Q-L yourself isn't optional. Let's jump in.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01b_pause",
+      "time_offset_ms": 30966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 35.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 31816,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 32266,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 33116,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "Total revenue per customer"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 34016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 34866,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Write a SQL query to find total revenue per customer last month.",
+        "region": "prompt-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 35316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 36166,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "SELECT c.customer_id, c.customer_name, SUM(o.amount) AS total_revenue\nFROM customers c\nINNER JOIN orders o ON c.customer_id = o.customer_id\nWHERE o.order_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\nAND o.order_date < DATE_TRUNC('month', CURRENT_DATE)\nGROUP BY c.customer_id, c.customer_name\nORDER BY total_revenue DESC;",
+        "region": "response-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 36616,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05b",
+      "time_offset_ms": 68716,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-1",
+        "callout": "Looks clean. Looks professional. But..."
+      },
+      "narration": "Look at that. Beautiful S-Q-L. Clean formatting, nice aliases, even threw in an ORDER BY for us. If you're new to this, you'd look at that and think, perfect, ship it. And honestly? That's exactly what I did the first time I got something like this back. I ran it. Got my numbers. Sent it to my boss. Done. Except it wasn't done, because this query has a silent, invisible problem hiding in plain sight.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05b_pause",
+      "time_offset_ms": 69166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 39.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 70016,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 70466,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 71316,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Wait \u2014 that query uses INNER JOIN. Wouldn't that drop customers who had zero orders last month? Should it be a LEFT JOIN instead?",
+        "region": "prompt-2"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 72216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 73066,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "You're right! An INNER JOIN only returns customers who have matching rows in the orders table. Customers with zero orders last month are silently excluded.\n\n\u2022 INNER JOIN result: 112 customers\n\u2022 LEFT JOIN result: 187 customers\n\u2022 Customers silently dropped: 75 (40% of the customer base)\n\nThe corrected query should use LEFT JOIN and COALESCE to show zero-revenue customers:\n\nSELECT c.customer_id, c.customer_name, COALESCE(SUM(o.amount), 0) AS total_revenue\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nAND o.order_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')\nAND o.order_date < DATE_TRUNC('month', CURRENT_DATE)\nGROUP BY c.customer_id, c.customer_name\nORDER BY total_revenue DESC;",
+        "region": "response-2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 73516,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08b",
+      "time_offset_ms": 104366,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-2",
+        "callout": "75 customers vanished \u2014 no error, no warning"
+      },
+      "narration": "There it is. That one word, INNER instead of LEFT, silently erased seventy-five customers from the results. The A-I's query returned one hundred twelve customers. The correct query returns one hundred eighty-seven. That's forty percent of the entire customer base, just gone. And here's the terrifying part, there was no error message, no warning, no red flag. The output looked completely normal. Just a nice clean table of numbers. Completely wrong numbers.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08b_pause",
+      "time_offset_ms": 105016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 37.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 105866,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 106316,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 107166,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "The real takeaway"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 108066,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 108916,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "So should I stop using AI to write SQL?",
+        "region": "prompt-3"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 109366,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 110216,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "No! AI is a powerful SQL writing tool. But you need the skill to verify what it gives you.\n\n\ud83d\udd11 The essential skill:\n\u2022 AI writes SQL \u2192 fast, convenient\n\u2022 YOU read SQL \u2192 accurate, accountable\n\n\u274c Your boss won't accept: \"ChatGPT wrote it\"\n\u2705 Your boss will respect: \"I checked the logic myself\"\n\nYou don't need to become a SQL wizard. You need to learn enough SQL to read what AI gives you and spot when it's wrong. That's the skill. That's the job security.",
+        "region": "response-3"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 110666,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12b",
+      "time_offset_ms": 148183,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-3",
+        "callout": "Learn SQL. Not because AI can't write it. Because AI can't be accountable for it."
+      },
+      "narration": "Look, A-I's amazing at writing S-Q-L. I use it every single day. But here's the thing nobody tells beginners. A-I isn't responsible for your data. You are. Your boss isn't going to accept \"well, ChatGPT wrote it\" as an excuse when seventy-five customers vanish from a report. You don't need to become a S-Q-L wizard. But you absolutely need to learn enough S-Q-L to read what A-I gives you and spot when it's lying to your face. That's the skill. That's the job security. Let's go learn S-Q-L.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12b_pause",
+      "time_offset_ms": 148833,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 44.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 149683,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 150133,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 151783,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}
