@@ -403,6 +403,15 @@ decoration — it's the actual mechanism by which a viewer understands the
 concept. A lesson can be funny and still confusing; it can also be totally
 serious and still clear. Clarity comes from the analogy, not the jokes.
 
+STATE THE ACTUAL THRESHOLD — if a WHERE clause or filter has a specific
+value that decides what's included or excluded (a cutoff date, a row
+count, a dollar amount), that value MUST be spoken explicitly at least
+once — never just "the cutoff" or "the threshold" with no actual number
+attached. A viewer who can't hear the boundary value can't verify the
+classification logic themselves; they just have to trust you. If the SQL
+says `< '2023-01-01'`, narration must say something like "before January
+2023" — not just "before the cutoff."
+
 WIT AND PERSONALITY — narration must have an opinion and a sense of humor,
 not just accurately describe what's on screen. Flat, competent-but-boring
 narration is a failure state even if every fact is correct and even if it
@@ -1102,6 +1111,15 @@ Check specifically for:
   that never actually appears anywhere in the lesson?
 - Is the core teaching point (the title's claim) actually, clearly proven
   by the real query results a viewer will see on screen?
+- If the SQL has a WHERE clause or filter with a specific threshold value
+  that determines what gets included or excluded (a cutoff date, a row
+  count, a dollar amount), is that ACTUAL value ever explicitly stated in
+  narration — not just referenced abstractly as "the cutoff" or "the
+  threshold"? A viewer can't verify classification logic they can't see
+  the boundary of. Be careful here: a coincidentally similar-looking value
+  appearing elsewhere (e.g. an example row's date happening to fall in the
+  same year as the cutoff) does NOT count as stating the threshold — the
+  actual boundary value itself must be spoken.
 
 Do NOT flag: writing style, humor choices, pacing, whether it's funny
 enough, or minor phrasing. Only flag concrete mismatches between what's
@@ -1296,6 +1314,73 @@ _TOPIC_SQL_CONSTRUCTS = {
     'null': (r'\bis\s+null\b|\bcoalesce\b', 'NULL handling'),
     'duplicate': (r'\bcount\s*\(', 'a COUNT to reveal duplicates'),
 }
+
+
+_ONES_WORDS_REV = {v: k for k, v in _NUMBER_WORDS.items() if v < 20}
+_TENS_WORDS_REV = {v: k for k, v in _NUMBER_WORDS.items() if v >= 20 and v < 100}
+
+
+def _int_to_words_0_99(n: int) -> str:
+    if n < 20:
+        return _ONES_WORDS_REV.get(n, str(n))
+    tens = (n // 10) * 10
+    ones = n % 10
+    tens_word = _TENS_WORDS_REV.get(tens, str(tens))
+    return f"{tens_word} {_ONES_WORDS_REV[ones]}" if ones else tens_word
+
+
+def _year_spoken_forms(year: int) -> list:
+    """All plausible ways a person would actually say a year aloud."""
+    forms = [str(year)]
+    if 2000 <= year < 2100:
+        remainder = year - 2000
+        if remainder == 0:
+            forms.append("two thousand")
+        else:
+            forms.append(f"twenty {_int_to_words_0_99(remainder)}")
+            forms.append(f"two thousand {_int_to_words_0_99(remainder)}")
+            forms.append(f"two thousand and {_int_to_words_0_99(remainder)}")
+    return forms
+
+
+def check_where_date_literals_mentioned(sql_content: str, card_yaml: str) -> list:
+    """
+    If a WHERE clause hinges on a specific date cutoff/threshold, that date
+    must actually be spoken in narration somewhere — not just referenced
+    abstractly ("the cutoff", "before that date"). A threshold that defines
+    the entire lesson's logic but is never stated leaves viewers unable to
+    verify the reasoning themselves; they just have to trust the narrator
+    that the classification is correct.
+    """
+    where_clauses = re.findall(
+        r'\bWHERE\b(.*?)(?:;|--\s*\[|\bGROUP BY\b|\bORDER BY\b|\bHAVING\b|$)',
+        sql_content, re.IGNORECASE | re.DOTALL
+    )
+    years_found = set()
+    for clause in where_clauses:
+        for m in re.finditer(r"'(\d{4})-(\d{2})-(\d{2})'", clause):
+            years_found.add(int(m.group(1)))
+
+    if not years_found:
+        return []
+
+    parsed = yaml.safe_load(card_yaml)
+    all_narration = ' '.join((e.get('narration') or '') for e in parsed.get('events', [])).lower()
+    all_narration = all_narration.replace('-', ' ')
+
+    issues = []
+    for year in years_found:
+        forms = _year_spoken_forms(year)
+        if not any(f in all_narration for f in forms):
+            issues.append(
+                f"The SQL's WHERE clause uses a cutoff date in {year}, but "
+                f"no spoken form of that year ever appears in the narration. "
+                f"A threshold this central to the lesson's logic must "
+                f"actually be stated ('before January 2023' or similar), not "
+                f"just referenced abstractly as 'the cutoff' — otherwise the "
+                f"viewer can't verify the classification themselves."
+            )
+    return issues
 
 
 def check_sql_matches_topic(sql_content: str, lesson_title: str, hook: str = "") -> list:
@@ -1555,7 +1640,8 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         # Verified-number check only applies to SQL lessons with real results
         number_issues = check_number_mismatches(raw, query_results) if query_results else []
         concept_issues = check_unbuilt_concept_claims(raw) if query_results else []
-        number_issues = number_issues + concept_issues
+        date_issues = check_where_date_literals_mentioned(sql_content, raw) if query_results else []
+        number_issues = number_issues + concept_issues + date_issues
 
         # Holistic fidelity review - a fresh model reads the lesson as a
         # skeptical viewer and judges whether it delivers on its own title/
