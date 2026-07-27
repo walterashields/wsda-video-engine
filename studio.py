@@ -83,6 +83,16 @@ STUDIO_HTML = '''<!DOCTYPE html>
   .chip.disabled { opacity: .35; cursor: not-allowed; }
   .chip.disabled:hover { border-color: var(--border); }
 
+  .scout-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+                margin-bottom: 8px; cursor: pointer; transition: all .15s; }
+  .scout-card:hover { border-color: var(--blue); background: rgba(74,158,255,0.05); }
+  .scout-card-selected { border-color: var(--green); background: rgba(6,192,21,0.08); }
+  .scout-card-topic { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .scout-card-rationale { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .scout-card-sources { font-size: 10px; color: var(--text-dim); word-break: break-all; }
+  .scout-card-sources a { color: var(--blue); text-decoration: none; }
+  .scout-card-sources a:hover { text-decoration: underline; }
+
   .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px;
          border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
          border: none; transition: all .15s; }
@@ -148,6 +158,23 @@ STUDIO_HTML = '''<!DOCTYPE html>
   <!-- Input form -->
   <div class="card" id="form-card">
     <div class="card-title">What do you want to create?</div>
+
+    <div class="field">
+      <label>Not sure what to make? Pick a category and get web-grounded suggestions</label>
+      <div class="chip-group" id="scout-category-chips">
+        <div class="chip" data-val="sql-fundamentals">SQL fundamentals &amp; debugging</div>
+        <div class="chip" data-val="sql-ai-hybrid">SQL + AI hybrid workflows</div>
+        <div class="chip" data-val="data-quality">Data quality &amp; trust</div>
+        <div class="chip" data-val="career-interview">Career &amp; interview prep</div>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn" id="scout-btn" type="button" style="font-size:12px;padding:8px 16px;">
+          🔎 Suggest topics (live web search, sources cited)
+        </button>
+      </div>
+      <div id="scout-status" style="display:none;margin-top:10px;font-size:12px;color:var(--text-dim);"></div>
+      <div id="scout-results" style="display:none;margin-top:12px;"></div>
+    </div>
 
     <div class="field">
       <label>Topic or title</label>
@@ -290,6 +317,72 @@ updateLengthFieldState();
 function getSelected(groupId) {
   return [...document.querySelectorAll(`#${groupId} .chip.selected`)]
     .map(c => c.dataset.val);
+}
+
+document.getElementById('scout-btn').addEventListener('click', async () => {
+  const category = getSelected('scout-category-chips')[0];
+  const statusEl = document.getElementById('scout-status');
+  const resultsEl = document.getElementById('scout-results');
+
+  if (!category) {
+    statusEl.style.display = 'block';
+    statusEl.textContent = 'Pick a category first.';
+    resultsEl.style.display = 'none';
+    return;
+  }
+
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Searching the web for current demand signals — this can take up to a minute...';
+  resultsEl.style.display = 'none';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/scout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category }),
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      statusEl.textContent = 'Error: ' + data.error;
+      return;
+    }
+
+    const suggestions = data.suggestions || [];
+    if (!suggestions.length) {
+      statusEl.textContent = 'No new suggestions found — this category may already be well covered.';
+      return;
+    }
+
+    statusEl.textContent = `${suggestions.length} suggestion(s) found. Click one to use it.`;
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = suggestions.map(s => `
+      <div class="scout-card" data-topic="${escapeHtml(s.topic)}">
+        <div class="scout-card-topic">${escapeHtml(s.topic)}</div>
+        <div class="scout-card-rationale">${escapeHtml(s.rationale || '')}</div>
+        <div class="scout-card-sources">
+          ${(s.sources || []).map(u => `<a href="${escapeHtml(u)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(u)}</a>`).join('<br>')}
+        </div>
+      </div>
+    `).join('');
+
+    resultsEl.querySelectorAll('.scout-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.getElementById('topic').value = card.dataset.topic;
+        resultsEl.querySelectorAll('.scout-card').forEach(c => c.classList.remove('scout-card-selected'));
+        card.classList.add('scout-card-selected');
+      });
+    });
+  } catch (err) {
+    statusEl.textContent = 'Error reaching the scout endpoint: ' + err.message;
+  }
+});
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
 }
 
 let pollInterval = null;
@@ -625,6 +718,36 @@ def run_production(job_id: str, payload: dict):
 @app.route('/')
 def index():
     return render_template_string(STUDIO_HTML)
+
+
+@app.route('/api/scout', methods=['POST'])
+def scout():
+    payload = request.json or {}
+    category_key = payload.get('category')
+    if not category_key:
+        return jsonify({'error': 'No category specified'}), 400
+
+    result = subprocess.run(
+        [sys.executable, 'topic_scout.py', '--category', category_key],
+        capture_output=True, text=True, cwd=str(ROOT), timeout=120,
+    )
+
+    if result.returncode != 0:
+        return jsonify({
+            'error': 'Topic scout failed',
+            'detail': (result.stdout + result.stderr)[-2000:],
+        }), 500
+
+    out_path = ROOT / 'research' / f'_scout_{category_key}.json'
+    if not out_path.exists():
+        return jsonify({'error': 'No suggestions produced', 'suggestions': []})
+
+    try:
+        data = json.loads(out_path.read_text())
+    except Exception:
+        return jsonify({'error': 'Could not parse scout output', 'suggestions': []})
+
+    return jsonify(data)
 
 
 @app.route('/api/produce', methods=['POST'])
