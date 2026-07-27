@@ -15,9 +15,10 @@ actually learn from, not just one that is technically correct.
 
 import base64
 import json
+import re
+import shutil
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import yaml
@@ -91,23 +92,32 @@ Be strict. This video will be sold as a paid product."""
 
 
 def extract_frames(mp4_path: Path, count: int = SAMPLE_FRAMES) -> list[Path]:
-    """Extract N evenly-spaced frames from the video as JPEGs."""
+    """Extract N evenly-spaced frames from the video as JPEGs.
+
+    Frames are saved to a persistent directory next to the MP4 so they
+    survive beyond this function call and can be inspected for debugging.
+    """
     duration_s = _get_duration(mp4_path)
     interval = duration_s / (count + 1)
 
+    # Persistent frame directory next to the MP4
+    frames_dir = mp4_path.parent / f"{mp4_path.stem}_review_frames"
+    if frames_dir.exists():
+        shutil.rmtree(frames_dir)
+    frames_dir.mkdir(parents=True, exist_ok=True)
+
     frames = []
-    with tempfile.TemporaryDirectory() as tmpdir:
-        for i in range(1, count + 1):
-            ts = interval * i
-            out = Path(tmpdir) / f"frame_{i:02d}_{ts:.1f}s.jpg"
-            subprocess.run(
-                [
-                    "ffmpeg", "-y", "-ss", str(ts), "-i", str(mp4_path),
-                    "-vframes", "1", "-q:v", "2", str(out)
-                ],
-                check=True, capture_output=True,
-            )
-            frames.append(out)
+    for i in range(1, count + 1):
+        ts = interval * i
+        out = frames_dir / f"frame_{i:02d}_{ts:.1f}s.jpg"
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-ss", str(ts), "-i", str(mp4_path),
+                "-vframes", "1", "-q:v", "2", str(out)
+            ],
+            check=True, capture_output=True,
+        )
+        frames.append(out)
     return frames
 
 
@@ -214,7 +224,7 @@ def review_video(mp4_path: Path, card_path: Path) -> dict:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        match = __import__("re").search(r"\{.*\}", text, __import__("re").DOTALL)
+        match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             try:
                 return json.loads(match.group())
