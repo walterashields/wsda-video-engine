@@ -345,7 +345,11 @@ document.getElementById('scout-btn').addEventListener('click', async () => {
     const data = await res.json();
 
     if (data.error) {
-      statusEl.textContent = 'Error: ' + data.error;
+      statusEl.textContent = 'Error: ' + data.error + (data.detail ? ' — see detail below' : '');
+      if (data.detail) {
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = `<pre style="font-size:11px;white-space:pre-wrap;color:var(--text-dim);border:1px solid var(--border);border-radius:8px;padding:10px;">${escapeHtml(data.detail)}</pre>`;
+      }
       return;
     }
 
@@ -740,12 +744,20 @@ def scout():
 
     out_path = ROOT / 'research' / f'_scout_{category_key}.json'
     if not out_path.exists():
-        return jsonify({'error': 'No suggestions produced', 'suggestions': []})
+        return jsonify({
+            'error': 'No suggestions produced',
+            'suggestions': [],
+            'detail': (result.stdout + result.stderr)[-2000:],
+        })
 
     try:
         data = json.loads(out_path.read_text())
     except Exception:
-        return jsonify({'error': 'Could not parse scout output', 'suggestions': []})
+        return jsonify({
+            'error': 'Could not parse scout output',
+            'suggestions': [],
+            'detail': (result.stdout + result.stderr)[-2000:],
+        })
 
     return jsonify(data)
 

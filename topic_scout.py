@@ -151,14 +151,28 @@ to 5 specific, narrow, genuinely in-demand lesson topics not already covered abo
         messages=[{"role": "user", "content": prompt}],
     )
 
+    # When web search actually runs, response.content contains multiple
+    # text blocks interleaved with server_tool_use/web_search_tool_result
+    # blocks - Claude's "I'll search for..." commentary comes as its own
+    # text block(s) BEFORE the final answer. Joining all text blocks
+    # together prepends that commentary in front of the JSON and breaks
+    # the parse. Only the LAST text block is the actual final answer.
     text_blocks = [b.text for b in response.content if getattr(b, "type", None) == "text"]
-    full_text = "\n".join(text_blocks).strip()
+    full_text = text_blocks[-1].strip() if text_blocks else ""
     full_text = re.sub(r'^```json\s*', '', full_text, flags=re.MULTILINE)
     full_text = re.sub(r'```\s*$', '', full_text.strip())
 
     try:
         return json.loads(full_text)
     except json.JSONDecodeError:
+        # Fallback: the model may have left stray commentary around the
+        # JSON despite instructions - try to isolate just the {...} object.
+        match = re.search(r'\{.*\}', full_text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
         console.print("[red]Could not parse scout response as JSON[/red]")
         console.print(full_text[:800])
         return {"suggestions": []}
