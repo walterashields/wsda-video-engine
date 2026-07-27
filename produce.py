@@ -202,6 +202,34 @@ def produce(card_path, el_key, el_voice, voice, max_retries, skip_precheck, fmt)
         console.print("[red]Production failed — no final video produced.[/red]")
         sys.exit(1)
 
+    # ── Step 3.5: Post-render Video Review ─────────────────────
+    video_review_path = ROOT / "output" / f"{lesson_id}_video_review.json"
+    review_cmd = [
+        sys.executable, "review/video_reviewer.py",
+        str(final_mp4), str(card_path),
+    ]
+    code, out = run_step("Step 3.5/5 — Video quality review", review_cmd)
+    
+    # Parse the review result from the last line of output or from a sidecar file
+    # The reviewer exits 0 on pass, 1 on fail, and prints the result
+    video_passed = code == 0
+    
+    if not video_passed:
+        console.print(Panel(
+            "[bold red]Video quality review failed.[/bold red]\n\n"
+            "The lesson content may be correct, but the video production "
+            "does not meet visual quality standards (readability, impact, "
+            "or polish). Review the feedback above and either:\n"
+            "1. Fix the SQL viewer CSS/templates for better readability\n"
+            "2. Adjust the production card for stronger visual hooks\n"
+            "3. Re-run with a different topic if the content is inherently "
+            "unvisual in this format\n\n"
+            "The video was NOT shipped.",
+            border_style="red",
+        ))
+        sys.exit(1)
+    console.print("[green]✓ Video quality review passed[/green]")
+
     # ── Step 4: Trim ─────────────────────────────────────────────
     trimmed_path = ROOT / "output" / f"{lesson_id}_final.mp4"
     code, out = run_step(
