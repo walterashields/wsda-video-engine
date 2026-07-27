@@ -323,6 +323,20 @@ fact must still be the real, grounded name.
 - snake_case columns: say the words naturally. "customer_id" -> "customer
   ID", "total_revenue" -> "total revenue", "order_date" -> "order date".
   Never say "customer underscore id" or run it together as one mangled word.
+- Bare abbreviated columns (no separator to expand): a column literally
+  named "id", "qty", "amt", "dob", "num" needs the same treatment even
+  though there's no underscore to split. Never speak it as a bare word —
+  "id" read alone will come out sounding like the psychoanalytic term, not
+  two letters. Add context from the table: in a customers table, "id"
+  becomes "customer ID"; in an orders table, "amt" becomes "order amount".
+- If the TEACHING POINT is specifically about cryptic/abbreviated names
+  (e.g. contrasting a good schema against a bad one with names like
+  "cust_eml" or "tbl_ord_hist"), do NOT just read the raw abbreviated
+  string as if it were a fluent word — it will garble. Instead say it as
+  letter-ish fragments and immediately state the plain-English meaning in
+  the same breath: "cust underscore eml — that's customer email,
+  abbreviated" not just "cust eml." The abbreviation can still be shown
+  on screen exactly as-is; only the SPOKEN form needs this treatment.
 - Table names: same treatment. "order_summary" -> "order summary table".
 - Numbers: ALWAYS spell them out in words, never write raw digit strings.
   Write "ninety-four thousand eight hundred seventy point zero zero", not
@@ -1188,6 +1202,119 @@ def review_lesson_fidelity(lesson_title: str, hook: str, key_takeaway: str,
     return [line.lstrip('-• ').strip() for line in text.splitlines() if line.strip()]
 
 
+QUALITY_GATE_SYSTEM = """You are a strict instructional quality grader for short-form \
+data-skills education videos that will be SOLD to individuals and organizations. Your \
+job is to score whether a lesson is genuinely ready to ship, not whether it's "pretty \
+good." Be tough. Most drafts should NOT get a perfect score on the first pass.
+
+Score each dimension from 1-5 (5 = excellent, 3 = mediocre/passable, 1 = fails):
+
+1. CLARITY: After watching once, could a genuine beginner explain the core concept back \
+in their own words? Score low if the explanation relies on jargon without ever truly \
+landing the idea in plain terms.
+
+2. COMPELLING HOOK: Does the opening create real stakes or genuine curiosity in the \
+first few seconds, or does it just state a topic ("today we'll learn about GROUP BY")? \
+Score low for generic, textbook-style openings.
+
+3. WHY IT MATTERS: Is there a clear, human reason to care — a real consequence, a real \
+scenario — or is this purely a technical fact with no connection to why anyone should care?
+
+4. PLAIN LANGUAGE / ANALOGY QUALITY: Do analogies genuinely carry the technical weight \
+(the learner understands the CONCEPT through the analogy), or are they decorative \
+window dressing bolted onto an explanation that still relies on jargon to actually land?
+
+5. EMOTIONAL REGISTER: Does this sound like a person who genuinely cares about the \
+learner's understanding, or does it read like a script being read aloud — competent \
+but flat?
+
+Respond with ONLY valid JSON, no markdown, no preamble:
+{
+  "scores": {"clarity": N, "hook": N, "why_it_matters": N, "plain_language": N, "emotional_register": N},
+  "overall_pass": true/false,
+  "feedback": ["specific, actionable note", "specific, actionable note"]
+}
+
+overall_pass is true ONLY if every dimension scores 4 or higher. Be honest — passing \
+mediocre content because it's "good enough" defeats the entire purpose of this review."""
+
+
+QUALITY_GATE_PROMPT = """Lesson title: {title}
+Hook: {hook}
+Key takeaway: {key_takeaway}
+
+FULL NARRATION (in order):
+{narration_text}
+
+Score this lesson against the rubric. Be strict — this will be sold as a paid product."""
+
+
+QUALITY_FIX_PROMPT = """Your lesson didn't clear the teaching-quality bar. Specific issues:
+
+{feedback}
+
+Rewrite the card to address these specifically — sharper hook, clearer analogies, more
+human and less flat delivery — while keeping every fact, number, table name, and column
+name EXACTLY as verified. Do not change any grounded content, only the way it's
+explained and delivered.
+
+Previous card:
+{previous_card}
+
+Return the complete corrected YAML, starting with schema_version: "3.0"
+"""
+
+
+def review_teaching_quality(lesson_title: str, hook: str, key_takeaway: str,
+                             card_yaml: str) -> dict:
+    """
+    Distinct from every correctness check above (grounding, timing, section
+    caps, fidelity) - those all verify a lesson is TRUE. This verifies it's
+    actually GOOD: clear, compelling, human. A lesson that passes every
+    correctness check but reads flat and confusing has still failed at its
+    actual job. This is the mechanism that makes quality a hard requirement
+    rather than a hope — see where it's called in draft_lesson for the
+    part that actually matters: refusing to ship a lesson that fails it.
+    """
+    parsed = yaml.safe_load(card_yaml)
+    narration_text = '\n'.join(
+        f"[{e.get('id')}] {e.get('narration')}"
+        for e in parsed.get('events', []) if e.get('narration')
+    )
+
+    response = client.messages.create(
+        model="claude-opus-4-6",
+        max_tokens=1500,
+        system=QUALITY_GATE_SYSTEM,
+        messages=[{
+            "role": "user",
+            "content": QUALITY_GATE_PROMPT.format(
+                title=lesson_title, hook=hook, key_takeaway=key_takeaway,
+                narration_text=narration_text,
+            )
+        }]
+    )
+
+    text_blocks = [b.text for b in response.content if getattr(b, "type", None) == "text"]
+    text = text_blocks[-1].strip() if text_blocks else ""
+    text = re.sub(r'^```json\s*', '', text, flags=re.MULTILINE)
+    text = re.sub(r'```\s*$', '', text.strip())
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        return {
+            "scores": {}, "overall_pass": False,
+            "feedback": ["Could not parse quality gate response — treating as fail-safe."],
+        }
+
+
 def check_unbuilt_concept_claims(card_yaml: str) -> list:
     """
     Catches a specific failure mode a numeric section-count check can't see:
@@ -1632,7 +1759,17 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
             "where the instructor asks questions and gets structured educational responses. "
             "The AI responses should contain the core teaching content - definitions, "
             "examples, comparisons - formatted clearly for on-screen reading. "
-            "The narration explains and deepens what the learner sees on screen."
+            "The narration explains and deepens what the learner sees on screen.\n\n"
+            "CRITICAL - SHOW, DON'T JUST NARRATE: if this lesson's teaching point "
+            "involves an actual schema, CREATE TABLE statement, code snippet, or "
+            "any artifact narration describes ('grab the CREATE TABLE statement', "
+            "'here are the real column names'), that artifact MUST actually appear "
+            "on screen as part of a show_message or show_response event's text - "
+            "never just described verbally with nothing shown. The text field of "
+            "these events supports HTML, so wrap code in "
+            "<pre><code>...</code></pre> and it will render as a formatted code "
+            "block in the chat. A lesson about pasting a schema into ChatGPT that "
+            "never actually shows a schema on screen has failed at its one job."
         )
     if lesson_format == "micro":
         lesson_context_parts.append(
@@ -1762,6 +1899,56 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     if not card_yaml:
         console.print(f"  [red]Failed after 3 attempts - saving best attempt (may contain unverified numbers)[/red]")
         card_yaml = raw
+
+    # Teaching Quality Gate — the actual "lock-in" mechanism. Everything
+    # above verifies correctness (is this true). This verifies quality (is
+    # this actually good). A lesson can pass every correctness check and
+    # still be flat, confusing, or forgettable — that's a separate failure
+    # mode, and until now nothing here checked for it, let alone refused to
+    # ship it. This gate gets real teeth: it can hard-fail a lesson.
+    quality_result = {"overall_pass": False, "scores": {}, "feedback": []}
+    for quality_attempt in range(1, 3):
+        quality_result = review_teaching_quality(
+            lesson['title'], brief.get('hook', ''),
+            lesson.get('key_takeaway', ''), card_yaml,
+        )
+        if quality_result.get('overall_pass'):
+            console.print(f"  [green]OK[/green] Teaching quality gate passed: {quality_result.get('scores')}")
+            break
+
+        console.print(f"  [yellow]Quality gate failed (attempt {quality_attempt}/2):[/yellow] {quality_result.get('scores')}")
+        for fb in quality_result.get('feedback', []):
+            console.print(f"    - {fb}")
+
+        if quality_attempt < 2:
+            console.print("  Rewriting for quality...")
+            fix_response = client.messages.create(
+                model="claude-opus-4-6",
+                max_tokens=6000,
+                system=DRAFT_SYSTEM,
+                messages=[{
+                    "role": "user",
+                    "content": QUALITY_FIX_PROMPT.format(
+                        feedback="\n".join(quality_result.get('feedback', [])),
+                        previous_card=card_yaml,
+                    )
+                }]
+            )
+            new_card = fix_response.content[0].text.strip()
+            new_card = re.sub(r'^```ya?ml\s*', '', new_card, flags=re.MULTILINE)
+            new_card = re.sub(r'```\s*$', '', new_card.strip())
+            valid, val_errors = validate_card(new_card)
+            if valid:
+                card_yaml = new_card
+            else:
+                console.print(f"  [yellow]Quality rewrite broke schema validity, keeping previous card and retrying quality on it[/yellow]")
+
+    if not quality_result.get('overall_pass'):
+        raise RuntimeError(
+            f"Lesson failed the teaching quality gate after 2 attempts and will NOT "
+            f"be shipped below the quality bar. Scores: {quality_result.get('scores')}. "
+            f"Issues: {'; '.join(quality_result.get('feedback', [])) or 'none reported'}"
+        )
 
     card_path = lesson_dir / "production_card.yml"
     card_path.write_text(card_yaml)
