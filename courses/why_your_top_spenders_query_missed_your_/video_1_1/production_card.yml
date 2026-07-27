@@ -1,0 +1,183 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: The top spender query lied to you - here is the customer it buried
+course: Why your top spenders query missed your actual best customer using SQL
+assets:
+  database: assets/why_your_top_spenders_query_missed_your_.db
+  sql_file: assets/lesson_1_queries.sql
+events:
+- id: e01
+  type: open_database
+  target: sql_viewer
+  asset: assets/why_your_top_spenders_query_missed_your_.db
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e02
+  type: show_schema
+  target: sql_viewer
+  transition: new_concept
+  narration: 'Alright, if you''ve ever written a quick S-Q-L query to find your top customer, sorted by
+    total spend, and felt pretty good about the answer, this one''s for you. By the end of this lesson
+    you''ll see exactly why that query lied to you, and how one extra line of S-Q-L reveals who''s actually
+    driving your business right now. We''ve got one table here, customers, with five columns: id, name,
+    total spent, last order date, and order count. Think of it like a simple spreadsheet your sales team
+    keeps, one row per customer, tracking how much they''ve spent, when they last showed up, and how many
+    times they''ve ordered.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 53.1
+  transition: continuation
+- id: e03
+  type: open_file
+  target: sql_viewer
+  asset: assets/lesson_1_queries.sql
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e04
+  type: highlight_section
+  target: sql_viewer
+  section: naive_top_spender
+  transition: new_concept
+  clears: []
+  narration: 'Here''s the query everyone writes on day one. We''re selecting name and total spent from
+    customers, ordering by total spent descending, and grabbing just the top row with LIMIT one. It''s
+    the S-Q-L equivalent of flipping to the last page of a receipt to see who spent the most. Seems reasonable,
+    right? Let''s run it.
+
+    '
+- id: e04_pause
+  type: pause
+  duration: 30.8
+  transition: continuation
+- id: e05
+  type: run_query
+  target: sql_viewer
+  query_ref: naive_top_spender
+- id: e05_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e06
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Big Corp, forty eight thousand dollars even. That''s our winner. Ship ''em a gift basket,
+    pop the champagne, best customer found. Except, not really. We only looked at one number, total spent,
+    and we ignored everything else. That''s like picking your best friend based entirely on who''s tallest.
+    Let''s see what we missed.
+
+    '
+- id: e06_pause
+  type: pause
+  duration: 29.9
+  transition: continuation
+- id: e07
+  type: highlight_section
+  target: sql_viewer
+  section: full_table_reveal
+  transition: new_concept
+  clears:
+  - naive_top_spender
+  narration: 'Now we''re pulling the full picture, all five customers with every column: name, total spent,
+    last order date, and order count. This is us actually opening the filing cabinet instead of just reading
+    the label on the front. Let''s see what''s inside.
+
+    '
+- id: e07_pause
+  type: pause
+  duration: 25.4
+  transition: continuation
+- id: e08
+  type: run_query
+  target: sql_viewer
+  query_ref: full_table_reveal
+- id: e08_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e09
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Okay, now it gets interesting. Big Corp sits at the top with forty eight thousand dollars,
+    but look at the rest of that row. Last order date, February fourteenth, twenty twenty three. Order
+    count, one. One order, over two years ago. Big Corp showed up once, dropped a bag of cash, and ghosted
+    you. Now look at Sara Martinez, fourth row down. Twelve thousand three hundred fifty dollars total,
+    sure, way less than Big Corp. But her last order date is June eighteenth, twenty twenty five, and
+    she''s placed forty seven orders. Forty seven! She''s basically on a first name basis with your shipping
+    team. That''s not a customer, that''s a relationship.
+
+    '
+- id: e09_pause
+  type: pause
+  duration: 54.3
+  transition: continuation
+- id: e10
+  type: highlight_section
+  target: sql_viewer
+  section: filtered_by_recency_and_frequency
+  transition: new_concept
+  clears:
+  - full_table_reveal
+  narration: 'So here''s the fix, and it''s one line of S-Q-L. We add a WHERE clause that says last order
+    date has to be on or after April sixteenth, twenty twenty five, that''s the date you get from DATE
+    of July fifteenth twenty twenty five minus ninety days. If you haven''t ordered since that cutoff,
+    you don''t get to be on this list. Then we sort by order count descending instead of total spent.
+    We''re asking a better question now: who''s actually showing up and buying things right now?
+
+    '
+- id: e10_pause
+  type: pause
+  duration: 44.4
+  transition: continuation
+- id: e11
+  type: run_query
+  target: sql_viewer
+  query_ref: filtered_by_recency_and_frequency
+- id: e11_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e12
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'And just like that, Sara Martinez jumps to number one with forty seven orders and twelve
+    thousand three hundred fifty dollars. Right behind her, Liam Chen with twenty nine orders and eight
+    thousand seven hundred forty dollars and fifty cents. Then Northgate LLC with fourteen orders and
+    twenty two thousand five hundred dollars. Big Corp? Gone. Their last order was February fourteenth,
+    twenty twenty three, way before our April sixteenth, twenty twenty five cutoff. Delta Supplies missed
+    it too, last order January ninth, twenty twenty four. Your top spender was a ghost. Sara''s your actual
+    best customer, and she was buried at row four this whole time.
+
+    '
+- id: e12_pause
+  type: pause
+  duration: 52.3
+  transition: continuation
+- id: e13
+  type: zoom_result
+  target: sql_viewer
+  transition: emphasis
+  narration: 'Here''s the takeaway. Total spend by itself is a vanity metric, it''s like judging a restaurant
+    by the most expensive item on the menu instead of how many people keep coming back. Filter by recency,
+    sort by frequency, and you''ll find the customers who are actually driving your business right now.
+    Don''t send the gift basket to a ghost.
+
+    '
+- id: e13_pause
+  type: pause
+  duration: 32.4
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

@@ -1,0 +1,433 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "COUNT(*) vs COUNT(column): See the Silent Undercount in Action",
+  "course": "COUNT(*) vs COUNT(column): The One-Character Difference That Silently Undercounts Your Data",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/count_vs_count_column_the_one_character_/video_1_1/production_card.yml",
+  "total_duration_ms": 322666,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 44466,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/count_vs_count_column_the_one_character_/video_1_1/assets/count_vs_count_column_the_one_character_.db"
+      },
+      "narration": "Alright, this one's for anyone who's just starting to write S-Q-L, maybe you're a marketing coordinator pulling campaign numbers, maybe you're a junior analyst building your first report. Doesn't matter. By the end of this lesson, you'll know exactly why COUNT star and COUNT column name can give you two completely different numbers from the same table, and you'll never accidentally undercount your data again. We're opening up a table called orders. It's got five columns: order ID, customer, order date, amount, and discount code. Ten rows total. Looks perfectly normal. But there's something hiding in here, and S-Q-L isn't going to warn you about it.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 45366,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 53.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 65600,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Here's our schema. One table, orders. Five columns: order ID, customer, order date, amount, and discount code. Think of it like a simple spreadsheet, ten rows of orders. Some of those orders used a discount code, some didn't. And that \"didn't\" part is where things get interesting.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 66500,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 67250,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/count_vs_count_column_the_one_character_/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 68150,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 93700,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "count_star"
+      },
+      "narration": "First query. We're asking S-Q-L the simplest possible question: how many rows are in the orders table? COUNT star is like counting heads in a room. You don't care what anyone's wearing, you don't care if someone forgot their name tag. You just point at each person and go one, two, three. Every row counts, no exceptions. Let's run it.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 94600,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 30.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 95450,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "count_star"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 96350,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 106766,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Ten. Ten rows, ten orders. Exactly what we'd expect. Nothing weird here. Hold onto that number, because it's about to get betrayed.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 107216,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 15.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 137350,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "count_column"
+      },
+      "narration": "Now here's where the trap springs. This query looks almost identical, one tiny difference. Instead of COUNT star, we're using COUNT discount code. We're asking S-Q-L to count only the rows that actually have a value in that discount code column. Think of it like counting heads in the room again, but this time you're only counting people who are holding a ticket. No ticket, you're invisible. Let's see what happens.",
+      "transition": "new_concept",
+      "clears": [
+        "count_star"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 138250,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 34.2
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 139100,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "count_column"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 140000,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 166666,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Seven. Same table, same ten rows, and we just got seven. Three orders just vanished from our count. If this were a report to your boss, you'd be telling them you had seven orders when you actually had ten. And S-Q-L didn't flash a warning, didn't raise an error, nothing. It just quietly handed you the wrong number. That's... not great.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 167116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 194750,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "isolate_the_nulls"
+      },
+      "narration": "So let's catch the culprit in the act. This query pulls every row from orders where the discount code IS NULL, meaning the value is missing, blank, unknown. NULL in S-Q-L is like an empty chair at a dinner party. The plate's there, the seat's there, but nobody showed up. And COUNT column name just skips right past those empty chairs like they don't exist.",
+      "transition": "new_concept",
+      "clears": [
+        "count_column"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 195650,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 196500,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "isolate_the_nulls"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 197400,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 221566,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "There they are. Three rows, three ghosts. Order ID two, James Okoro. Order ID five, Lucia Reyes. Order ID nine, Elena Volkov. All three have no discount code, the value is NULL. These are perfectly real orders, real customers who spent real money, but COUNT discount code pretended they weren't there. That's the silent undercount.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 222016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 240066,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "measure_the_gap"
+      },
+      "narration": "Here's a bonus trick that'll make you look sharp. You can subtract COUNT discount code from COUNT star in a single query to measure exactly how many NULLs are hiding in your data. We're calling that result missing discounts. Let's run it.",
+      "transition": "new_concept",
+      "clears": [
+        "isolate_the_nulls"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 240966,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 22.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14",
+      "time_offset_ms": 241816,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "measure_the_gap"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e14_pause",
+      "time_offset_ms": 242716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.7
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15",
+      "time_offset_ms": 266883,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Total rows, ten. Rows with discount, seven. Missing discounts, three. Ten minus seven equals three. Clean, simple, and now you've got proof. You can drop this into any report and instantly show how many rows are missing a value in whatever column you care about. No guessing, no scrolling through the table counting by hand.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e15_pause",
+      "time_offset_ms": 267333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 31.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16",
+      "time_offset_ms": 315366,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "So here's the one rule to tattoo on your brain. If your question is \"how many rows exist,\" use COUNT star, always. It counts every row, NULLs and all. If your question is \"how many rows actually have a value in this specific column,\" then COUNT column name is the right tool. The mistake happens when you mean to count all rows but you accidentally put a column name in there that has NULLs. S-Q-L won't tap you on the shoulder. It'll just quietly give you a smaller number and let you walk into that meeting with the wrong data. Now you know. That one character, star versus column name, really does matter.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e16_pause",
+      "time_offset_ms": 316016,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 53.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 317666,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

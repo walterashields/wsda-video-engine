@@ -1,0 +1,7 @@
+{
+  "course": "COUNT(*) vs COUNT(column): The One-Character Difference That Silently Undercounts Your Data using sql",
+  "slug": "count_vs_count_column_the_one_character_",
+  "lessons": [
+    "/Users/waltershields/Desktop/wsda-video-engine/courses/count_vs_count_column_the_one_character_/video_1_1/production_card.yml"
+  ]
+}

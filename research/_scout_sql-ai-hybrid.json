@@ -1,0 +1,49 @@
+{
+  "suggestions": [
+    {
+      "topic": "How to Paste Your Schema So ChatGPT Stops Inventing Column Names",
+      "rationale": "Schema hallucination \u2014 where AI fabricates table and column names that don't exist \u2014 is documented as the single most common AI-SQL error category in 2026, and pasting CREATE TABLE statements is the proven fix that most analysts skip.",
+      "sources": [
+        "https://kissmetrics.io/blog/ai-sql-generation-guide",
+        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4",
+        "https://builder.ai2sql.io/blog/ai-generated-sql-safety-guide"
+      ]
+    },
+    {
+      "topic": "Why Two Analysts Got Different Numbers from the Same AI \u2014 and How to Define Metrics in Your Prompt",
+      "rationale": "A widely discussed 2026 problem is that AI tools produce inconsistent SQL when two people phrase the same business question differently, because terms like 'revenue' or 'churn' aren't defined in the prompt \u2014 a structural issue that better prompts alone cannot fix.",
+      "sources": [
+        "https://www.actian.com/blog/data-analytics/ai-analytics-gives-different-answers-to-the-same-question-see-the-fix/",
+        "https://tianpan.co/blog/2026-05-07-cross-user-consistency-problem-ai-enterprise",
+        "https://www.powermetrics.app/blog/ai-analytics-context-metric-governance"
+      ]
+    },
+    {
+      "topic": "The BETWEEN Trap: Why AI Keeps Getting Your Date Range Off by One Day",
+      "rationale": "AI-generated SQL frequently uses BETWEEN for date filtering, which silently includes or excludes boundary dates depending on timestamps \u2014 a well-documented off-by-one error that causes dashboard disagreements and is flagged in current analyst checklists.",
+      "sources": [
+        "https://www.basedash.com/blog/how-to-review-ai-generated-sql-a-checklist-for-analysts-and-operators",
+        "https://sqlblog.org/2009/10/16/bad-habits-to-kick-mis-handling-date-range-queries",
+        "https://github.com/metabase/metabase/issues/15651"
+      ]
+    },
+    {
+      "topic": "Ask AI to Think Before It Writes: Chain-of-Thought Prompting for Multi-Table SQL",
+      "rationale": "Chain-of-thought decomposition \u2014 prompting AI to plan intermediate steps before generating the final query \u2014 is shown to dramatically improve accuracy on complex multi-join queries, yet most analysts still use single-shot prompts.",
+      "sources": [
+        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4",
+        "https://kissmetrics.io/blog/ai-sql-generation-guide",
+        "https://www.buildfastwithai.com/blogs/ai-prompts-data-analyst-python-sql-chatgpt-2026"
+      ]
+    },
+    {
+      "topic": "The 5-Minute Spot-Check: How to Verify AI-Generated SQL Before It Reaches a Stakeholder",
+      "rationale": "With 96.5% of organizations now letting AI interact with production databases but only 35% automating validation, current guides stress a layered spot-check workflow \u2014 LIMIT 10, row counts, EXPLAIN, schema verification \u2014 as a critical analyst skill.",
+      "sources": [
+        "https://securityboulevard.com/2026/07/how-to-validate-ai-generated-sql-before-deployment/",
+        "https://builder.ai2sql.io/blog/ai-generated-sql-safety-guide",
+        "https://dev.to/vivekdraxlr/dont-trust-ai-generated-sql-blindly-a-developers-validation-checklist-5f9g"
+      ]
+    }
+  ]
+}

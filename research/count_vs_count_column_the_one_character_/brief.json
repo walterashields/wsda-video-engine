@@ -1,0 +1,99 @@
+{
+  "topic": "COUNT(*) vs COUNT(column): The One-Character Difference That Silently Undercounts Your Data using sql",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "SQL remains the most in-demand data skill in 2024 job postings, and as more non-technical professionals are expected to pull their own data, subtle mistakes like miscounting with NULLs are causing real business errors in dashboards and reports. This is a perennial gotcha that trips up beginners and even intermediate analysts.",
+    "target_learner": "A complete beginner who has just started writing SELECT statements \u2014 could be a marketing coordinator, a junior analyst, or a student who has seen COUNT in a tutorial but has never been warned about how NULLs silently change results.",
+    "learner_goal": "Confidently choose between COUNT(*) and COUNT(column_name) and understand exactly when and why the numbers will differ so they never silently undercount data.",
+    "competition_gap": "Most existing content either buries this in a long SQL fundamentals course or shows it in a dry text blog post with no visual demonstration of the surprise moment. Almost nobody shows a side-by-side live query where the numbers visibly differ and then explains the single reason why. This video needs to deliver that aha moment in under four minutes.",
+    "platform_fit": "YouTube and LinkedIn feed are ideal because the title creates curiosity and mild anxiety \u2014 both drive clicks. The short runtime and single-takeaway format match feed-scrolling behavior. LinkedIn is especially strong because data professionals share gotcha content frequently."
+  },
+  "content_structure": {
+    "hook": "These two SQL queries look almost identical \u2014 but one of them is quietly giving you the wrong number. And you would never know unless someone showed you why.",
+    "core_promise": "In under four minutes you will see exactly how one character changes your row count and you will never miscount your data again.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "COUNT(*) vs COUNT(column): See the Silent Undercount in Action",
+        "duration_minutes": 4,
+        "learning_objective": "By the end of this lesson the learner will be able to explain why COUNT(*) and COUNT(column_name) return different numbers and choose the correct one for any situation.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The Surprise: Two Queries, Two Different Numbers",
+            "duration_seconds": 70,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A simple table called orders with 10 rows visible, where 3 rows have NULL in the discount_code column. The instructor runs SELECT COUNT(*) FROM orders and gets 10, then runs SELECT COUNT(discount_code) FROM orders and gets 7. Both results are shown side by side with the difference highlighted in red.",
+            "what_learner_hears": "Here is a table with 10 orders. Watch what happens when I count them two slightly different ways. COUNT star gives me 10. COUNT discount_code gives me 7. Same table, same 10 rows \u2014 but a different answer. If this were a report to your boss, you just silently lost three rows of data. Let me show you why.",
+            "exercise_file": null,
+            "transition_to_next": "Now let us look at the table more closely to understand what is hiding in those missing rows."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The Villain: NULLs Are Invisible to COUNT(column)",
+            "duration_seconds": 80,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The same orders table is shown with the 3 NULL values in discount_code highlighted in yellow. A simple animated graphic appears briefly showing the rule: COUNT(*) counts rows, COUNT(column) counts non-NULL values only. The instructor then runs SELECT * FROM orders WHERE discount_code IS NULL to isolate the 3 rows.",
+            "what_learner_hears": "Here is the secret. Three of these rows have no discount code \u2014 the value is NULL, which in SQL means unknown or missing. COUNT star does not care about values at all. It just counts rows. All 10 rows exist, so you get 10. But COUNT column name skips any row where that column is NULL. It only counts actual values. So those 3 NULLs vanish from your count. This is not a bug \u2014 it is how SQL was designed. But if you do not know about it, your numbers will be wrong and nothing will warn you.",
+            "exercise_file": null,
+            "transition_to_next": "So when should you use each one? Here is the simple rule."
+          },
+          {
+            "scene_number": 3,
+            "scene_title": "The Rule: When to Use Which",
+            "duration_seconds": 50,
+            "visual_type": "slides",
+            "what_learner_sees": "A clean two-column comparison card. Left side: COUNT(*) with the label 'How many rows are there?' and a green checkmark. Right side: COUNT(column) with the label 'How many rows have a value in this column?' and a green checkmark. Below both: a warning icon with text 'If you want total rows, always use COUNT(*). Using COUNT(column) on a column with NULLs will silently undercount.'",
+            "what_learner_hears": "Here is the one rule to remember. If your question is how many rows are there, use COUNT star \u2014 always. If your question is how many rows actually have a value in a specific column, then COUNT column name is exactly right. The mistake happens when you mean to count all rows but you accidentally put a column name in there that has NULLs. SQL will not warn you. It will just quietly give you a smaller number.",
+            "exercise_file": null,
+            "transition_to_next": "Let us prove this one more time with a quick real-world example so it really sticks."
+          },
+          {
+            "scene_number": 4,
+            "scene_title": "Real-World Proof and Wrap-Up",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The instructor runs three queries in sequence: SELECT COUNT(*) FROM orders returns 10, SELECT COUNT(discount_code) FROM orders returns 7, and SELECT COUNT(*) - COUNT(discount_code) AS missing_discounts FROM orders returns 3. The final result is circled. A closing card appears with the takeaway text and a prompt to save or share the video.",
+            "what_learner_hears": "Here is a bonus trick. You can subtract COUNT column from COUNT star to find out exactly how many NULLs are hiding in your data. 10 minus 7 equals 3 \u2014 three orders with no discount code. Now you know the difference, and you will never silently lose rows again. If this saved you from a future mistake, share it with someone who writes SQL. That one character really does matter.",
+            "exercise_file": "count_demo.sql",
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "count_demo.sql",
+          "orders_sample.csv"
+        ],
+        "key_takeaway": "COUNT(*) counts all rows regardless of values. COUNT(column_name) skips NULLs and will silently return a lower number. If you want total rows, always use COUNT(*)."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "count_demo.sql",
+      "type": "sql",
+      "purpose": "Contains the CREATE TABLE and INSERT statements to build the sample orders table, plus all four queries shown in the video so the learner can paste them into any SQL environment and reproduce the results.",
+      "lesson_used_in": [
+        1
+      ]
+    },
+    {
+      "filename": "orders_sample.csv",
+      "type": "csv",
+      "purpose": "A 10-row CSV of the orders table with NULLs in the discount_code column, useful for learners who want to import into a spreadsheet or database tool to experiment on their own.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "conversational",
+    "pacing": "moderate",
+    "complexity": "beginner",
+    "hands_on_ratio": "10 percent \u2014 the learner primarily watches the demonstration and absorbs the concept, with optional exercise files available for self-guided practice afterward",
+    "adapters_needed": [
+      "sql_viewer",
+      "slides"
+    ]
+  }
+}

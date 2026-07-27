@@ -1,0 +1,49 @@
+{
+  "suggestions": [
+    {
+      "topic": "Why NOT IN with NULLs Returns Zero Rows \u2014 and How NOT EXISTS Saves You",
+      "rationale": "The NOT IN + NULL trap is one of SQL's most searched-for silent bugs: the query runs without errors but returns no rows when even a single NULL exists in the subquery, a pitfall actively discussed in recent articles and forums.",
+      "sources": [
+        "https://biljana989.medium.com/the-not-in-null-trap-why-your-sql-query-returns-no-rows-bbcd9bad47aa",
+        "https://medium.com/@prathik.codes/the-hidden-sql-trap-how-null-values-can-break-your-queries-ad67ce7ff681",
+        "https://biwave.substack.com/p/debugging-in-sql"
+      ]
+    },
+    {
+      "topic": "Why Your JOIN Doubled Your Revenue: The SQL Fanout Trap That Inflates Every Metric",
+      "rationale": "SQL fanout \u2014 where a one-to-many JOIN silently duplicates rows and inflates SUM/COUNT results \u2014 is a persistent pain point generating active discussion in 2025-2026, especially among analysts joining fact tables to dimension tables.",
+      "sources": [
+        "https://medium.com/@rajesh_data_ai/sql-fanout-the-hidden-trap-in-joins-and-aggregates-789c929f075b",
+        "https://medium.com/@Samietex/sql-that-runs-but-is-wrong-the-duplicate-join-disaster-77344126d4a9",
+        "https://devsolus.com/sql-join-duplicates-whats-causing-them/"
+      ]
+    },
+    {
+      "topic": "WHERE vs HAVING: Why Your Filter on an Aggregate Silently Returns Wrong Rows",
+      "rationale": "Confusion between WHERE and HAVING is consistently called out as one of the most common SQL mistakes for analysts, with multiple recent articles and tutorials specifically addressing incorrect placement of filters before vs. after GROUP BY.",
+      "sources": [
+        "https://medium.com/@harsh1995hg/sql-having-vs-where-mastering-the-art-of-filtering-rows-vs-groups-for-precise-data-analysis-7fe9aa01ad61",
+        "https://medium.com/@codecosmosbynav/where-vs-having-in-sql-with-real-examples-common-mistakes-9870aa0eacf4",
+        "https://www.datacamp.com/tutorial/difference-between-where-and-having-clause-in-sql"
+      ]
+    },
+    {
+      "topic": "COUNT(*) vs COUNT(column): The One-Character Difference That Silently Undercounts Your Data",
+      "rationale": "The difference between COUNT(*) and COUNT(column_name) \u2014 where the latter silently skips NULLs \u2014 is a recurring source of wrong metrics in dashboards, with recent guides explicitly warning analysts about this misunderstanding.",
+      "sources": [
+        "https://www.dawiso.com/glossary/sql-count-complete-guide-to-counting-records-in-database-queries",
+        "https://www.techonthenet.com/sql/count.php",
+        "https://www.navicat.com/en/company/aboutus/blog/1796-null-values-and-the-sql-count-function.html"
+      ]
+    },
+    {
+      "topic": "When SQL Silently Converts Your Data Types \u2014 and Your WHERE Clause Stops Working",
+      "rationale": "Implicit data type conversion is actively discussed as a silent query-correctness and performance killer in 2025-2026, where mismatched types in JOINs or WHERE clauses cause SQL to auto-convert values, bypassing indexes and returning wrong results without any error.",
+      "sources": [
+        "https://stedmansolutions.com/2026/05/09/sql-code-smells-implicit-conversions/",
+        "https://www.stratascratch.com/blog/data-type-conversion-in-sql-closer-look-at-cast-function",
+        "https://rishandigital.com/sql-server/identifying-and-fixing-implicit-conversions/"
+      ]
+    }
+  ]
+}

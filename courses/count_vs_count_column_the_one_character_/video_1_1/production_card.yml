@@ -1,0 +1,222 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: 'COUNT(*) vs COUNT(column): See the Silent Undercount in Action'
+course: 'COUNT(*) vs COUNT(column): The One-Character Difference That Silently Undercounts Your Data'
+assets:
+  database: assets/count_vs_count_column_the_one_character_.db
+  sql_file: assets/lesson_1_queries.sql
+events:
+- id: e01
+  type: open_database
+  target: sql_viewer
+  asset: assets/count_vs_count_column_the_one_character_.db
+  transition: new_concept
+  narration: 'Alright, this one''s for anyone who''s just starting to write S-Q-L, maybe you''re a marketing
+    coordinator pulling campaign numbers, maybe you''re a junior analyst building your first report. Doesn''t
+    matter. By the end of this lesson, you''ll know exactly why COUNT star and COUNT column name can give
+    you two completely different numbers from the same table, and you''ll never accidentally undercount
+    your data again. We''re opening up a table called orders. It''s got five columns: order ID, customer,
+    order date, amount, and discount code. Ten rows total. Looks perfectly normal. But there''s something
+    hiding in here, and S-Q-L isn''t going to warn you about it.
+
+    '
+- id: e01_pause
+  type: pause
+  duration: 53.0
+  transition: continuation
+- id: e02
+  type: show_schema
+  target: sql_viewer
+  transition: new_concept
+  narration: 'Here''s our schema. One table, orders. Five columns: order ID, customer, order date, amount,
+    and discount code. Think of it like a simple spreadsheet, ten rows of orders. Some of those orders
+    used a discount code, some didn''t. And that "didn''t" part is where things get interesting.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 29.3
+  transition: continuation
+- id: e03
+  type: open_file
+  target: sql_viewer
+  asset: assets/lesson_1_queries.sql
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 1.8
+  transition: continuation
+- id: e04
+  type: highlight_section
+  target: sql_viewer
+  section: count_star
+  transition: new_concept
+  clears: []
+  narration: 'First query. We''re asking S-Q-L the simplest possible question: how many rows are in the
+    orders table? COUNT star is like counting heads in a room. You don''t care what anyone''s wearing,
+    you don''t care if someone forgot their name tag. You just point at each person and go one, two, three.
+    Every row counts, no exceptions. Let''s run it.
+
+    '
+- id: e04_pause
+  type: pause
+  duration: 30.3
+  transition: continuation
+- id: e05
+  type: run_query
+  target: sql_viewer
+  query_ref: count_star
+- id: e05_pause
+  type: pause
+  duration: 2.7
+  transition: continuation
+- id: e06
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Ten. Ten rows, ten orders. Exactly what we''d expect. Nothing weird here. Hold onto that
+    number, because it''s about to get betrayed.
+
+    '
+- id: e06_pause
+  type: pause
+  duration: 15.5
+  transition: continuation
+- id: e07
+  type: highlight_section
+  target: sql_viewer
+  section: count_column
+  transition: new_concept
+  clears:
+  - count_star
+  narration: 'Now here''s where the trap springs. This query looks almost identical, one tiny difference.
+    Instead of COUNT star, we''re using COUNT discount code. We''re asking S-Q-L to count only the rows
+    that actually have a value in that discount code column. Think of it like counting heads in the room
+    again, but this time you''re only counting people who are holding a ticket. No ticket, you''re invisible.
+    Let''s see what happens.
+
+    '
+- id: e07_pause
+  type: pause
+  duration: 34.2
+  transition: continuation
+- id: e08
+  type: run_query
+  target: sql_viewer
+  query_ref: count_column
+- id: e08_pause
+  type: pause
+  duration: 2.7
+  transition: continuation
+- id: e09
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Seven. Same table, same ten rows, and we just got seven. Three orders just vanished from
+    our count. If this were a report to your boss, you''d be telling them you had seven orders when you
+    actually had ten. And S-Q-L didn''t flash a warning, didn''t raise an error, nothing. It just quietly
+    handed you the wrong number. That''s... not great.
+
+    '
+- id: e09_pause
+  type: pause
+  duration: 29.4
+  transition: continuation
+- id: e10
+  type: highlight_section
+  target: sql_viewer
+  section: isolate_the_nulls
+  transition: new_concept
+  clears:
+  - count_column
+  narration: 'So let''s catch the culprit in the act. This query pulls every row from orders where the
+    discount code IS NULL, meaning the value is missing, blank, unknown. NULL in S-Q-L is like an empty
+    chair at a dinner party. The plate''s there, the seat''s there, but nobody showed up. And COUNT column
+    name just skips right past those empty chairs like they don''t exist.
+
+    '
+- id: e10_pause
+  type: pause
+  duration: 32.5
+  transition: continuation
+- id: e11
+  type: run_query
+  target: sql_viewer
+  query_ref: isolate_the_nulls
+- id: e11_pause
+  type: pause
+  duration: 2.7
+  transition: continuation
+- id: e12
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'There they are. Three rows, three ghosts. Order ID two, James Okoro. Order ID five, Lucia
+    Reyes. Order ID nine, Elena Volkov. All three have no discount code, the value is NULL. These are
+    perfectly real orders, real customers who spent real money, but COUNT discount code pretended they
+    weren''t there. That''s the silent undercount.
+
+    '
+- id: e12_pause
+  type: pause
+  duration: 32.7
+  transition: continuation
+- id: e13
+  type: highlight_section
+  target: sql_viewer
+  section: measure_the_gap
+  transition: new_concept
+  clears:
+  - isolate_the_nulls
+  narration: 'Here''s a bonus trick that''ll make you look sharp. You can subtract COUNT discount code
+    from COUNT star in a single query to measure exactly how many NULLs are hiding in your data. We''re
+    calling that result missing discounts. Let''s run it.
+
+    '
+- id: e13_pause
+  type: pause
+  duration: 22.3
+  transition: continuation
+- id: e14
+  type: run_query
+  target: sql_viewer
+  query_ref: measure_the_gap
+- id: e14_pause
+  type: pause
+  duration: 2.7
+  transition: continuation
+- id: e15
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'Total rows, ten. Rows with discount, seven. Missing discounts, three. Ten minus seven equals
+    three. Clean, simple, and now you''ve got proof. You can drop this into any report and instantly show
+    how many rows are missing a value in whatever column you care about. No guessing, no scrolling through
+    the table counting by hand.
+
+    '
+- id: e15_pause
+  type: pause
+  duration: 31.3
+  transition: continuation
+- id: e16
+  type: zoom_result
+  target: sql_viewer
+  transition: emphasis
+  narration: 'So here''s the one rule to tattoo on your brain. If your question is "how many rows exist,"
+    use COUNT star, always. It counts every row, NULLs and all. If your question is "how many rows actually
+    have a value in this specific column," then COUNT column name is the right tool. The mistake happens
+    when you mean to count all rows but you accidentally put a column name in there that has NULLs. S-Q-L
+    won''t tap you on the shoulder. It''ll just quietly give you a smaller number and let you walk into
+    that meeting with the wrong data. Now you know. That one character, star versus column name, really
+    does matter.
+
+    '
+- id: e16_pause
+  type: pause
+  duration: 53.1
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

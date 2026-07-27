@@ -1,0 +1,355 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "The top spender query lied to you - here is the customer it buried",
+  "course": "Why your top spenders query missed your actual best customer using SQL",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_top_spenders_query_missed_your_/video_1_1/production_card.yml",
+  "total_duration_ms": 287766,
+  "narration_locked": false,
+  "adapter_type": "sql_viewer",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 300,
+      "type": "open_database",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_top_spenders_query_missed_your_/video_1_1/assets/why_your_top_spenders_query_missed_your_.db"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1200,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 47266,
+      "type": "show_schema",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Alright, if you've ever written a quick S-Q-L query to find your top customer, sorted by total spend, and felt pretty good about the answer, this one's for you. By the end of this lesson you'll see exactly why that query lied to you, and how one extra line of S-Q-L reveals who's actually driving your business right now. We've got one table here, customers, with five columns: id, name, total spent, last order date, and order count. Think of it like a simple spreadsheet your sales team keeps, one row per customer, tracking how much they've spent, when they last showed up, and how many times they've ordered.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 48166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 53.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 48916,
+      "type": "open_file",
+      "target": "sql_viewer",
+      "params": {
+        "asset": "/Users/waltershields/Desktop/wsda-video-engine/courses/why_your_top_spenders_query_missed_your_/video_1_1/assets/lesson_1_queries.sql"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 49816,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 2.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 73283,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "naive_top_spender"
+      },
+      "narration": "Here's the query everyone writes on day one. We're selecting name and total spent from customers, ordering by total spent descending, and grabbing just the top row with LIMIT one. It's the S-Q-L equivalent of flipping to the last page of a receipt to see who spent the most. Seems reasonable, right? Let's run it.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 74183,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 30.8
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 75033,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "naive_top_spender"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 75933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 99266,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Big Corp, forty eight thousand dollars even. That's our winner. Ship 'em a gift basket, pop the champagne, best customer found. Except, not really. We only looked at one number, total spent, and we ignored everything else. That's like picking your best friend based entirely on who's tallest. Let's see what we missed.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 99716,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 29.9
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 117766,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "full_table_reveal"
+      },
+      "narration": "Now we're pulling the full picture, all five customers with every column: name, total spent, last order date, and order count. This is us actually opening the filing cabinet instead of just reading the label on the front. Let's see what's inside.",
+      "transition": "new_concept",
+      "clears": [
+        "naive_top_spender"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 118666,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 25.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08",
+      "time_offset_ms": 119516,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "full_table_reveal"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e08_pause",
+      "time_offset_ms": 120416,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09",
+      "time_offset_ms": 168333,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Okay, now it gets interesting. Big Corp sits at the top with forty eight thousand dollars, but look at the rest of that row. Last order date, February fourteenth, twenty twenty three. Order count, one. One order, over two years ago. Big Corp showed up once, dropped a bag of cash, and ghosted you. Now look at Sara Martinez, fourth row down. Twelve thousand three hundred fifty dollars total, sure, way less than Big Corp. But her last order date is June eighteenth, twenty twenty five, and she's placed forty seven orders. Forty seven! She's basically on a first name basis with your shipping team. That's not a customer, that's a relationship.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e09_pause",
+      "time_offset_ms": 168783,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 54.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e10",
+      "time_offset_ms": 206000,
+      "type": "highlight_section",
+      "target": "sql_viewer",
+      "params": {
+        "section": "filtered_by_recency_and_frequency"
+      },
+      "narration": "So here's the fix, and it's one line of S-Q-L. We add a WHERE clause that says last order date has to be on or after April sixteenth, twenty twenty five, that's the date you get from DATE of July fifteenth twenty twenty five minus ninety days. If you haven't ordered since that cutoff, you don't get to be on this list. Then we sort by order count descending instead of total spent. We're asking a better question now: who's actually showing up and buying things right now?",
+      "transition": "new_concept",
+      "clears": [
+        "full_table_reveal"
+      ],
+      "phases": []
+    },
+    {
+      "id": "e10_pause",
+      "time_offset_ms": 206900,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 44.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11",
+      "time_offset_ms": 207750,
+      "type": "run_query",
+      "target": "sql_viewer",
+      "params": {
+        "query_ref": "filtered_by_recency_and_frequency"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e11_pause",
+      "time_offset_ms": 208650,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 3.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12",
+      "time_offset_ms": 254483,
+      "type": "show_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "And just like that, Sara Martinez jumps to number one with forty seven orders and twelve thousand three hundred fifty dollars. Right behind her, Liam Chen with twenty nine orders and eight thousand seven hundred forty dollars and fifty cents. Then Northgate LLC with fourteen orders and twenty two thousand five hundred dollars. Big Corp? Gone. Their last order was February fourteenth, twenty twenty three, way before our April sixteenth, twenty twenty five cutoff. Delta Supplies missed it too, last order January ninth, twenty twenty four. Your top spender was a ghost. Sara's your actual best customer, and she was buried at row four this whole time.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e12_pause",
+      "time_offset_ms": 254933,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 52.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13",
+      "time_offset_ms": 280466,
+      "type": "zoom_result",
+      "target": "sql_viewer",
+      "params": {},
+      "narration": "Here's the takeaway. Total spend by itself is a vanity metric, it's like judging a restaurant by the most expensive item on the menu instead of how many people keep coming back. Filter by recency, sort by frequency, and you'll find the customers who are actually driving your business right now. Don't send the gift basket to a ghost.",
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e13_pause",
+      "time_offset_ms": 281116,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 32.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 282766,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

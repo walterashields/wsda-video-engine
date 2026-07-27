@@ -1,0 +1,162 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: One Paste to Kill Fake Column Names
+course: How to Paste Your Schema So ChatGPT Stops Inventing Column Names
+assets:
+  demo: chat
+events:
+- id: e01
+  type: open_chat
+  target: chat_demo
+  user_name: You
+  initials: YO
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 1.5
+  transition: continuation
+- id: e02
+  type: new_conversation
+  target: chat_demo
+  title: The Hallucination Horror Show
+  transition: new_concept
+- id: e02_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e03
+  type: show_message
+  target: chat_demo
+  text: Write me a query to find customers who have not ordered in 90 days.
+  region: prompt-1
+  transition: continuation
+- id: e03_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e04
+  type: show_response
+  target: chat_demo
+  text: 'SELECT customer_email, last_order_date
+
+    FROM orders_table
+
+    WHERE last_order_date < DATEADD(day, -90, GETDATE());'
+  region: response-1
+  transition: continuation
+- id: e04_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e04b
+  type: highlight_region
+  target: chat_demo
+  region: response-1
+  callout: These column names are completely made up
+  transition: continuation
+  narration: 'Look at this. You asked ChatGPT for a query and it wrote something gorgeous. One problem,
+    not a single one of these column names is real. It literally made them up. "customer_email"? Your
+    database calls that "cust_eml" because Dave from IT set it up in two thousand seven and Dave did not
+    believe in vowels. "last_order_date"? That''s actually "lst_ord_dt." And "orders_table"? It''s "tbl_ord_hist."
+    You''ll paste this into your database tool, hit run, and get nothing but a wall of red errors. ChatGPT
+    didn''t write you a query, it wrote you a wish.
+
+    '
+- id: e04b_pause
+  type: pause
+  duration: 46.1
+  transition: continuation
+- id: e04c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e04c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e05
+  type: new_conversation
+  target: chat_demo
+  title: The One-Paste Fix
+  transition: new_concept
+- id: e05_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e05b
+  type: highlight_region
+  target: chat_demo
+  region: chat-area
+  callout: This time we paste the schema first
+  transition: new_concept
+  narration: 'Here''s the fix and it takes three seconds. Go to your database, grab the CREATE TABLE statement,
+    that''s basically the recipe card that lists every real column name your table actually has, and paste
+    it right into ChatGPT before your question.
+
+    '
+- id: e05b_pause
+  type: pause
+  duration: 25.0
+  transition: continuation
+- id: e05c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e05c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e06
+  type: show_message
+  target: chat_demo
+  text: "Here is my actual schema:\n\nCREATE TABLE tbl_ord_hist (\n  cust_eml VARCHAR(255),\n  lst_ord_dt\
+    \ DATE,\n  ord_amt DECIMAL(10,2)\n);\n\nWrite me a query to find customers who have not ordered in\
+    \ 90 days."
+  region: prompt-2
+  transition: continuation
+- id: e06_pause
+  type: pause
+  duration: 0.5
+  transition: continuation
+- id: e07
+  type: show_response
+  target: chat_demo
+  text: 'SELECT cust_eml, lst_ord_dt
+
+    FROM tbl_ord_hist
+
+    WHERE lst_ord_dt < DATEADD(day, -90, GETDATE());'
+  region: response-2
+  transition: continuation
+- id: e07_pause
+  type: pause
+  duration: 1.0
+  transition: continuation
+- id: e07b
+  type: highlight_region
+  target: chat_demo
+  region: response-2
+  callout: Every column name is real this time
+  transition: continuation
+  narration: 'Now look. "cust_eml," "lst_ord_dt," "tbl_ord_hist." Every single column name is real. ChatGPT
+    doesn''t have to guess anymore because you handed it the cheat sheet. It''s like giving someone directions
+    versus saying "you''ll figure it out." One paste. That''s it. Stop letting the A-I improvise. Paste
+    your schema.
+
+    '
+- id: e07b_pause
+  type: pause
+  duration: 27.4
+  transition: continuation
+- id: e07c
+  type: clear_highlight
+  target: chat_demo
+  transition: continuation
+- id: e07c_pause
+  type: pause
+  duration: 0.3
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

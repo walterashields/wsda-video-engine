@@ -1,0 +1,363 @@
+{
+  "schema_version": "3.0",
+  "lesson_id": "video_1_1",
+  "title": "One Paste to Kill Fake Column Names",
+  "course": "How to Paste Your Schema So ChatGPT Stops Inventing Column Names",
+  "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/how_to_paste_your_schema_so_chatgpt_stop/video_1_1/production_card.yml",
+  "total_duration_ms": 99900,
+  "narration_locked": false,
+  "adapter_type": "chat_demo",
+  "events": [
+    {
+      "id": "e01",
+      "time_offset_ms": 400,
+      "type": "open_chat",
+      "target": "chat_demo",
+      "params": {
+        "user_name": "You",
+        "initials": "YO"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e01_pause",
+      "time_offset_ms": 1300,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02",
+      "time_offset_ms": 2150,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "The Hallucination Horror Show"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e02_pause",
+      "time_offset_ms": 3050,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03",
+      "time_offset_ms": 3900,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Write me a query to find customers who have not ordered in 90 days.",
+        "region": "prompt-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e03_pause",
+      "time_offset_ms": 4350,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04",
+      "time_offset_ms": 5200,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "SELECT customer_email, last_order_date\nFROM orders_table\nWHERE last_order_date < DATEADD(day, -90, GETDATE());",
+        "region": "response-1"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04_pause",
+      "time_offset_ms": 5650,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04b",
+      "time_offset_ms": 44833,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-1",
+        "callout": "These column names are completely made up"
+      },
+      "narration": "Look at this. You asked ChatGPT for a query and it wrote something gorgeous. One problem, not a single one of these column names is real. It literally made them up. \"customer_email\"? Your database calls that \"cust_eml\" because Dave from IT set it up in two thousand seven and Dave did not believe in vowels. \"last_order_date\"? That's actually \"lst_ord_dt.\" And \"orders_table\"? It's \"tbl_ord_hist.\" You'll paste this into your database tool, hit run, and get nothing but a wall of red errors. ChatGPT didn't write you a query, it wrote you a wish.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04b_pause",
+      "time_offset_ms": 45283,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 46.1
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04c",
+      "time_offset_ms": 46133,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e04c_pause",
+      "time_offset_ms": 46583,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05",
+      "time_offset_ms": 47433,
+      "type": "new_conversation",
+      "target": "chat_demo",
+      "params": {
+        "title": "The One-Paste Fix"
+      },
+      "narration": null,
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05_pause",
+      "time_offset_ms": 48333,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05b",
+      "time_offset_ms": 66266,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "chat-area",
+        "callout": "This time we paste the schema first"
+      },
+      "narration": "Here's the fix and it takes three seconds. Go to your database, grab the CREATE TABLE statement, that's basically the recipe card that lists every real column name your table actually has, and paste it right into ChatGPT before your question.",
+      "transition": "new_concept",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05b_pause",
+      "time_offset_ms": 67166,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 25.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05c",
+      "time_offset_ms": 68016,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e05c_pause",
+      "time_offset_ms": 68466,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06",
+      "time_offset_ms": 69316,
+      "type": "show_message",
+      "target": "chat_demo",
+      "params": {
+        "text": "Here is my actual schema:\n\nCREATE TABLE tbl_ord_hist (\n  cust_eml VARCHAR(255),\n  lst_ord_dt DATE,\n  ord_amt DECIMAL(10,2)\n);\n\nWrite me a query to find customers who have not ordered in 90 days.",
+        "region": "prompt-2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e06_pause",
+      "time_offset_ms": 69766,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.5
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07",
+      "time_offset_ms": 70616,
+      "type": "show_response",
+      "target": "chat_demo",
+      "params": {
+        "text": "SELECT cust_eml, lst_ord_dt\nFROM tbl_ord_hist\nWHERE lst_ord_dt < DATEADD(day, -90, GETDATE());",
+        "region": "response-2"
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07_pause",
+      "time_offset_ms": 71066,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 1.0
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07b",
+      "time_offset_ms": 91500,
+      "type": "highlight_region",
+      "target": "chat_demo",
+      "params": {
+        "region": "response-2",
+        "callout": "Every column name is real this time"
+      },
+      "narration": "Now look. \"cust_eml,\" \"lst_ord_dt,\" \"tbl_ord_hist.\" Every single column name is real. ChatGPT doesn't have to guess anymore because you handed it the cheat sheet. It's like giving someone directions versus saying \"you'll figure it out.\" One paste. That's it. Stop letting the A-I improvise. Paste your schema.",
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07b_pause",
+      "time_offset_ms": 91950,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 27.4
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07c",
+      "time_offset_ms": 92800,
+      "type": "clear_highlight",
+      "target": "chat_demo",
+      "params": {},
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e07c_pause",
+      "time_offset_ms": 93250,
+      "type": "pause",
+      "target": null,
+      "params": {
+        "duration": 0.3
+      },
+      "narration": null,
+      "transition": "continuation",
+      "clears": [],
+      "phases": []
+    },
+    {
+      "id": "e_end",
+      "time_offset_ms": 94900,
+      "type": "fade_out",
+      "target": "all",
+      "params": {},
+      "narration": null,
+      "transition": "emphasis",
+      "clears": [],
+      "phases": []
+    }
+  ]
+}

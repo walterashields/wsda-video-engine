@@ -1,0 +1,67 @@
+{
+  "topic": "Why your top spenders query missed your actual best customer using sql (written for a complete beginner with no prior knowledge; mostly watching, minimal hands-on requirement)",
+  "format": "short-video",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "SQL content is exploding on short-form platforms as data literacy becomes a baseline expectation for marketing, product, and business roles. The counterintuitive angle of a simple query being WRONG hooks the growing audience of people learning SQL who assume SELECT and ORDER BY are all they need.",
+    "target_learner": "A complete beginner who has seen or written a basic SELECT query and thinks sorting by total spend is enough to find the best customer \u2014 likely a marketer, junior analyst, or career-switcher scrolling TikTok or Reels for bite-sized SQL knowledge.",
+    "learner_goal": "Understand that a naive ORDER BY total_spent query can miss a loyal, frequent, recent customer who is actually more valuable \u2014 and see the one-line fix that reveals them.",
+    "competition_gap": "Most SQL shorts teach syntax in a vacuum. Almost none show a real business scenario where a correct query gives a misleading answer. This video weaponizes surprise \u2014 the viewer feels smart, then gets humbled, then gets the fix, all in under two minutes.",
+    "platform_fit": "TikTok, Instagram Reels, and YouTube Shorts \u2014 the controversial hot-take format (your query is WRONG) performs extremely well in short-form feeds where pattern interrupts drive watch-through rates."
+  },
+  "content_structure": {
+    "hook": "This SQL query finds your top spender. It also completely misses your best customer. Let me show you why.",
+    "core_promise": "You will see exactly how a simple ORDER BY total_spent query hides a more valuable customer and learn the one tweak that reveals them.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The top spender query lied to you \u2014 here is the customer it buried",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to explain why sorting customers by total spend alone can hide a more valuable customer and recognize that factoring in recency or frequency changes the answer.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The query that looks right but is not",
+            "duration_seconds": 50,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A simple customers table with five rows: name, total_spent, last_order_date, order_count. The presenter runs SELECT name, total_spent FROM customers ORDER BY total_spent DESC LIMIT 1. Result: Big Corp at $48,000. Then the presenter scrolls to reveal the full table \u2014 a customer named Sara with $12,000 total but 47 orders in the last 90 days, versus Big Corp with 1 order from 2 years ago.",
+            "what_learner_hears": "Here is your classic top spender query. Big Corp wins with 48 grand. Ship them a gift basket, right? But scroll down. Sara spent less overall \u2014 except she ordered 47 times in the last three months. Big Corp ordered once, two years ago, and ghosted you. Your top spender is a ghost. Sara is your actual best customer.",
+            "exercise_file": null,
+            "transition_to_next": "Quick beat \u2014 so what do you do instead?"
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The one-line fix that changes everything",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The presenter modifies the query to add a WHERE clause: WHERE last_order_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY) and changes ORDER BY to order_count DESC. Runs it. Sara now appears at the top. Big Corp is gone. A final text overlay says: Top spender is not the same as best customer. Filter by recency. Sort by frequency. Know the difference.",
+            "what_learner_hears": "Add one WHERE clause \u2014 only customers who ordered in the last 90 days. Now sort by order count. Sara jumps to number one. Big Corp disappears. Total spend is a vanity metric without recency and frequency. One line of SQL just saved your marketing budget. Do not send the gift basket to a ghost.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [],
+        "key_takeaway": "Sorting by total spend alone is a vanity metric \u2014 filtering by recency and sorting by frequency reveals who is actually driving your business right now."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "customers_top_spender_trap.sql",
+      "type": "sql",
+      "purpose": "Contains the CREATE TABLE statement, sample data for five customers, the naive top-spender query, and the improved recency-plus-frequency query so curious viewers can paste it into any free SQL playground and try it themselves.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "beginner",
+    "hands_on_ratio": "5% \u2014 this is a watch-and-absorb format with an optional SQL file linked in bio for anyone who wants to try it",
+    "adapters_needed": [
+      "sql_viewer"
+    ]
+  }
+}
