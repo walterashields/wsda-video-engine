@@ -266,8 +266,11 @@ def save_brief(brief: dict, topic: str) -> tuple[Path, Path]:
 @click.option("--format", "fmt", default="course",
               type=click.Choice(["course", "short-video", "tutorial", "lesson", "micro"]),
               help="Content format")
+@click.option("--hands-on", "hands_on", default="moderate",
+              type=click.Choice(["light", "moderate", "heavy"]),
+              help="Hands-on exercise intensity - stored verbatim for draft.py to act on")
 @click.option("--open-brief", is_flag=True, help="Open the markdown brief after generation")
-def research(topic, fmt, open_brief):
+def research(topic, fmt, hands_on, open_brief):
     """Research a topic and generate a content brief for draft.py."""
 
     console.print(Panel(
@@ -291,6 +294,12 @@ def research(topic, fmt, open_brief):
             sys.exit(1)
 
     json_path, md_path = save_brief(brief, topic)
+
+    # Store the user's actual hands-on selection verbatim, not just the
+    # model's free-text hands_on_ratio guess - draft.py needs a reliable
+    # structured value to decide whether to generate real exercise files.
+    brief['hands_on_style'] = hands_on
+    json_path.write_text(json.dumps(brief, indent=2))
 
     # Print summary
     ma = brief['market_analysis']

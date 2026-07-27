@@ -287,7 +287,7 @@ STUDIO_HTML = '''<!DOCTYPE html>
 <script>
 // Chip toggle
 document.querySelectorAll('.chip-group').forEach(group => {
-  const multi = group.id === 'tools-chips' || group.id === 'handson-chips';
+  const multi = group.id === 'tools-chips';
   group.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
       if (chip.classList.contains('disabled')) return;
@@ -589,7 +589,7 @@ def run_production(job_id: str, payload: dict):
 
         code, out = run_cmd([
             sys.executable, 'research.py', enriched,
-            '--format', fmt,
+            '--format', fmt, '--hands-on', handson,
         ])
         if code != 0:
             update('research', 'error', 'Research failed')

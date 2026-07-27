@@ -10,8 +10,10 @@ Usage:
   python3 draft.py research/ai_for_beginners/brief.json --lesson 1
 """
 
+import csv
 import json
 import re
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -1517,6 +1519,61 @@ def build_verified_sql_and_db(lesson: dict, lesson_title: str, assets_dir: Path,
     return sql_content, db_path, query_results
 
 
+def generate_exercise_files(sql_content: str, db_path: Path, output_dir: Path,
+                             hands_on_style: str) -> list:
+    """
+    Produce real, downloadable exercise materials when hands_on_style is
+    'moderate' or 'heavy' - a CSV export of the lesson's actual verified
+    dataset, a starter SQL file with the teaching queries blanked out
+    (schema and seed data intact, so the learner practices on the exact
+    same real data shown in the video), and an answer key.
+
+    'light' produces nothing - selecting it means no exercise materials,
+    not just softer narration. Before this function existed, EVERY
+    hands-on selection produced zero actual files regardless of choice;
+    this is what makes "heavy" mean something concrete.
+    """
+    if hands_on_style not in ('moderate', 'heavy'):
+        return []
+
+    exercise_dir = output_dir / "exercise"
+    exercise_dir.mkdir(exist_ok=True)
+    created = []
+
+    conn = sqlite3.connect(str(db_path))
+    try:
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()]
+        for t in tables:
+            csv_path = exercise_dir / f"{t}.csv"
+            cursor = conn.execute(f"SELECT * FROM {t}")
+            cols = [d[0] for d in cursor.description]
+            with open(csv_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(cols)
+                writer.writerows(cursor.fetchall())
+            created.append(csv_path)
+    finally:
+        conn.close()
+
+    sections = parse_sql_sections(sql_content)
+    starter_content = sql_content
+    for name, body in sections.items():
+        starter_content = starter_content.replace(
+            body, f"-- Your turn: write the query for '{name}' here\n"
+        )
+    starter_path = exercise_dir / "practice_starter.sql"
+    starter_path.write_text(starter_content)
+    created.append(starter_path)
+
+    answer_path = exercise_dir / "answer_key.sql"
+    answer_path.write_text(sql_content)
+    created.append(answer_path)
+
+    return created
+
+
 def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
     lesson_num = lesson['lesson_number']
     lesson_id = f"video_1_{lesson_num}"
@@ -1549,6 +1606,18 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         )
         schema = get_real_schema(db_path)
         verified_data_block = format_verified_data_block(schema, query_results)
+
+        hands_on_style = brief.get('hands_on_style', 'moderate')
+        exercise_files = generate_exercise_files(
+            sql_content, db_path, lesson_dir, hands_on_style
+        )
+        if exercise_files:
+            console.print(
+                f"  [green]OK[/green] Exercise files ({hands_on_style}): "
+                f"{', '.join(f.name for f in exercise_files)}"
+            )
+        else:
+            console.print(f"  [dim]No exercise files (hands-on: {hands_on_style})[/dim]")
 
     # Build lesson context string
     lesson_context_parts = [
