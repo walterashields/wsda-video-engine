@@ -1,52 +1,83 @@
 #!/usr/bin/env python3
 """
-WSDA Silent Renderer — Record video from visual storyboard without audio
+WSDA Silent Renderer v2.1 — Self-contained video recording
 
-Reads a visual storyboard YAML and executes each event in the browser,
-recording the screen to an MP4. No audio is generated — this is the
-silent video that the narrator will later watch and describe.
-
-Usage:
-    from silent_renderer import SilentRenderer
-    renderer = SilentRenderer()
-    renderer.render("storyboard.yml", "silent.mp4")
+Starts a temporary HTTP server for the viewer HTML, then records
+the screen via Playwright. No external server required.
 """
 
 import asyncio
+import http.server
 import json
+import shutil
+import socketserver
 import subprocess
+import threading
 from pathlib import Path
 
 import yaml
 from playwright.async_api import async_playwright
 
-VIEWER_URL = "http://localhost:7010/viewer"
+ROOT = Path(__file__).parent
+VIEWER_HTML = ROOT / "web" / "templates" / "viewer.html"
+
+
+class ViewerServer:
+    """Temporary HTTP server for the viewer HTML."""
+
+    def __init__(self, port: int = 0):
+        self.port = port
+        self.server = None
+        self.thread = None
+
+    def start(self):
+        """Start the server in a background thread."""
+        viewer_dir = VIEWER_HTML.parent
+
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=str(viewer_dir), **kwargs)
+
+            def log_message(self, format, *args):
+                pass  # Suppress logs
+
+        self.server = socketserver.TCPServer(("127.0.0.1", self.port), Handler)
+        self.port = self.server.server_address[1]
+
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        return f"http://127.0.0.1:{self.port}/viewer.html"
+
+    def stop(self):
+        if self.server:
+            self.server.shutdown()
 
 
 class SilentRenderer:
     """Renders a visual storyboard to silent MP4 using Playwright."""
 
-    def __init__(self, viewer_url: str = VIEWER_URL):
-        self.viewer_url = viewer_url
+    def __init__(self):
+        self.server = ViewerServer()
+        self.viewer_url = None
         self.page = None
         self.browser = None
         self.playwright = None
 
     async def start(self):
-        """Launch browser and open viewer."""
+        """Start server and launch browser."""
+        self.viewer_url = self.server.start()
+        await asyncio.sleep(0.3)  # Let server start
+
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(headless=True)
-        self.page = await self.browser.new_page(viewport={"width": 1920, "height": 1080})
-        await self.page.goto(self.viewer_url)
-        await self.page.wait_for_load_state("networkidle")
-        await asyncio.sleep(0.5)
 
     async def stop(self):
-        """Close browser."""
+        """Close browser and stop server."""
         if self.browser:
             await self.browser.close()
         if self.playwright:
             await self.playwright.stop()
+        self.server.stop()
 
     # ── Event Handlers ──────────────────────────────────────────────────────
     async def handle_show_title_card(self, params: dict):
@@ -84,7 +115,6 @@ class SilentRenderer:
         await self.page.evaluate(f"setSQL({json.dumps(params.get('query_text', ''))});")
         label = params.get('label', '')
         if label:
-            # Add color coding class
             await self.page.evaluate(f"setQueryColor(0, 999, {json.dumps(label)});")
         await asyncio.sleep(0.3)
 
@@ -104,7 +134,6 @@ class SilentRenderer:
                 {json.dumps(params.get('query_name', ''))}
             );
         """)
-        # Apply highlights and annotations
         highlight = params.get('highlight_row')
         if highlight is not None:
             color = params.get('highlight_color', 'blue')
@@ -161,24 +190,8 @@ class SilentRenderer:
 
         events = storyboard.get("events", [])
 
-        # Start browser
+        # Start server and browser
         await self.start()
-
-        # Start ffmpeg recording
-        # We'll use Playwright's built-in video recording instead
-        # This is simpler and more reliable
-
-        # Actually, let's use ffmpeg to record the browser viewport
-        # First, we need to know the browser's CDP websocket URL
-        cdp_ws = self.page.context.browser.ws_endpoint if hasattr(self.page.context.browser, 'ws_endpoint') else None
-
-        # For now, use Playwright's video recording
-        # Enable video recording on the context
-        # We need to restart with video enabled
-        await self.stop()
-
-        self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=True)
 
         # Create context with video recording
         context = await self.browser.new_context(
@@ -223,26 +236,24 @@ class SilentRenderer:
 
         # Close context to save video
         await context.close()
-        await self.browser.close()
-        await self.playwright.stop()
+        await self.stop()
 
-        # Playwright saves video with a generated name, we need to rename it
-        # Find the video file
+        # Convert webm to mp4
         video_files = list(output_mp4.parent.glob("*.webm"))
         if video_files:
-            # Convert webm to mp4 using ffmpeg
             webm_path = video_files[0]
             subprocess.run([
                 "ffmpeg", "-y", "-i", str(webm_path),
                 "-c:v", "libx264", "-preset", "fast", "-crf", "23",
                 "-pix_fmt", "yuv420p", str(output_mp4)
             ], check=True, capture_output=True)
-            webm_path.unlink()  # Clean up webm
-
-        print(f"[SilentRenderer] Saved: {output_mp4}")
+            webm_path.unlink()
+            print(f"[SilentRenderer] Saved: {output_mp4}")
+        else:
+            print("[SilentRenderer] Warning: no video file found")
 
     def render(self, storyboard_path: Path, output_mp4: Path):
-        """Synchronous wrapper for render_async."""
+        """Synchronous wrapper."""
         asyncio.run(self.render_async(Path(storyboard_path), Path(output_mp4)))
 
 
