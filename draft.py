@@ -73,7 +73,8 @@ Control events (all lesson types):
    NEVER on run_query, show_message, show_response, open_chat, new_conversation.
 
 2. Every event with narration is immediately followed by a pause event.
-   Pause duration formula: (word_count / 145 * 60) + 8 seconds, rounded up.
+   Pause duration formula: (word_count / 145 * 60) + buffer seconds, rounded up.
+ Buffer by format: micro=2s, short=4s, standard=6s.
    Example: 60 words = (60/145*60)+8 = 32.8 → use 33.0
 
 3. Numbers must match what the SQL viewer displays (2 decimal places).
@@ -916,7 +917,7 @@ def _spoken_word_units(text: str) -> float:
     return units
 
 
-def recompute_pause_durations(raw_yaml: str) -> str:
+def recompute_pause_durations(raw_yaml: str, fmt: str = "standard") -> str:
     """
     Deterministically recalculate every pause duration from the ACTUAL
     narration text using numeric-aware word counting, overriding whatever
@@ -936,13 +937,14 @@ def recompute_pause_durations(raw_yaml: str) -> str:
         if i + 1 < len(events) and events[i + 1].get('type') == 'pause':
             pause_event = events[i + 1]
             units = _spoken_word_units(narr)
-            new_duration = round((units / 145 * 60) + 8, 1)
+            buffer = {"micro": 2.0, "short": 4.0, "short-video": 4.0}.get(fmt.lower(), 6.0)
+            new_duration = round((units / 145 * 60) + buffer, 1)
             pause_event['duration'] = new_duration
 
     return yaml.dump(parsed, sort_keys=False, allow_unicode=True, width=100)
 
 
-def enforce_duration_cap(raw_yaml: str, max_s: float) -> tuple:
+def enforce_duration_cap(raw_yaml: str, max_s: float, fmt: str = "standard") -> tuple:
     """
     If total runtime exceeds the format cap, compress pauses toward their
     minimum safe floor (word-time + 1s margin) rather than uniformly scaling
@@ -1877,7 +1879,7 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         # Deterministically recompute pause durations from actual narration
         # text (numeric-aware), overriding the model's own word-count math.
         # This is the fix for audio getting cut off / distorted on numbers.
-        raw = recompute_pause_durations(raw)
+        raw = recompute_pause_durations(raw, lesson_format)
         console.print(f"  [green]OK[/green] Pause durations recalculated (numeric-aware)")
 
         # Enforce duration limit based on format — compress buffer slack only,
@@ -1889,7 +1891,7 @@ def draft_lesson(lesson: dict, brief: dict, course_dir: Path) -> Path:
         max_min = format_limits.get(lesson_format, 15)
         max_s = max_min * 60
 
-        raw, cap_message = enforce_duration_cap(raw, max_s)
+        raw, cap_message = enforce_duration_cap(raw, max_s, lesson_format)
         console.print(f"  [cyan]{cap_message}[/cyan]")
 
         card_yaml = raw
