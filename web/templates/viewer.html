@@ -1,979 +1,678 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=1280">
-  <title>WSDA SQL Viewer</title>
-  <style>
-    /* ── Design tokens ─────────────────────────────────────────── */
-    :root {
-      --navy:         #0f1923;
-      --navy-mid:     #162030;
-      --navy-light:   #1e2d3d;
-      --panel:        #1a2840;
-      --border:       #2a3f58;
-      --green:        #06c015;
-      --text:         #e8edf2;
-      --text-dim:     #8aa0b8;
-      --text-muted:   #4d6680;
-      --highlight:    #ffd700;
-      --highlight-bg: rgba(255,215,0,0.10);
-      --accent-red:   #e05c5c;
-      --accent-blue:  #4a9eff;
-      --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
-      --sans: 'Inter','Segoe UI',system-ui,sans-serif;
-      --radius: 6px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WSDA SQL Viewer</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #7d8590;
+    --accent: #2f81f7;
+    --accent-glow: rgba(47,129,247,0.15);
+    --green: #3fb950;
+    --green-bg: rgba(63,185,80,0.12);
+    --red: #f85149;
+    --red-bg: rgba(248,81,73,0.12);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210,153,34,0.12);
+    --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ── Title Card Overlay ── */
+  #title-card {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 40px;
+    text-align: center;
+  }
+  #title-card.active { display: flex; }
+  #title-card .title-card-badge {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+  }
+  #title-card .title-card-headline {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.15;
+    max-width: 800px;
+    margin-bottom: 20px;
+    background: linear-gradient(90deg, #fff 0%, #7d8590 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #title-card .title-card-sub {
+    font-size: 20px;
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.5;
+  }
+  #title-card .title-card-stakes {
+    margin-top: 32px;
+    font-size: 18px;
+    color: var(--red);
+    font-weight: 600;
+    padding: 12px 24px;
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    background: var(--red-bg);
+  }
 
-    html, body {
-      width: 1280px;
-      height: 720px;
-      overflow: hidden;
-      background: var(--navy);
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 14px;
-    }
+  /* ── Layout ── */
+  .app { display: flex; flex: 1; overflow: hidden; }
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease, min-width 0.3s ease;
+  }
+  .sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; border: none; }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* ── App shell ─────────────────────────────────────────────── */
-    .app {
-      width: 1280px;
-      height: 720px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+  /* ── Header ── */
+  .header {
+    height: 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .header-brand { font-weight: 700; color: var(--accent); }
+  .header-db { color: var(--text-dim); }
+  .header-db strong { color: var(--text); }
+  .header-toggle {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .header-toggle:hover { color: var(--text); border-color: var(--accent); }
 
-    /* ── Top bar ───────────────────────────────────────────────── */
-    .topbar {
-      height: 44px;
-      flex-shrink: 0;
-      background: var(--navy-mid);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 14px;
-    }
-    .topbar-logo {
-      font-size: 12px; font-weight: 700;
-      color: var(--green); letter-spacing: 0.1em; text-transform: uppercase;
-    }
-    .topbar-sep { color: var(--border); }
-    .topbar-course { font-size: 13px; color: var(--text-dim); }
-    .topbar-db {
-      font-family: var(--mono); font-size: 11px; color: var(--text-dim);
-      background: var(--navy-light); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 2px 9px;
-    }
-    .topbar-status {
-      margin-left: auto; font-size: 11px; color: var(--text-muted);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--text-muted);
-      transition: background 0.3s, box-shadow 0.3s;
-    }
-    .status-dot.active {
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-    }
+  /* ── Schema Panel ── */
+  .schema-header {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .schema-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .schema-table {
+    margin-bottom: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .schema-table-name {
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.03);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .schema-table-name:hover { background: rgba(255,255,255,0.06); }
+  .schema-table-name .arrow { font-size: 10px; transition: transform 0.2s; }
+  .schema-table-name.expanded .arrow { transform: rotate(90deg); }
+  .schema-columns {
+    display: none;
+    padding: 4px 12px 8px;
+  }
+  .schema-columns.visible { display: block; }
+  .schema-col {
+    font-size: 12px;
+    padding: 3px 0;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+  .schema-col .col-type { color: var(--text-dim); opacity: 0.6; margin-left: 4px; }
 
-    /* ── Main area (fills remaining height) ────────────────────── */
-    .main {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-      min-height: 0;
-    }
+  /* ── SQL Editor ── */
+  .sql-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sql-toolbar {
+    height: 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 8px;
+  }
+  .sql-toolbar button {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .sql-toolbar button:hover { opacity: 0.9; }
+  .sql-toolbar .tab {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .sql-toolbar .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  .sql-editor-wrap {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+  }
+  .sql-editor {
+    width: 100%;
+    min-height: 100%;
+    background: var(--bg);
+    border: none;
+    padding: 16px 20px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    white-space: pre;
+    tab-size: 2;
+  }
 
-    /* ── Schema sidebar ────────────────────────────────────────── */
-    .schema-panel {
-      width: 200px;
-      flex-shrink: 0;
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .panel-header {
-      padding: 10px 14px;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--text-muted);
-      border-bottom: 1px solid var(--border); flex-shrink: 0;
-    }
-    .schema-scroll { overflow-y: auto; flex: 1; padding: 6px 0; }
-    .table-item {
-      padding: 5px 14px; cursor: default; transition: background 0.15s;
-    }
-    .table-item:hover { background: var(--navy-light); }
-    .table-item.active {
-      background: var(--highlight-bg);
-      border-left: 2px solid var(--highlight);
-    }
-    .table-name {
-      font-family: var(--mono); font-size: 11px; color: var(--text);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .table-name::before {
-      content: ''; width: 7px; height: 7px; border-radius: 2px;
-      background: var(--accent-blue); flex-shrink: 0;
-    }
-    .table-count { font-size: 10px; color: var(--text-muted); padding-left: 13px; }
-    .col-list { padding: 3px 0 3px 13px; display: none; }
-    .table-item.expanded .col-list { display: block; }
-    .view-item {
-      border-left: 2px solid var(--accent-blue);
-      background: rgba(100,160,255,0.04);
-    }
-    .view-badge {
-      font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
-      color: var(--accent-blue); text-transform: uppercase;
-      padding: 1px 4px; border: 1px solid var(--accent-blue);
-      border-radius: 3px; margin-left: 6px; opacity: 0.8;
-    }
-    .view-definition {
-      display: block; font-family: monospace; font-size: 10px;
-      color: var(--text-muted); white-space: pre-wrap;
-      padding: 6px 8px; border-top: 1px solid var(--border);
-      max-height: 180px; overflow-y: auto; line-height: 1.6;
-    }
-    .col-row {
-      display: flex; gap: 6px; padding: 2px 0;
-      font-family: var(--mono); font-size: 10px; color: var(--text-dim);
-    }
-    .col-type { color: var(--text-muted); }
+  /* ── Query Color Coding ── */
+  .sql-editor .query-correct { background: var(--green-bg); }
+  .sql-editor .query-buggy { background: var(--red-bg); }
+  .sql-editor .query-label {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .sql-editor .query-label.correct { background: var(--green); color: #000; }
+  .sql-editor .query-label.buggy { background: var(--red); color: #fff; }
 
-    /* ── Content area (right of schema) ────────────────────────── */
-    .content-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      min-width: 0;
-    }
+  /* ── Results ── */
+  .results-area {
+    height: 45%;
+    min-height: 200px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+  .results-header {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .results-header .row-count {
+    font-size: 12px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .results-table-wrap {
+    flex: 1;
+    overflow: auto;
+  }
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .results-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    white-space: nowrap;
+  }
+  .results-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .results-table tr:hover td { background: rgba(255,255,255,0.03); }
 
-    /* ════════════════════════════════════════════════════════════
-       LAYOUT MODES
-       Controlled via window.wsda.setLayout(mode)
-       All modes live inside .content-area
-    ════════════════════════════════════════════════════════════ */
+  /* ── Row Highlighting ── */
+  .results-table tr.highlighted td {
+    background: var(--accent-glow) !important;
+    border-left: 3px solid var(--accent);
+    animation: pulse-row 2s ease-in-out infinite;
+  }
+  @keyframes pulse-row {
+    0%, 100% { background: var(--accent-glow); }
+    50% { background: rgba(47,129,247,0.25); }
+  }
+  .results-table tr.highlighted-red td {
+    background: var(--red-bg) !important;
+    border-left: 3px solid var(--red);
+  }
+  .results-table tr.highlighted-green td {
+    background: var(--green-bg) !important;
+    border-left: 3px solid var(--green);
+  }
 
-    /* ── SINGLE: SQL top, one result bottom (default) ──────────── */
-    .layout-single {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
+  /* ── Cell Callout ── */
+  .cell-callout {
+    position: relative;
+    display: inline-block;
+  }
+  .cell-callout::after {
+    content: attr(data-callout);
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--yellow);
+    color: #000;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .cell-callout.visible::after { opacity: 1; }
+  .cell-callout.important {
+    background: var(--yellow-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
 
-    /* ── SPLIT: SQL left 40%, results right 60% ────────────────── */
-    .layout-split {
-      display: none;
-      flex-direction: row;
-      height: 100%;
-      overflow: hidden;
-    }
-    .split-sql {
-      width: 40%;
-      flex-shrink: 0;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .split-results {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+  /* ── Empty State ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    font-size: 14px;
+    gap: 12px;
+  }
+  .empty-state .icon {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
 
-    /* ── COMPARE: SQL top strip, N result panels below ─────────── */
-    .layout-compare {
-      display: none;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-    .compare-sql-strip {
-      height: 38%;
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .compare-panels {
-      flex: 1;
-      display: flex;
-      flex-direction: row;
-      overflow: hidden;
-      gap: 0;
-    }
-    .compare-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border-right: 1px solid var(--border);
-      transition: all 0.4s ease;
-    }
-    .compare-panel:last-child { border-right: none; }
-    .compare-panel-header {
-      padding: 8px 12px;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase;
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-    }
-    .compare-panel-label { color: var(--text-muted); }
-    .compare-panel.highlighted .compare-panel-header {
-      background: var(--highlight-bg);
-      border-bottom-color: var(--highlight);
-    }
-    .compare-panel.highlighted .compare-panel-label {
-      color: var(--highlight);
-    }
-    .compare-panel-scroll { flex: 1; overflow: auto; background: var(--navy); }
+  /* ── Status Bar ── */
+  .status-bar {
+    height: 28px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    gap: 16px;
+  }
+  .status-bar .status-ok { color: var(--green); }
+  .status-bar .status-warn { color: var(--yellow); }
+  .status-bar .status-err { color: var(--red); }
 
-    /* ── FOCUS: full-screen result, no SQL ─────────────────────── */
-    .layout-focus {
-      display: none;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-
-    /* Active layout visibility */
-    .content-area.mode-single  .layout-single  { display: flex; }
-    .content-area.mode-split   .layout-split   { display: flex; }
-    .content-area.mode-compare .layout-compare { display: flex; }
-    .content-area.mode-focus   .layout-focus   { display: flex; }
-
-    /* ── SQL pane (shared component) ───────────────────────────── */
-    .sql-pane {
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-    .layout-single .sql-pane { height: 42%; flex-shrink: 0; border-bottom: 1px solid var(--border); transition: height 0.4s ease; }
-    .layout-single.sql-expanded .sql-pane { height: 88%; }
-    .layout-single.sql-expanded .results-pane { display: none; }
-    .split-sql .sql-pane     { flex: 1; }
-    .compare-sql-strip       { }
-
-    .sql-header {
-      padding: 9px 14px;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-    }
-    .sql-filename {
-      margin-left: auto; font-family: var(--mono); font-size: 10px;
-      color: var(--text-muted); font-weight: 400;
-      letter-spacing: 0; text-transform: none;
-    }
-    .sql-scroll { flex: 1; overflow: auto; background: var(--navy); scroll-padding-top: 24px; }
-    .sql-content {
-      padding: 14px 18px;
-      font-family: var(--mono); font-size: 12px; line-height: 1.8;
-      white-space: pre; min-height: 100%;
-    }
-    .sql-block {
-      border-radius: var(--radius); padding: 8px 12px; margin-bottom: 10px;
-      border: 1px solid transparent; transition: all 0.3s ease;
-    }
-    .sql-block.highlighted {
-      background: rgba(255,215,0,0.18);
-      border: 2px solid var(--highlight);
-      box-shadow: 0 0 0 2px var(--highlight), 0 0 24px rgba(255,215,0,0.3),
-                  inset 0 0 20px rgba(255,215,0,0.05);
-    }
-    .sql-label {
-      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px;
-    }
-    .sql-block.highlighted .sql-label { color: var(--highlight); }
-    .sql-comment { color: var(--text-muted); }
-    .sql-keyword { color: var(--accent-blue); }
-    .sql-function { color: var(--green); }
-
-    /* ── Results pane (shared component) ───────────────────────── */
-    .results-pane {
-      flex: 1; display: flex; flex-direction: column; overflow: hidden;
-    }
-    .results-header {
-      padding: 9px 14px;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-      background: var(--panel);
-    }
-    .results-meta {
-      margin-left: auto; font-family: var(--mono); font-size: 10px;
-      color: var(--text-muted); font-weight: 400;
-      letter-spacing: 0; text-transform: none;
-    }
-    .results-scroll { flex: 1; overflow: auto; background: var(--navy); }
-    .results-table { width: 100%; border-collapse: collapse; }
-    .results-table th {
-      position: sticky; top: 0; background: var(--panel);
-      border-bottom: 2px solid var(--border);
-      padding: 7px 14px; text-align: left;
-      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
-      text-transform: uppercase; color: var(--text-dim); font-family: var(--mono);
-    }
-    .results-table td {
-      padding: 6px 14px; font-family: var(--mono); font-size: 12px;
-      color: var(--text); border-bottom: 1px solid rgba(42,63,88,0.5);
-    }
-    .results-table tr:hover td { background: var(--navy-light); }
-    .results-table td.number { text-align: right; color: var(--green); }
-    .empty-state {
-      display: flex; align-items: center; justify-content: center;
-      height: 100%; color: var(--text-muted); font-size: 12px;
-      flex-direction: column; gap: 8px;
-    }
-    .empty-icon { font-size: 24px; opacity: 0.25; }
-
-    /* ── Attention animations ───────────────────────────────────── */
-    @keyframes row-flash {
-      0%   { background: rgba(255,215,0,0.25); }
-      100% { background: transparent; }
-    }
-    .flash td { animation: row-flash 0.5s ease forwards; }
-
-    @keyframes panel-appear {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .compare-panel { animation: panel-appear 0.35s ease forwards; }
-
-    /* ── Status bar ─────────────────────────────────────────────── */
-    .statusbar {
-      height: 22px; flex-shrink: 0;
-      background: var(--navy-mid); border-top: 1px solid var(--border);
-      display: flex; align-items: center; padding: 0 14px; gap: 16px;
-      font-size: 10px; color: var(--text-muted);
-    }
-
-    /* ── Scrollbars ─────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* ── Fade overlay ───────────────────────────────────────────── */
-    .fade-overlay {
-      position: fixed; inset: 0; background: #000;
-      opacity: 0; pointer-events: none;
-      transition: opacity 1s ease; z-index: 9999;
-    }
-    .fade-overlay.active { opacity: 1; }
-  </style>
+  /* ── Cursor Ring (for recording) ── */
+  #cursor-ring {
+    position: fixed;
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+    transition: all 0.15s ease;
+  }
+  #cursor-ring.active { display: block; }
+</style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Top bar -->
-  <div class="topbar">
-    <span class="topbar-logo">WSDA</span>
-    <span class="topbar-sep">|</span>
-    <span class="topbar-course" id="course-name">NovaBridge Analytics</span>
-    <div class="topbar-db" id="db-label">No database loaded</div>
-    <div class="topbar-status">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Waiting</span>
+<!-- Title Card Overlay -->
+<div id="title-card">
+  <div class="title-card-badge" id="title-badge">SQL Debugging</div>
+  <div class="title-card-headline" id="title-headline">Loading...</div>
+  <div class="title-card-sub" id="title-sub">Loading...</div>
+  <div class="title-card-stakes" id="title-stakes" style="display:none"></div>
+</div>
+
+<!-- Cursor Ring -->
+<div id="cursor-ring"></div>
+
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="schema-header">
+      <span>Schema</span>
+      <span id="schema-count" style="font-size:11px;color:var(--text-dim)"></span>
     </div>
+    <div class="schema-list" id="schema-list"></div>
   </div>
 
   <!-- Main -->
   <div class="main">
+    <div class="header">
+      <span class="header-brand">WSDA</span>
+      <span style="color:var(--border)">|</span>
+      <span class="header-db" id="header-db">No database loaded</span>
+      <button class="header-toggle" id="toggle-schema" onclick="toggleSchema()">◀ Schema</button>
+    </div>
 
-    <!-- Schema sidebar -->
-    <div class="schema-panel">
-      <div class="panel-header">Schema</div>
-      <div class="schema-scroll" id="schema-list">
-        <div class="empty-state" style="margin-top:32px;">
-          <div class="empty-icon">◻</div>
-          <div>No database</div>
+    <div class="sql-area">
+      <div class="sql-toolbar">
+        <button onclick="runQuery()">▷ Run</button>
+        <div style="flex:1"></div>
+        <div class="tab active" id="tab-sql">SQL</div>
+        <div class="tab" id="tab-results">Results</div>
+      </div>
+      <div class="sql-editor-wrap">
+        <textarea class="sql-editor" id="sql-editor" placeholder="-- Write your SQL here..." spellcheck="false"></textarea>
+      </div>
+    </div>
+
+    <div class="results-area">
+      <div class="results-header">
+        <span>Results</span>
+        <span class="row-count" id="row-count"></span>
+      </div>
+      <div class="results-table-wrap" id="results-wrap">
+        <div class="empty-state">
+          <div class="icon">▷</div>
+          <span>Run a query to see results</span>
         </div>
       </div>
     </div>
 
-    <!-- Content area — layout controlled by mode class -->
-    <div class="content-area mode-single" id="content-area">
-
-      <!-- ── SINGLE layout ────────────────────────────────────── -->
-      <div class="layout-single">
-        <div class="sql-pane">
-          <div class="sql-header">
-            SQL
-            <span class="sql-filename" id="sql-filename-single">—</span>
-          </div>
-          <div class="sql-scroll">
-            <div class="sql-content" id="sql-content-single">
-              <div class="empty-state" style="margin-top:32px;">
-                <div class="empty-icon">◻</div><div>No file loaded</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="results-pane">
-          <div class="results-header">
-            Results
-            <span class="results-meta" id="results-meta-single"></span>
-          </div>
-          <div class="results-scroll" id="results-area-single">
-            <div class="empty-state">
-              <div class="empty-icon">▷</div>
-              <div>Run a query to see results</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SPLIT layout ─────────────────────────────────────── -->
-      <div class="layout-split">
-        <div class="split-sql">
-          <div class="sql-pane" style="flex:1;">
-            <div class="sql-header">
-              SQL
-              <span class="sql-filename" id="sql-filename-split">—</span>
-            </div>
-            <div class="sql-scroll">
-              <div class="sql-content" id="sql-content-split"></div>
-            </div>
-          </div>
-        </div>
-        <div class="split-results">
-          <div class="results-pane">
-            <div class="results-header">
-              Results
-              <span class="results-meta" id="results-meta-split"></span>
-            </div>
-            <div class="results-scroll" id="results-area-split">
-              <div class="empty-state">
-                <div class="empty-icon">▷</div>
-                <div>Run a query to see results</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── COMPARE layout ───────────────────────────────────── -->
-      <div class="layout-compare">
-        <div class="compare-sql-strip">
-          <div class="sql-header">
-            SQL
-            <span class="sql-filename" id="sql-filename-compare">—</span>
-          </div>
-          <div class="sql-scroll">
-            <div class="sql-content" id="sql-content-compare"></div>
-          </div>
-        </div>
-        <div class="compare-panels" id="compare-panels">
-          <!-- Panels injected dynamically by setLayout -->
-        </div>
-      </div>
-
-      <!-- ── FOCUS layout ─────────────────────────────────────── -->
-      <div class="layout-focus">
-        <div class="results-pane">
-          <div class="results-header">
-            Results
-            <span class="results-meta" id="results-meta-focus"></span>
-          </div>
-          <div class="results-scroll" id="results-area-focus">
-            <div class="empty-state">
-              <div class="empty-icon">▷</div>
-              <div>Run a query to see results</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /content-area -->
-  </div><!-- /main -->
-
-  <!-- Status bar -->
-  <div class="statusbar">
-    <span id="sb-db">No database</span>
-    <span id="sb-rows"></span>
-    <span id="sb-ref"></span>
+    <div class="status-bar">
+      <span id="status-text">Ready</span>
+      <span style="margin-left:auto" id="status-detail"></span>
+    </div>
   </div>
-
-</div><!-- /app -->
-
-<!-- Fade overlay -->
-<div class="fade-overlay" id="fade-overlay"></div>
+</div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// WSDA Viewer — JavaScript Core
-// All state management and rendering.
-// Exposed via window.wsda for Playwright injection.
-// ═══════════════════════════════════════════════════════════════
+// ── State ──
+let db = null;
+let currentFile = null;
+let sections = [];
+let schemaVisible = true;
 
-const state = {
-  mode: 'single',           // current layout mode
-  sqlContent: '',
-  sqlSections: {},
-  resultHistory: {},        // { queryRef: { columns, rows } }
-  compareLabels: {},        // { panelId: label }
-};
-
-// ── Layout system ──────────────────────────────────────────────
-// mode: 'single' | 'split' | 'compare' | 'focus'
-// options for compare: { panels: [{id, label}] }
-function setLayout(mode, options = {}) {
-  const area = document.getElementById('content-area');
-  area.className = `content-area mode-${mode}`;
-  state.mode = mode;
-
-  // Sync SQL content to new pane
-  const sqlEl = document.getElementById(`sql-content-${mode}`);
-  if (sqlEl && state.sqlContent) {
-    sqlEl.innerHTML = document.getElementById('sql-content-single').innerHTML;
-  }
-
-  // Build compare panels
-  if (mode === 'compare' && options.panels) {
-    const container = document.getElementById('compare-panels');
-    container.innerHTML = options.panels.map(p => `
-      <div class="compare-panel" id="cpanel-${p.id}" data-panel="${p.id}">
-        <div class="compare-panel-header">
-          <span class="compare-panel-label">${p.label || p.id}</span>
-        </div>
-        <div class="compare-panel-scroll" id="cpanel-scroll-${p.id}">
-          <div class="empty-state">
-            <div class="empty-icon">▷</div>
-            <div>Waiting</div>
-          </div>
-        </div>
-      </div>
-    `).join('');
-
-    // Populate panels that already have results
-    options.panels.forEach(p => {
-      const hist = state.resultHistory[p.id];
-      if (hist) renderResultsInPanel(hist, p.id);
-    });
-  }
-
-  // Sync sql filename labels
-  const fname = document.getElementById('sql-filename-single')?.textContent || '—';
-  ['split','compare','focus'].forEach(m => {
-    const el = document.getElementById(`sql-filename-${m}`);
-    if (el) el.textContent = fname;
-  });
-}
-
-// ── Schema ─────────────────────────────────────────────────────
-function renderSchema(schema) {
-  const el = document.getElementById('schema-list');
-  if (!schema || !Object.keys(schema).length) return;
-
-  // Separate tables and views
-  const tables = Object.entries(schema).filter(([_, i]) => !i.is_view);
-  const views  = Object.entries(schema).filter(([_, i]) => i.is_view);
-
-  const renderTable = ([table, info]) => `
-    <div class="table-item" data-table="${table}" onclick="toggleTable('${table}')">
-      <div class="table-name">
-        <span class="tbl-indicator" style="background:var(--green)"></span>
-        ${table}
-      </div>
-      <div class="table-count">${info.row_count} rows</div>
-      <div class="col-list">
-        ${info.columns.map(c => `
-          <div class="col-row">
-            <span>${c.name}</span><span class="col-type">${c.type}</span>
-          </div>`).join('')}
-      </div>
-    </div>`;
-
-  const renderView = ([name, info]) => `
-    <div class="table-item view-item" data-table="${name}" onclick="toggleTable('${name}')">
-      <div class="table-name" style="display:flex;align-items:center">
-        <span class="tbl-indicator" style="background:var(--accent-blue)"></span>
-        ${name}<span class="view-badge">VIEW</span>
-      </div>
-      <div class="table-count" style="color:var(--accent-blue);font-size:10px">canonical source</div>
-      <div class="col-list">
-        <div class="view-definition">${(info.definition||'').replace(/</g,'&lt;')}</div>
-      </div>
-    </div>`;
-
-  let html = '';
-  if (views.length) {
-    html += `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;
-      color:var(--accent-blue);padding:6px 10px 2px;opacity:.7">Canonical Views</div>`;
-    html += views.map(renderView).join('');
-    html += `<div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;
-      color:var(--text-muted);padding:8px 10px 2px;opacity:.7">Tables</div>`;
-  }
-  html += tables.map(renderTable).join('');
-  el.innerHTML = html;
-
-  // Views start collapsed — clicking loads definition into editor
-}
-
-function toggleTable(name) {
-  const el = document.querySelector(`[data-table="${name}"]`);
-  if (!el) return;
-  el.classList.toggle('expanded');
-
-  // If this is a view, also load its definition into the SQL window
-  if (el.classList.contains('view-item')) {
-    const defEl = el.querySelector('.view-definition');
-    if (defEl) {
-      const sql = defEl.textContent.replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-      if (sql) {
-        showViewDefinition(name, sql);
-      }
-    }
-  }
-}
-
-function expandSQLPane() {
-  // Collapse results pane so full SQL is visible — called on highlight_section
-  const layout = document.querySelector('.layout-single');
-  if (layout) layout.classList.add('sql-expanded');
-}
-
-function collapseSQLPane() {
-  // Restore results pane — called on show_result
-  const layout = document.querySelector('.layout-single');
-  if (layout) layout.classList.remove('sql-expanded');
-}
-
-function showViewDefinition(name, sql) {
-  // Determine current layout mode
-  const mode = window.currentLayout || 'single';
-
-  // Load into the active SQL editor pane
-  const editorEl = document.getElementById(`sql-content-${mode}`) ||
-                   document.getElementById('sql-content-single');
-  if (editorEl) {
-    editorEl.innerHTML = syntaxHL(sql);
-  }
-
-  // Update filename label
-  const labelEl = document.getElementById(`sql-filename-${mode}`) ||
-                  document.getElementById('sql-filename-single');
-  if (labelEl) labelEl.textContent = `view: ${name}`;
-
-  // Emit for adapter tracking
-  if (window.wsda && window.wsda.emit) wsda.emit('view_opened', {name, sql});
-}
-
-function activateTable(name) {
-  document.querySelectorAll('.table-item').forEach(el => el.classList.remove('active'));
-  const el = document.querySelector(`[data-table="${name}"]`);
-  if (el) el.classList.add('active', 'expanded');
-}
-
-// ── SQL ────────────────────────────────────────────────────────
-const KW = /\b(SELECT|FROM|WHERE|GROUP BY|ORDER BY|JOIN|ON|AS|SUM|COUNT|AVG|DISTINCT|HAVING|LIMIT|INNER|LEFT|RIGHT|AND|OR|NOT|NULL|BY|DESC|ASC)\b/gi;
-
-function syntaxHL(sql) {
-  return sql
-    .replace(/--.*$/gm, m => `<span class="sql-comment">${m}</span>`)
-    .replace(KW, m => `<span class="sql-keyword">${m}</span>`);
-}
-
-function renderSQL(content, sections) {
-  state.sqlContent = content;
-  state.sqlSections = sections;
-
-  const lines = content.split('\n');
-  let blocks = [], cur = null, curLines = [];
-  for (const line of lines) {
-    const m = line.match(/^--\s*\[(\w+)\]/);
-    if (m) {
-      if (cur) blocks.push({ id: cur, lines: curLines });
-      cur = m[1]; curLines = [];
-    } else if (cur !== null) curLines.push(line);
-  }
-  if (cur) blocks.push({ id: cur, lines: curLines });
-
-  const html = blocks.map(b => `
-    <div class="sql-block" id="block-${b.id}" data-section="${b.id}">
-      <div class="sql-label">${b.id.replace(/_/g,' ')}</div>
-      <code>${syntaxHL(b.lines.join('\n').trim())}</code>
-    </div>`).join('');
-
-  // Write to all SQL panes
-  ['single','split','compare'].forEach(m => {
-    const el = document.getElementById(`sql-content-${m}`);
-    if (el) el.innerHTML = html;
-  });
-}
-
-function highlightSection(section) {
-  document.querySelectorAll('.sql-block').forEach(b => b.classList.remove('highlighted'));
-  const el = document.querySelector(`#block-${section}`);
-  if (!el) return;
-  el.classList.add('highlighted');
-
-  const container = document.querySelector('.sql-scroll');
-  if (container) {
-    const elTop = el.offsetTop;
-    const elHeight = el.offsetHeight;
-    const containerHeight = container.clientHeight;
-    let targetScroll;
-    if (elHeight <= containerHeight) {
-      // Whole block fits — center it so there's breathing room on both
-      // sides instead of pinning the top edge (which cuts off the bottom
-      // of any block taller than half the viewport).
-      targetScroll = elTop - (containerHeight - elHeight) / 2;
-    } else {
-      // Block taller than the viewport — align to top with a small margin
-      // so the query's opening (comment + SELECT) is visible. Some
-      // clipping is still possible for an oversized block, but this is
-      // rare now that queries are capped at 4 concise sections per lesson.
-      targetScroll = elTop - 16;
-    }
-    container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+// ── Title Card ──
+function showTitleCard(badge, headline, sub, stakes) {
+  document.getElementById('title-badge').textContent = badge || 'SQL Lesson';
+  document.getElementById('title-headline').textContent = headline;
+  document.getElementById('title-sub').textContent = sub || '';
+  const stakesEl = document.getElementById('title-stakes');
+  if (stakes) {
+    stakesEl.textContent = stakes;
+    stakesEl.style.display = 'block';
   } else {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    stakesEl.style.display = 'none';
   }
+  document.getElementById('title-card').classList.add('active');
+}
+function hideTitleCard() {
+  document.getElementById('title-card').classList.remove('active');
 }
 
-// ── Results ────────────────────────────────────────────────────
-function buildTable(data) {
-  const numCols = new Set();
-  if (data.rows.length > 0) {
-    data.columns.forEach((c, i) => {
-      if (typeof data.rows[0][i] === 'number') numCols.add(i);
-    });
-  }
-  return `
-    <table class="results-table">
-      <thead><tr>${data.columns.map(c => `<th>${c}</th>`).join('')}</tr></thead>
-      <tbody>${data.rows.map(row => `
-        <tr>${row.map((cell, i) => {
-          const isNum = numCols.has(i);
-          const fmt = isNum && typeof cell === 'number'
-            ? cell.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
-            : cell;
-          return `<td class="${isNum ? 'number' : ''}">${fmt ?? 'NULL'}</td>`;
-        }).join('')}</tr>`).join('')}
-      </tbody>
-    </table>`;
+// ── Schema Toggle ──
+function toggleSchema() {
+  schemaVisible = !schemaVisible;
+  document.getElementById('sidebar').classList.toggle('collapsed', !schemaVisible);
+  document.getElementById('toggle-schema').textContent = schemaVisible ? '◀ Schema' : '▶ Schema';
+}
+function collapseSchema() {
+  schemaVisible = false;
+  document.getElementById('sidebar').classList.add('collapsed');
+  document.getElementById('toggle-schema').textContent = '▶ Schema';
+}
+function expandSchema() {
+  schemaVisible = true;
+  document.getElementById('sidebar').classList.remove('collapsed');
+  document.getElementById('toggle-schema').textContent = '◀ Schema';
 }
 
-function flashRows(container) {
-  container.querySelectorAll('tr').forEach(r => {
-    r.classList.remove('flash');
-    void r.offsetWidth;
-    r.classList.add('flash');
-    setTimeout(() => r.classList.remove('flash'), 500);
+// ── Row Highlighting ──
+function highlightRow(tableSelector, rowIndex, color) {
+  const table = document.querySelector(tableSelector || '.results-table');
+  if (!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  rows.forEach(r => r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));
+  if (rows[rowIndex]) {
+    rows[rowIndex].classList.add(color === 'red' ? 'highlighted-red' : color === 'green' ? 'highlighted-green' : 'highlighted');
+  }
+}
+function clearHighlights(tableSelector) {
+  const table = document.querySelector(tableSelector || '.results-table');
+  if (!table) return;
+  table.querySelectorAll('tr').forEach(r => r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));
+}
+
+// ── Cell Callout ──
+function annotateCell(tableSelector, rowIndex, colIndex, text) {
+  const table = document.querySelector(tableSelector || '.results-table');
+  if (!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  if (!rows[rowIndex]) return;
+  const cells = rows[rowIndex].querySelectorAll('td');
+  if (!cells[colIndex]) return;
+  cells[colIndex].classList.add('cell-callout', 'important');
+  cells[colIndex].setAttribute('data-callout', text);
+  setTimeout(() => cells[colIndex].classList.add('visible'), 100);
+}
+function clearAnnotations(tableSelector) {
+  const table = document.querySelector(tableSelector || '.results-table');
+  if (!table) return;
+  table.querySelectorAll('.cell-callout').forEach(c => {
+    c.classList.remove('cell-callout', 'important', 'visible');
+    c.removeAttribute('data-callout');
   });
 }
 
-// Render results into the active layout's result area
-function renderResults(data, queryRef) {
-  if (!data.success) return;
-
-  state.resultHistory[queryRef] = data;
-
-  const rowLabel = `${data.rows.length} row${data.rows.length !== 1 ? 's' : ''}`;
-  const tableHtml = buildTable(data);
-
-  // Always update single pane (source of truth)
-  const singleArea = document.getElementById('results-area-single');
-  if (singleArea) { singleArea.innerHTML = tableHtml; flashRows(singleArea); }
-  const singleMeta = document.getElementById('results-meta-single');
-  if (singleMeta) singleMeta.textContent = `${rowLabel} — ${queryRef}`;
-
-  // Update split pane if active
-  if (state.mode === 'split') {
-    const splitArea = document.getElementById('results-area-split');
-    if (splitArea) { splitArea.innerHTML = tableHtml; flashRows(splitArea); }
-    const splitMeta = document.getElementById('results-meta-split');
-    if (splitMeta) splitMeta.textContent = `${rowLabel} — ${queryRef}`;
-  }
-
-  // Update compare panel if active and panel exists
-  if (state.mode === 'compare') {
-    renderResultsInPanel(data, queryRef);
-  }
-
-  // Update focus pane
-  if (state.mode === 'focus') {
-    const focusArea = document.getElementById('results-area-focus');
-    if (focusArea) { focusArea.innerHTML = tableHtml; flashRows(focusArea); }
-    const focusMeta = document.getElementById('results-meta-focus');
-    if (focusMeta) focusMeta.textContent = `${rowLabel} — ${queryRef}`;
-  }
-
-  // Status bar
-  document.getElementById('sb-rows').textContent = rowLabel;
-  document.getElementById('sb-ref').textContent = queryRef ? `[${queryRef}]` : '';
+// ── Query Color Coding ──
+function setQueryColor(startLine, endLine, type) {
+  const editor = document.getElementById('sql-editor');
+  // This is a visual marker — in practice the adapter injects CSS classes
+  // into the editor content or wraps query blocks
+  console.log(`Query lines ${startLine}-${endLine} marked as ${type}`);
 }
 
-function renderResultsInPanel(data, panelId) {
-  const scroll = document.getElementById(`cpanel-scroll-${panelId}`);
-  if (!scroll) return;
-  const html = buildTable(data);
-  scroll.innerHTML = html;
-  flashRows(scroll);
+// ── Cursor Ring ──
+function moveCursorRing(x, y) {
+  const ring = document.getElementById('cursor-ring');
+  ring.style.left = (x - 16) + 'px';
+  ring.style.top = (y - 16) + 'px';
+  ring.classList.add('active');
+}
+function hideCursorRing() {
+  document.getElementById('cursor-ring').classList.remove('active');
 }
 
-function highlightComparePanel(panelId) {
-  document.querySelectorAll('.compare-panel').forEach(p => p.classList.remove('highlighted'));
-  document.getElementById(`cpanel-${panelId}`)?.classList.add('highlighted');
+// ── Database Loading ──
+function loadDatabase(name) {
+  document.getElementById('header-db').innerHTML = `Database: <strong>${name}</strong>`;
+  setStatus('Database loaded: ' + name, 'ok');
 }
 
-// ── Attention ──────────────────────────────────────────────────
-function applyAttention(type, targets, duration) {
-  const ms = (duration || 2) * 1000;
-
-  if (type === 'highlight_result') {
-    const area = document.getElementById(`results-area-${state.mode}`);
-    if (area) {
-      area.querySelectorAll('tr').forEach(r => {
-        r.style.background = 'rgba(255,215,0,0.15)';
-        setTimeout(() => r.style.background = '', ms);
-      });
+// ── Schema Rendering ──
+function renderSchema(tables) {
+  const list = document.getElementById('schema-list');
+  list.innerHTML = '';
+  document.getElementById('schema-count').textContent = tables.length + ' tables';
+  tables.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'schema-table';
+    div.innerHTML = `
+      <div class="schema-table-name" onclick="toggleTable(this)">
+        <span class="arrow">▶</span>
+        <span>${t.name}</span>
+      </div>
+      <div class="schema-columns">
+        ${t.columns.map(c => `<div class="schema-col">${c.name}<span class="col-type">${c.type}</span></div>`).join('')}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+function toggleTable(el) {
+  el.classList.toggle('expanded');
+  el.nextElementSibling.classList.toggle('visible');
+}
+function activateTable(tableName) {
+  // Expand a specific table by name
+  document.querySelectorAll('.schema-table-name').forEach(el => {
+    if (el.textContent.includes(tableName)) {
+      el.classList.add('expanded');
+      el.nextElementSibling.classList.add('visible');
     }
-  }
-
-  if (type === 'zoom') {
-    const area = document.getElementById(`results-area-${state.mode}`) ||
-                 document.getElementById('compare-panels');
-    if (area) {
-      area.style.transition = `transform ${0.4}s ease`;
-      area.style.transformOrigin = 'top center';
-      area.style.transform = 'scale(1.06)';
-      setTimeout(() => area.style.transform = 'scale(1)', ms);
-    }
-  }
-
-  if (type === 'comparison' && targets.length) {
-    targets.forEach(t => highlightComparePanel(t));
-    setTimeout(() => {
-      document.querySelectorAll('.compare-panel').forEach(p => p.classList.remove('highlighted'));
-    }, ms);
-  }
-}
-
-// ── Fade ───────────────────────────────────────────────────────
-function fadeOut(duration) {
-  const overlay = document.getElementById('fade-overlay');
-  overlay.style.transition = `opacity ${duration || 1}s ease`;
-  overlay.classList.add('active');
-}
-
-// ── Status ─────────────────────────────────────────────────────
-function setStatus(text, active) {
-  document.getElementById('status-text').textContent = text;
-  const dot = document.getElementById('status-dot');
-  dot.classList.toggle('active', !!active);
-}
-
-function setDBLabel(name) {
-  document.getElementById('db-label').textContent = name;
-  document.getElementById('sb-db').textContent = name;
-}
-
-function setSQLFilename(name) {
-  ['single','split','compare'].forEach(m => {
-    const el = document.getElementById(`sql-filename-${m}`);
-    if (el) el.textContent = name;
   });
 }
 
-function setCourseName(name) {
-  document.getElementById('course-name').textContent = name;
+// ── SQL Editor ──
+function setSQL(content) {
+  document.getElementById('sql-editor').value = content;
+}
+function getSQL() {
+  return document.getElementById('sql-editor').value;
+}
+function highlightSection(sectionName) {
+  // Scroll to and visually emphasize a named section
+  console.log('Highlight section:', sectionName);
 }
 
-// Poll for db label sync
-setInterval(async () => {
-  try {
-    const r = await fetch('/api/state');
-    const d = await r.json();
-    if (d.db_path) setDBLabel(d.db_path.split('/').pop());
-  } catch(e) {}
-}, 3000);
+// ── Query Execution ──
+function runQuery() {
+  setStatus('Running query...', 'warn');
+  // Actual execution is handled by the adapter injecting results
+}
+function showResults(columns, rows, queryName) {
+  const wrap = document.getElementById('results-wrap');
+  if (!rows || rows.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="icon">∅</div><span>No results</span></div>';
+    document.getElementById('row-count').textContent = '0 rows';
+    return;
+  }
+  let html = '<table class="results-table"><thead><tr>';
+  columns.forEach(c => html += `<th>${c}</th>`);
+  html += '</tr></thead><tbody>';
+  rows.forEach(row => {
+    html += '<tr>';
+    row.forEach(cell => html += `<td>${cell !== null ? cell : 'NULL'}</td>`);
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  document.getElementById('row-count').textContent = rows.length + ' rows';
+  setStatus('Query complete: ' + (queryName || ''), 'ok');
+}
+function zoomResult() {
+  // Expand results area for emphasis
+  document.querySelector('.results-area').style.height = '65%';
+  document.querySelector('.sql-area').style.flex = '0 0 35%';
+}
+function resetZoom() {
+  document.querySelector('.results-area').style.height = '';
+  document.querySelector('.sql-area').style.flex = '';
+}
 
+// ── Status ──
+function setStatus(text, type) {
+  const el = document.getElementById('status-text');
+  el.textContent = text;
+  el.className = type === 'ok' ? 'status-ok' : type === 'warn' ? 'status-warn' : type === 'err' ? 'status-err' : '';
+}
 
-// ═══════════════════════════════════════════════════════════════
-// AUDIO CLOCK — Master sync for narrated recording
-// The audio element is the authoritative clock.
-// Playwright reads audio.currentTime to fire events at exact positions.
-// ═══════════════════════════════════════════════════════════════
+// ── Fade Out ──
+function fadeOut() {
+  document.body.style.transition = 'opacity 1.5s ease';
+  document.body.style.opacity = '0';
+}
 
-const _audio = new Audio();
-_audio.preload = 'auto';
-
-// Expose audio control to Playwright
-window.wsdaAudio = {
-  load(src) {
-    _audio.src = src;
-    return new Promise(resolve => {
-      _audio.oncanplaythrough = () => resolve(true);
-      _audio.onerror = () => resolve(false);
-    });
-  },
-  play()  { return _audio.play(); },
-  pause() { _audio.pause(); },
-  seek(s) { _audio.currentTime = s; },
-
-  // Current time in milliseconds — Playwright polls this
-  get currentTimeMs() { return Math.round(_audio.currentTime * 1000); },
-  get duration()      { return _audio.duration || 0; },
-  get ended()         { return _audio.ended; },
-  get paused()        { return _audio.paused; },
-
-  // Wait until audio reaches a timestamp (ms), then resolve
-  // Used by runner to fire events at exact audio positions
-  waitUntil(targetMs, timeoutMs = 30000) {
-    return new Promise((resolve, reject) => {
-      if (_audio.ended) { resolve(); return; }
-      const check = () => {
-        if (_audio.currentTime * 1000 >= targetMs || _audio.ended) {
-          resolve();
-        }
-      };
-      _audio.addEventListener('timeupdate', check);
-      setTimeout(() => {
-        _audio.removeEventListener('timeupdate', check);
-        resolve(); // Don't reject on timeout — just continue
-      }, timeoutMs);
-    });
-  },
-};
-
-// ── Public API ─────────────────────────────────────────────────
-window.wsda = {
-  setLayout,
-  renderSchema,
-  expandSQLPane,
-  collapseSQLPane,
-  renderSQL,
-  highlightSection,
-  renderResults,
-  applyAttention,
-  activateTable,
-  highlightComparePanel,
-  fadeOut,
-  setStatus,
-  setDBLabel,
-  setSQLFilename,
-  setCourseName,
-  audio: window.wsdaAudio,
-};
-
-setStatus('Ready', false);
+// ── Init ──
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('WSDA SQL Viewer ready');
+});
 </script>
 </body>
 </html>
