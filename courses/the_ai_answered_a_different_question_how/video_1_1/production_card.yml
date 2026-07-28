@@ -1,0 +1,72 @@
+schema_version: "3.0"
+lesson_id: "video_1_1"
+title: "The Side-by-Side Check That Catches a Bad GROUP BY in 5 Seconds"
+course: "The AI Answered a Different Question: How to Catch a Wrong GROUP BY Level Before You Ship"
+assets:
+  database: "assets/the_ai_answered_a_different_question_how.db"
+  sql_file: "assets/lesson_1_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/the_ai_answered_a_different_question_how.db"
+    transition: "new_concept"
+    narration: >
+      Your A I just tripled every customer's revenue, and the query ran without a single error. No red text, no warnings, nothing. Just a clean result set full of numbers that are three times too high. That's the scariest kind of bug, the kind that looks completely right. Today I'll show you exactly how it happens, why a perfectly reasonable-looking JOIN causes it, and the five-second side-by-side check that catches it every time.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 41.0
+    transition: "continuation"
+  - id: "e02"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_1_queries.sql"
+    transition: "new_concept"
+  - id: "e02_pause"
+    type: "pause"
+    duration: 1.5
+    transition: "continuation"
+  - id: "e03"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "fan_out_comparison"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Here's the scenario. I asked an A I for total revenue per customer. It wrote a query that joins the orders table to the order items table before summing anything. Now, the order items table is where individual line items live, think three products on one receipt. Each order fans out into multiple rows when you join to that table. So if an order has three line items, that order's revenue gets copied onto three rows. Then when you SUM, you're adding the same order revenue three times. The GROUP BY says "group by customer name," which sounds right, but it's summing over all those duplicate rows without knowing they're duplicates. So here's the fix, and also the diagnostic. Instead of joining first and summing the mess, you sum revenue from the orders table on its own, before any join, using a subquery. That gives you the real total. This comparison query does both side by side, the correct subquery approach and the inflated join-then-sum approach, for every customer. Real receipt next to the photocopied stack.
+  - id: "e03_pause"
+    type: "pause"
+    duration: 82.0
+    transition: "continuation"
+  - id: "e04"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "fan_out_comparison"
+  - id: "e04_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+  - id: "e05"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Look at DataBridge Corp. Correct revenue is nine thousand one hundred dollars. The inflated column says twenty seven thousand three hundred. That's three times too high. Now look at Beacon Health, eight thousand nine hundred versus twenty six thousand seven hundred, same multiplier. And check the inflation factor column on the right, every single row reads three point zero zero, straight down. Every customer is wrong by the same factor. Imagine sending this to your CFO. Every number on that report, silently tripled, and nothing in the query warned you.
+  - id: "e05_pause"
+    type: "pause"
+    duration: 49.0
+    transition: "continuation"
+  - id: "e06"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      So here's what you're taking away. When you get a revenue query from an A I, or write one yourself, don't just run it and trust the output. Build this side-by-side check. Sum your revenue in a subquery from the orders table alone, that's your baseline truth. Then run the naive join-then-sum next to it. If the inflation factor is the same across every row, like three point zero zero straight down this column, your JOIN fanned out the rows and your SUM is lying. The remedy is to always aggregate before you join. Sum first in a subquery, then bring that clean number into your final result. One comparison query, five seconds, and you've caught the fan-out before it ever leaves your notebook.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 62.0
+    transition: "continuation"
+  - id: "e07"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"
