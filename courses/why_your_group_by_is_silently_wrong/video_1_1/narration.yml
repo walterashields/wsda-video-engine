@@ -1,0 +1,13 @@
+segments:
+  - timestamp: "0:00"
+    narration: "If you can't query your data, you can't make decisions. Here's the WSDA SQL editor — your blank canvas for pulling answers straight from a database."
+  - timestamp: "0:05"
+    narration: "Look at this layout. Up top you've got the SQL editor pane — that dark area with the placeholder text saying 'Write your SQL here.' This is where you'll type your queries, like writing instructions that tell the database exactly what to hand back to you."
+  - timestamp: "0:15"
+    narration: "See how there's a blue Run button in the top left? That's your go button. Once you've written a query, you hit Run and your results appear in the bottom panel."
+  - timestamp: "0:25"
+    narration: "Right now the results panel is empty — it's just showing a play icon and the message 'Run a query to see results.' That's because we haven't loaded a database yet. See up top where it says 'No database loaded'? You'll need to connect one first."
+  - timestamp: "0:35"
+    narration: "Also notice the tabs in the upper right — SQL and Results — so you can toggle between your code and your output. And over in the far corner, there's a Schema button that'll show you all the tables and columns available, like a map of your data."
+  - timestamp: "0:50"
+    narration: "The status bar at the bottom says 'Ready,' meaning the editor's waiting on you. So here's your takeaway: load a database, write your query up top, hit that blue Run button, and your answers show up below. That's the whole workflow."

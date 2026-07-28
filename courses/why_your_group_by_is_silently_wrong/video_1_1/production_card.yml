@@ -1,0 +1,163 @@
+schema_version: "3.0"
+lesson_id: "video_1_1"
+title: "The GROUP BY lie your database tells you every day"
+course: "Why your GROUP BY is silently wrong"
+assets:
+  database: "assets/why_your_group_by_is_silently_wrong.db"
+  sql_file: "assets/lesson_1_queries.sql"
+events:
+  - id: "e01"
+    type: "open_database"
+    target: "sql_viewer"
+    asset: "assets/why_your_group_by_is_silently_wrong.db"
+    transition: "new_concept"
+    narration: >
+      Right now, one of your queries is returning a value that looks
+      completely correct but is entirely made up by your database. No
+      error message. No warning. Just a clean result that happens to be
+      wrong. Let me show you exactly how it happens.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 24.0
+    transition: "continuation"
+  - id: "e02"
+    type: "show_schema"
+    target: "sql_viewer"
+    transition: "new_concept"
+    narration: >
+      Here's our orders table. Four columns: order ID, customer ID,
+      product, and amount. Each customer has bought multiple different
+      products. Completely normal table, nothing suspicious about it yet.
+  - id: "e02_pause"
+    type: "pause"
+    duration: 18.0
+    transition: "continuation"
+  - id: "e03"
+    type: "open_file"
+    target: "sql_viewer"
+    asset: "assets/lesson_1_queries.sql"
+    transition: "new_concept"
+  - id: "e03_pause"
+    type: "pause"
+    duration: 2.0
+    transition: "continuation"
+  - id: "e04"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "group_by_lie_exposed"
+    transition: "new_concept"
+    clears: []
+    narration: >
+      Here's the trap. This query selects customer ID, the actual product
+      each customer bought, the line amount, and then a column called
+      "group by showed," which is whatever the database decided to display
+      when we grouped by customer ID without aggregating the product column.
+      Think of GROUP BY like dumping every order from the same customer into
+      one pile, then asking "what product is this pile?" But the pile has
+      three different products in it. The database just grabs whichever
+      one's sitting on top. No warning, no error, no apology. Let's run it.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 40.0
+    transition: "continuation"
+  - id: "e05"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "group_by_lie_exposed"
+  - id: "e05_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e06"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Twelve rows. Look at customer one oh one. They actually bought three
+      different things: a Wireless Mouse at twenty-nine point nine nine, a
+      U-S-B-C Hub at fifty-four point five zero, and a Laptop Stand at
+      eighty-nine point nine five. But the group by showed column says
+      "Wireless Mouse" for all three. It picked one product and pretended
+      the other two don't exist. The status column spells it out: one row
+      says "shown," the other two say "HIDDEN." Now look at customer one oh
+      three. Four products, including a U-S-B Microphone at a hundred
+      nineteen dollars and a Pop Filter at twelve point four nine, and
+      GROUP BY just slapped "Webcam HD" on every single one. Imagine you
+      shipped a report to your boss showing every customer bought a Webcam
+      HD. That's what this query does. It builds a dashboard where the
+      wrong product shows up for most of your customers, and nothing in
+      the output tells you anything's off.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 63.0
+    transition: "continuation"
+  - id: "e07"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Here's the rule. Any column in your SELECT that isn't in the GROUP BY
+      and isn't inside an aggregate function can return a random, wrong
+      value. SQLite, which we're using right here, won't even blink. It'll
+      quietly hand you a result that looks perfectly normal and is silently
+      incomplete.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 24.0
+    transition: "continuation"
+  - id: "e08"
+    type: "highlight_section"
+    target: "sql_viewer"
+    section: "group_by_fixed"
+    transition: "new_concept"
+    clears: ["group_by_lie_exposed"]
+    narration: >
+      The fix is simple. Either aggregate every non-grouped column, like
+      wrapping product in GROUP CONCAT so you see all of them, or add
+      product to your GROUP BY so each product gets its own row. This
+      corrected query uses GROUP CONCAT to combine every product per
+      customer into one visible list. Let's run it and see the difference.
+  - id: "e08_pause"
+    type: "pause"
+    duration: 28.0
+    transition: "continuation"
+  - id: "e09"
+    type: "run_query"
+    target: "sql_viewer"
+    query_ref: "group_by_fixed"
+  - id: "e09_pause"
+    type: "pause"
+    duration: 3.0
+    transition: "continuation"
+  - id: "e10"
+    type: "show_result"
+    target: "sql_viewer"
+    transition: "continuation"
+    narration: >
+      Now look at customer one oh one. Instead of "Wireless Mouse" hiding
+      everything else, you can see all three products: Wireless Mouse,
+      U-S-B-C Hub, and Laptop Stand, right there in one field. Customer
+      one oh three shows all four products instead of pretending everything
+      was a Webcam HD. That's the contrast. Same data, completely different
+      story, because now nothing's hidden.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 28.0
+    transition: "continuation"
+  - id: "e11"
+    type: "zoom_result"
+    target: "sql_viewer"
+    transition: "emphasis"
+    narration: >
+      Your queries have been lying to you. Now you know the tell. If a
+      column's in your SELECT but not in your GROUP BY and not inside an
+      aggregate, it's a lie waiting to happen. Catch it before your
+      dashboard does.
+  - id: "e11_pause"
+    type: "pause"
+    duration: 20.0
+    transition: "continuation"
+  - id: "e_end"
+    type: "fade_out"
+    target: "all"
+    transition: "emphasis"

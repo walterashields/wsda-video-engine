@@ -1,0 +1,42 @@
+schema_version: "3.0"
+lesson_id: "groupby-silently-wrong"
+format: "micro"
+
+visual_events:
+  - type: show_title_card
+    badge: "SQL GOTCHA"
+    headline: "Your GROUP BY Is Silently Wrong"
+    sub: "No error. No warning. Just wrong answers."
+    stakes: "Most databases won't stop you from writing a query that lies to you"
+    pause: 3
+
+  - type: open_database
+    db_name: "ecommerce"
+    pause: 2
+
+  - type: set_sql
+    query_text: |
+      SELECT customer_name,
+             city,
+             SUM(order_total) AS total_spent
+      FROM   orders
+      JOIN   customers USING (customer_id)
+      GROUP BY customer_name;
+    label: "buggy"
+    pause: 4
+
+  - type: run_query
+    pause: 1
+
+  - type: show_results
+    columns: ["customer_name", "city", "total_spent"]
+    rows:
+      - ["Alice Chen", "Denver", "$4,200"]
+      - ["Bob Marsh", "Portland", "$1,850"]
+      - ["Carol Diaz", "Chicago", "$3,600"]
+    highlight_row: 0
+    annotate_cell:
+      row: 0
+      column: "city"
+      text: "⚠ WRONG — Alice has orders from Denver AND Seattle. DB picked one at random. 'city' not in GROUP BY = arbitrary value."
+    pause: 5
