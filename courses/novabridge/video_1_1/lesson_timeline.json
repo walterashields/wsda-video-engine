@@ -6,6 +6,7 @@
   "compiled_from": "/Users/waltershields/Desktop/wsda-video-engine/courses/novabridge/video_1_1/production_card.yml",
   "total_duration_ms": 137850,
   "narration_locked": false,
+  "adapter_type": "sql_viewer",
   "events": [
     {
       "id": "e01",
