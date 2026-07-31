@@ -1,0 +1,134 @@
+schema_version: '3.0'
+lesson_id: video_1_1
+title: The JOIN that secretly doubled your revenue
+course: Why your SQL SUM is wrong
+assets:
+  database: assets/why_your_sql_sum_is_wrong.db
+  sql_file: assets/lesson_1_queries.sql
+events:
+- id: e01
+  type: open_database
+  target: sql_viewer
+  asset: assets/why_your_sql_sum_is_wrong.db
+  transition: new_concept
+- id: e01_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e02
+  type: show_schema
+  target: sql_viewer
+  transition: new_concept
+  narration: 'Two tables. Orders, with an ID, customer name, amount, and order date. Payments, with its
+    own ID, an order ID that links back, a payment amount, payment method, and paid date. One order can
+    have multiple payments, like splitting a bill across two credit cards. That''s the trap.
+
+    '
+- id: e02_pause
+  type: pause
+  duration: 27.9
+  transition: continuation
+- id: e03
+  type: open_file
+  target: sql_viewer
+  asset: assets/lesson_1_queries.sql
+  transition: new_concept
+- id: e03_pause
+  type: pause
+  duration: 2.0
+  transition: continuation
+- id: e04
+  type: highlight_section
+  target: sql_viewer
+  section: buggy_join
+  transition: new_concept
+  clears: []
+  narration: 'Here''s a query that looks completely innocent. We''re joining orders to payments on order
+    ID, then summing the amount column from orders. No errors, no warnings, S-Q-L doesn''t even flinch.
+    But here''s the thing, a JOIN is like a copy machine. Every time an order matches two payments, that
+    order gets photocopied, and SUM happily adds both copies. Let''s catch it in the act.
+
+    '
+- id: e04_pause
+  type: pause
+  duration: 34.5
+  transition: continuation
+- id: e05
+  type: run_query
+  target: sql_viewer
+  query_ref: buggy_join
+- id: e05_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e06
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'There it is. The buggy JOIN reports revenue of eight hundred thirty-nine thousand seven
+    hundred eighty-five dollars and fifty cents. Sounds legit, right? But look at the row counts. We started
+    with ten real orders, and after the JOIN we''ve got twenty rows. Every order that had two payments
+    got duplicated. The actual revenue is four hundred nineteen thousand eight hundred ninety-two dollars
+    and seventy-five cents. That buggy number is literally double. And nobody told you.
+
+    '
+- id: e06_pause
+  type: pause
+  duration: 39.4
+  transition: continuation
+- id: e07
+  type: highlight_section
+  target: sql_viewer
+  section: fixed_preagg
+  transition: new_concept
+  clears:
+  - buggy_join
+  narration: 'Now here''s the fix, and it''s not SUM DISTINCT, don''t do that. If two orders genuinely
+    cost the same amount, SUM DISTINCT quietly deletes real data. Instead, we deduplicate the join key
+    first. A subquery selects order ID from payments grouped by order ID, so each order appears only once.
+    Then we join that deduplicated list back to orders. One match per order, no photocopies, no inflated
+    SUM.
+
+    '
+- id: e07_pause
+  type: pause
+  duration: 36.1
+  transition: continuation
+- id: e08
+  type: run_query
+  target: sql_viewer
+  query_ref: fixed_preagg
+- id: e08_pause
+  type: pause
+  duration: 3.0
+  transition: continuation
+- id: e09
+  type: show_result
+  target: sql_viewer
+  transition: continuation
+  narration: 'The fixed query reports four hundred nineteen thousand eight hundred ninety-two dollars
+    and seventy-five cents. Actual revenue matches reported revenue exactly. Ten joined rows, ten real
+    orders. No photocopies, no phantom dollars.
+
+    '
+- id: e09_pause
+  type: pause
+  duration: 21.2
+  transition: continuation
+- id: e10
+  type: compare_results
+  target: sql_viewer
+  transition: emphasis
+  narration: 'Side by side, the buggy JOIN doubled everything. Eight hundred thirty-nine thousand versus
+    four hundred nineteen thousand. Twenty rows versus ten. One rule: every time you SUM after a JOIN,
+    check your row count. If it grew, your total''s lying to you.
+
+    '
+- id: e10_pause
+  type: pause
+  duration: 25.4
+  transition: continuation
+- id: e_end
+  type: fade_out
+  target: all
+  transition: emphasis

@@ -1,49 +1,62 @@
 #!/usr/bin/env python3
 """
-WSDA Silent Renderer v2.1 — Self-contained video recording
+silent_renderer.py — WSDA Silent Renderer v2.3
 
-Starts a temporary HTTP server for the viewer HTML, then records
-the screen via Playwright. No external server required.
+Executes storyboard events through SQLViewerAdapterV2 while recording
+via Playwright.
+
+FIXES:
+  - Auto-hides title card after dwell so SQL editor is visible
+  - Resolves actual .db file path for open_database
+  - Logs adapter errors with full traceback
+  - Takes debug screenshots after each event
 """
 
 import asyncio
 import http.server
-import json
-import shutil
 import socketserver
-import subprocess
 import threading
+import traceback
 from pathlib import Path
 
 import yaml
 from playwright.async_api import async_playwright
 
+import sys
 ROOT = Path(__file__).parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from adapters.sql_viewer_adapter import SQLViewerAdapterV2
+
 VIEWER_HTML = ROOT / "web" / "templates" / "viewer.html"
 
 
-class ViewerServer:
-    """Temporary HTTP server for the viewer HTML."""
+def find_db_file() -> str:
+    """Find the most recently created .db file in the project."""
+    db_files = []
+    for db in ROOT.rglob("*.db"):
+        db_files.append((db.stat().st_mtime, db))
+    if not db_files:
+        return ""
+    db_files.sort(reverse=True)
+    return str(db_files[0][1].absolute())
 
+
+class ViewerServer:
     def __init__(self, port: int = 0):
         self.port = port
         self.server = None
         self.thread = None
 
     def start(self):
-        """Start the server in a background thread."""
         viewer_dir = VIEWER_HTML.parent
-
         class Handler(http.server.SimpleHTTPRequestHandler):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, directory=str(viewer_dir), **kwargs)
-
             def log_message(self, format, *args):
-                pass  # Suppress logs
-
+                pass
         self.server = socketserver.TCPServer(("127.0.0.1", self.port), Handler)
         self.port = self.server.server_address[1]
-
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         return f"http://127.0.0.1:{self.port}/viewer.html"
@@ -54,207 +67,215 @@ class ViewerServer:
 
 
 class SilentRenderer:
-    """Renders a visual storyboard to silent MP4 using Playwright."""
-
     def __init__(self):
         self.server = ViewerServer()
-        self.viewer_url = None
-        self.page = None
         self.browser = None
         self.playwright = None
+        self.adapter = None
+        self.page = None
 
     async def start(self):
-        """Start server and launch browser."""
         self.viewer_url = self.server.start()
-        await asyncio.sleep(0.3)  # Let server start
-
+        await asyncio.sleep(0.3)
         self.playwright = await async_playwright().start()
         self.browser = await self.playwright.chromium.launch(headless=True)
 
     async def stop(self):
-        """Close browser and stop server."""
         if self.browser:
             await self.browser.close()
         if self.playwright:
             await self.playwright.stop()
         self.server.stop()
 
-    # ── Event Handlers ──────────────────────────────────────────────────────
-    async def handle_show_title_card(self, params: dict):
-        await self.page.evaluate(f"""
-            showTitleCard(
-                {json.dumps(params.get('badge', 'SQL Lesson'))},
-                {json.dumps(params.get('headline', ''))},
-                {json.dumps(params.get('sub', ''))},
-                {json.dumps(params.get('stakes', ''))}
-            );
-        """)
-        await asyncio.sleep(0.6)
-
-    async def handle_hide_title_card(self, params: dict):
-        await self.page.evaluate("hideTitleCard();")
-        await asyncio.sleep(0.6)
-
-    async def handle_open_database(self, params: dict):
-        await self.page.evaluate(f"loadDatabase({json.dumps(params.get('db_name', ''))});")
-        await asyncio.sleep(0.5)
-
-    async def handle_expand_schema(self, params: dict):
-        await self.page.evaluate("expandSchema();")
-        await asyncio.sleep(0.4)
-
-    async def handle_collapse_schema(self, params: dict):
-        await self.page.evaluate("collapseSchema();")
-        await asyncio.sleep(0.4)
-
-    async def handle_activate_table(self, params: dict):
-        await self.page.evaluate(f"activateTable({json.dumps(params.get('table_name', ''))});")
-        await asyncio.sleep(0.3)
-
-    async def handle_set_sql(self, params: dict):
-        await self.page.evaluate(f"setSQL({json.dumps(params.get('query_text', ''))});")
-        label = params.get('label', '')
-        if label:
-            await self.page.evaluate(f"setQueryColor(0, 999, {json.dumps(label)});")
-        await asyncio.sleep(0.3)
-
-    async def handle_highlight_section(self, params: dict):
-        await self.page.evaluate(f"highlightSection({json.dumps(params.get('section_name', ''))});")
-        await asyncio.sleep(0.3)
-
-    async def handle_run_query(self, params: dict):
-        await self.page.evaluate("runQuery();")
-        await asyncio.sleep(0.5)
-
-    async def handle_show_results(self, params: dict):
-        await self.page.evaluate(f"""
-            showResults(
-                {json.dumps(params.get('columns', []))},
-                {json.dumps(params.get('rows', []))},
-                {json.dumps(params.get('query_name', ''))}
-            );
-        """)
-        highlight = params.get('highlight_row')
-        if highlight is not None:
-            color = params.get('highlight_color', 'blue')
-            await self.page.evaluate(f"highlightRow(null, {highlight}, {json.dumps(color)});")
-
-        annotate = params.get('annotate_cell')
-        if annotate:
-            await self.page.evaluate(f"""
-                annotateCell(null, {annotate['row']}, {annotate['col']}, {json.dumps(annotate['text'])});
-            """)
-        await asyncio.sleep(0.4)
-
-    async def handle_zoom_results(self, params: dict):
-        await self.page.evaluate("zoomResults();")
-        await asyncio.sleep(0.4)
-
-    async def handle_reset_zoom(self, params: dict):
-        await self.page.evaluate("resetZoom();")
-        await asyncio.sleep(0.3)
-
-    async def handle_highlight_row(self, params: dict):
-        await self.page.evaluate(f"""
-            highlightRow(null, {params.get('row_index', 0)}, {json.dumps(params.get('color', 'blue'))});
-        """)
-        await asyncio.sleep(0.3)
-
-    async def handle_annotate_cell(self, params: dict):
-        await self.page.evaluate(f"""
-            annotateCell(null, {params['row_index']}, {params['col_index']}, {json.dumps(params['text'])});
-        """)
-        await asyncio.sleep(0.4)
-
-    async def handle_clear_highlights(self, params: dict):
-        await self.page.evaluate("clearHighlights(null);")
-        await asyncio.sleep(0.2)
-
-    async def handle_clear_annotations(self, params: dict):
-        await self.page.evaluate("clearAnnotations(null);")
-        await asyncio.sleep(0.2)
-
-    async def handle_fade_out(self, params: dict):
-        await self.page.evaluate("fadeOut();")
-        await asyncio.sleep(1.5)
-
-    async def handle_pause(self, params: dict):
-        duration = float(params.get('duration', 2.0))
-        await asyncio.sleep(duration)
-
-    # ── Main Render Loop ────────────────────────────────────────────────────
     async def render_async(self, storyboard_path: Path, output_mp4: Path):
-        """Render storyboard to silent MP4."""
         with open(storyboard_path) as f:
             storyboard = yaml.safe_load(f)
 
-        events = storyboard.get("events", [])
+        visual = storyboard.get("visual_storyboard", storyboard)
+        events = visual.get("events", [])
 
-        # Start server and browser
+        if not events:
+            print("[Renderer] WARNING: No events in storyboard")
+            return
+
+        print(f"[Renderer] Rendering {len(events)} events...")
+
         await self.start()
 
-        # Create context with video recording
         context = await self.browser.new_context(
             viewport={"width": 1920, "height": 1080},
             record_video_dir=str(output_mp4.parent),
             record_video_size={"width": 1920, "height": 1080}
         )
+
         self.page = await context.new_page()
         await self.page.goto(self.viewer_url)
         await self.page.wait_for_load_state("networkidle")
         await asyncio.sleep(0.5)
 
-        # Execute events
-        handlers = {
-            "show_title_card": self.handle_show_title_card,
-            "hide_title_card": self.handle_hide_title_card,
-            "open_database": self.handle_open_database,
-            "expand_schema": self.handle_expand_schema,
-            "collapse_schema": self.handle_collapse_schema,
-            "activate_table": self.handle_activate_table,
-            "set_sql": self.handle_set_sql,
-            "highlight_section": self.handle_highlight_section,
-            "run_query": self.handle_run_query,
-            "show_results": self.handle_show_results,
-            "zoom_results": self.handle_zoom_results,
-            "reset_zoom": self.handle_reset_zoom,
-            "highlight_row": self.handle_highlight_row,
-            "annotate_cell": self.handle_annotate_cell,
-            "clear_highlights": self.handle_clear_highlights,
-            "clear_annotations": self.handle_clear_annotations,
-            "fade_out": self.handle_fade_out,
-            "pause": self.handle_pause,
-        }
+        self.adapter = SQLViewerAdapterV2(output_dir=output_mp4.parent)
+        self.adapter.page = self.page
+        self.adapter.browser = self.browser
 
-        for event in events:
-            etype = event.get("type")
-            handler = handlers.get(etype)
-            if handler:
-                await handler(event)
-            else:
-                print(f"[SilentRenderer] Unknown event: {etype}")
+        total_pause = 0
+        for i, event in enumerate(events):
+            etype = event.get("type", "")
+            pause = event.get("pause", 1.0)
+            params = event.get("params", {})
 
-        # Close context to save video
+            print(f"[Renderer] Event {i+1}/{len(events)}: {etype} (pause: {pause}s)")
+
+            try:
+                await self._execute_event(etype, params)
+            except Exception as e:
+                print(f"[Renderer] ✗ Event {etype} failed: {e}")
+                traceback.print_exc()
+
+            # Debug screenshot
+            screenshot_path = output_mp4.parent / f"debug_{i:02d}_{etype}.png"
+            try:
+                await self.page.screenshot(path=str(screenshot_path))
+            except Exception:
+                pass
+
+            await asyncio.sleep(pause)
+            total_pause += pause
+
+            # CRITICAL FIX: Auto-hide title card so next events are visible
+            if etype == "show_title_card":
+                try:
+                    print("[Renderer]   → Auto-hiding title card")
+                    await self.adapter.hide_title_card()
+                    await asyncio.sleep(0.3)
+                except Exception as e:
+                    print(f"[Renderer]   → hide_title_card failed: {e}")
+
+        print(f"[Renderer] Events complete. Total dwell time: {total_pause:.1f}s")
+        await asyncio.sleep(1.0)
+
         await context.close()
         await self.stop()
 
         # Convert webm to mp4
-        video_files = list(output_mp4.parent.glob("*.webm"))
-        if video_files:
-            webm_path = video_files[0]
+        import subprocess
+        webm_files = sorted(output_mp4.parent.glob("*.webm"), key=lambda f: f.stat().st_mtime, reverse=True)
+        if webm_files:
+            webm_path = webm_files[0]
             subprocess.run([
                 "ffmpeg", "-y", "-i", str(webm_path),
                 "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-                "-pix_fmt", "yuv420p", str(output_mp4)
-            ], check=True, capture_output=True)
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                str(output_mp4)
+            ], capture_output=True)
             webm_path.unlink()
-            print(f"[SilentRenderer] Saved: {output_mp4}")
+            print(f"[Renderer] Saved: {output_mp4}")
         else:
-            print("[SilentRenderer] Warning: no video file found")
+            print("[Renderer] WARNING: No video file generated")
+
+    async def _execute_event(self, etype: str, params: dict):
+        adapter = self.adapter
+
+        if etype == "show_title_card":
+            await adapter.show_title_card(
+                badge=params.get("badge", "SQL Lesson"),
+                headline=params.get("headline", ""),
+                sub=params.get("sub", ""),
+                stakes=params.get("stakes", "")
+            )
+
+        elif etype == "hide_title_card":
+            await adapter.hide_title_card()
+
+        elif etype == "open_database":
+            db_name = params.get("db_name", params.get("asset", ""))
+            db_path = db_name
+            if not db_path or not Path(db_path).exists():
+                db_path = find_db_file()
+            if db_path:
+                print(f"[Renderer]   → Loading DB: {db_path}")
+                await adapter.open_database(db_path)
+            else:
+                print("[Renderer]   → WARNING: No .db file found")
+
+        elif etype == "show_schema":
+            await adapter.show_schema()
+
+        elif etype == "expand_schema":
+            await adapter.expand_schema()
+
+        elif etype == "collapse_schema":
+            await adapter.collapse_schema()
+
+        elif etype == "activate_table":
+            await adapter.activate_table(params.get("table_name", params.get("table", "")))
+
+        elif etype == "set_sql":
+            content = params.get("query_text", params.get("content", ""))
+            print(f"[Renderer]   → SQL: {content[:60]}...")
+            await adapter.set_sql(content)
+
+        elif etype == "highlight_section":
+            await adapter.highlight_section(params.get("section", ""))
+
+        elif etype == "run_query":
+            await adapter.run_query()
+
+        elif etype in ("show_results", "show_result"):
+            columns = params.get("columns", [])
+            rows = params.get("rows", [])
+            print(f"[Renderer]   → Results: {len(rows)} rows, {len(columns)} cols")
+            await adapter.show_results(
+                columns=columns,
+                rows=rows,
+                query_name=params.get("query_name", "")
+            )
+
+        elif etype == "highlight_row":
+            await adapter.highlight_row(
+                row_index=params.get("row_index", 0),
+                color=params.get("color", "blue")
+            )
+
+        elif etype == "clear_highlights":
+            await adapter.clear_row_highlights()
+
+        elif etype == "annotate_cell":
+            await adapter.annotate_cell(
+                row_index=params.get("row_index", 0),
+                col_index=params.get("col_index", 0),
+                text=params.get("text", "")
+            )
+
+        elif etype == "clear_annotations":
+            await adapter.clear_annotations()
+
+        elif etype == "zoom_results":
+            await adapter.zoom_results()
+
+        elif etype == "reset_zoom":
+            await adapter.reset_zoom()
+
+        elif etype == "set_query_color":
+            await adapter.set_query_color(
+                start_line=params.get("start_line", 0),
+                end_line=params.get("end_line", 0),
+                label_type=params.get("label_type", "")
+            )
+
+        elif etype == "fade_out":
+            await adapter.fade_out()
+
+        elif etype == "pause":
+            await adapter.pause(params.get("duration", 1.0))
+
+        else:
+            print(f"[Renderer] Unknown event type: {etype}")
 
     def render(self, storyboard_path: Path, output_mp4: Path):
-        """Synchronous wrapper."""
         asyncio.run(self.render_async(Path(storyboard_path), Path(output_mp4)))
+
+    def render_sync(self, storyboard_path: Path, output_mp4: Path):
+        self.render(storyboard_path, output_mp4)
 
 
 if __name__ == "__main__":
@@ -262,6 +283,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python3 silent_renderer.py <storyboard.yml> <output.mp4>")
         sys.exit(1)
-
     renderer = SilentRenderer()
     renderer.render(sys.argv[1], sys.argv[2])

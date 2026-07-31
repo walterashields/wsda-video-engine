@@ -1,48 +1,46 @@
 {
   "suggestions": [
     {
-      "topic": "How to Paste Your Schema So ChatGPT Stops Inventing Column Names",
-      "rationale": "Schema hallucination \u2014 where AI fabricates table and column names that don't exist \u2014 is documented as the single most common AI-SQL error category in 2026, and pasting CREATE TABLE statements is the proven fix that most analysts skip.",
-      "sources": [
-        "https://kissmetrics.io/blog/ai-sql-generation-guide",
-        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4",
-        "https://builder.ai2sql.io/blog/ai-generated-sql-safety-guide"
-      ]
-    },
-    {
-      "topic": "Why Two Analysts Got Different Numbers from the Same AI \u2014 and How to Define Metrics in Your Prompt",
-      "rationale": "A widely discussed 2026 problem is that AI tools produce inconsistent SQL when two people phrase the same business question differently, because terms like 'revenue' or 'churn' aren't defined in the prompt \u2014 a structural issue that better prompts alone cannot fix.",
-      "sources": [
-        "https://www.actian.com/blog/data-analytics/ai-analytics-gives-different-answers-to-the-same-question-see-the-fix/",
-        "https://tianpan.co/blog/2026-05-07-cross-user-consistency-problem-ai-enterprise",
-        "https://www.powermetrics.app/blog/ai-analytics-context-metric-governance"
-      ]
-    },
-    {
-      "topic": "The BETWEEN Trap: Why AI Keeps Getting Your Date Range Off by One Day",
-      "rationale": "AI-generated SQL frequently uses BETWEEN for date filtering, which silently includes or excludes boundary dates depending on timestamps \u2014 a well-documented off-by-one error that causes dashboard disagreements and is flagged in current analyst checklists.",
+      "topic": "The BETWEEN Trap: Why AI Loves a Date Filter That Quietly Includes Tomorrow",
+      "rationale": "AI-generated SQL consistently uses BETWEEN for date ranges instead of >= / <, silently including an extra day's data \u2014 a documented pattern causing dashboard disagreements that analysts struggle to diagnose.",
       "sources": [
         "https://www.basedash.com/blog/how-to-review-ai-generated-sql-a-checklist-for-analysts-and-operators",
-        "https://sqlblog.org/2009/10/16/bad-habits-to-kick-mis-handling-date-range-queries",
-        "https://github.com/metabase/metabase/issues/15651"
+        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4"
       ]
     },
     {
-      "topic": "Ask AI to Think Before It Writes: Chain-of-Thought Prompting for Multi-Table SQL",
-      "rationale": "Chain-of-thought decomposition \u2014 prompting AI to plan intermediate steps before generating the final query \u2014 is shown to dramatically improve accuracy on complex multi-join queries, yet most analysts still use single-shot prompts.",
+      "topic": "Tell the AI Which Database You Use \u2014 Or Get SQL That Runs Nowhere",
+      "rationale": "AI defaults to generic SQL and silently gets dialect-specific syntax wrong (LIMIT vs TOP, DATE_TRUNC argument order, string functions), a top pain point as analysts work across PostgreSQL, Snowflake, and BigQuery in 2026.",
       "sources": [
-        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4",
+        "https://medium.com/@sinhapunya/how-ai-writes-sql-for-you-and-when-not-to-trust-it-25902a807a60",
+        "https://builder.ai2sql.io/blog/best-ai-sql-tools-2026",
+        "https://dev.to/vivekdraxlr/how-to-prompt-ai-tools-to-write-accurate-sql-queries-and-why-most-developers-get-this-wrong-55k4"
+      ]
+    },
+    {
+      "topic": "The AI Answered a Different Question: How to Catch a Wrong GROUP BY Level Before You Ship",
+      "rationale": "A widely documented failure mode where AI groups by only one dimension when you asked for two (e.g., revenue by customer by month becomes just revenue by month), producing plausible but wrong results.",
+      "sources": [
+        "https://www.basedash.com/blog/how-to-review-ai-generated-sql-a-checklist-for-analysts-and-operators",
+        "https://kissmetrics.io/blog/ai-sql-generation-guide"
+      ]
+    },
+    {
+      "topic": "The 5-Row Sanity Check: How to Spot-Test AI SQL Against a Known Answer",
+      "rationale": "Multiple 2026 practitioner guides emphasize testing AI output against a known account or small sample as the single highest-value validation step, yet most analysts skip it \u2014 and job postings now explicitly test this skill.",
+      "sources": [
+        "https://dev.to/vivekdraxlr/dont-trust-ai-generated-sql-blindly-a-developers-validation-checklist-5f9g",
+        "https://www.educative.io/guide/sql-guide",
+        "https://diyai.io/ai-tools/data-analytics/best-ai-sql-generators/"
+      ]
+    },
+    {
+      "topic": "Why 'Show Me Revenue' Is the Most Dangerous Prompt You Can Write",
+      "rationale": "AI cannot know your company's hidden business rules \u2014 excluded test accounts, refund logic, fiscal quarter definitions \u2014 so vague metric prompts produce polished nonsense, a problem multiple 2026 sources call the #1 cause of wrong AI-generated reports.",
+      "sources": [
         "https://kissmetrics.io/blog/ai-sql-generation-guide",
-        "https://www.buildfastwithai.com/blogs/ai-prompts-data-analyst-python-sql-chatgpt-2026"
-      ]
-    },
-    {
-      "topic": "The 5-Minute Spot-Check: How to Verify AI-Generated SQL Before It Reaches a Stakeholder",
-      "rationale": "With 96.5% of organizations now letting AI interact with production databases but only 35% automating validation, current guides stress a layered spot-check workflow \u2014 LIMIT 10, row counts, EXPLAIN, schema verification \u2014 as a critical analyst skill.",
-      "sources": [
-        "https://securityboulevard.com/2026/07/how-to-validate-ai-generated-sql-before-deployment/",
-        "https://builder.ai2sql.io/blog/ai-generated-sql-safety-guide",
-        "https://dev.to/vivekdraxlr/dont-trust-ai-generated-sql-blindly-a-developers-validation-checklist-5f9g"
+        "https://medium.com/@ds_stream/when-ai-writes-your-sql-what-data-skills-still-matter-44845c579c0c",
+        "https://diyai.io/ai-tools/data-analytics/best-ai-sql-generators/"
       ]
     }
   ]

@@ -1,0 +1,59 @@
+{
+  "topic": "The AI Answered a Different Question: How to Catch a Wrong GROUP BY Level Before You Ship",
+  "format": "micro",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "Millions of people are now pasting SQL questions into ChatGPT and trusting the output without checking the grain of the result set, leading to silently wrong dashboards and reports that nobody catches until a stakeholder notices the numbers do not add up.",
+    "target_learner": "A complete beginner who has just started using AI tools to write SQL queries and copies the output straight into a report or dashboard without knowing how to verify the results",
+    "learner_goal": "Spot when a GROUP BY is at the wrong level by doing a simple row-count sanity check before trusting any AI-generated query",
+    "competition_gap": "Existing SQL tutorials teach GROUP BY syntax but never show the real-world failure mode where AI confidently returns a query grouped at the wrong grain \u2014 nobody is showing the dramatic before-and-after of how one wrong GROUP BY silently doubles or halves your revenue number",
+    "platform_fit": "TikTok, Instagram Reels, and YouTube Shorts are ideal because the reveal moment \u2014 the number is wildly wrong \u2014 creates a visual shock that works perfectly in under 90 seconds and is highly shareable among data and analytics communities"
+  },
+  "content_structure": {
+    "hook": "I asked ChatGPT for total revenue by customer and it gave me a number that was 3x too high \u2014 and the SQL looked perfectly fine.",
+    "core_promise": "You will learn the one sanity check that instantly reveals when an AI-generated GROUP BY is at the wrong level.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The Row Count Trick That Catches a Bad GROUP BY in 5 Seconds",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to compare expected row counts against actual row counts to detect a wrong GROUP BY grain in any AI-generated SQL query",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The AI Gave You the Wrong Answer",
+            "duration_seconds": 50,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "Split screen: left side shows a ChatGPT prompt asking for total revenue per customer, right side shows the AI-generated SQL with a JOIN to an order_items table that creates duplicate rows. The query runs and shows Customer A with $90,000 revenue. A big red highlight appears showing the real answer is $30,000. A quick zoom into the GROUP BY line reveals it is grouping by customer but the JOIN already tripled the rows.",
+            "what_learner_hears": "I asked the AI for total revenue per customer. It wrote this query, it ran perfectly, zero errors. But this number is 3x too high. The AI joined to order_items, which created duplicate rows before the SUM. The GROUP BY is technically valid SQL \u2014 it is just answering a different question than you asked.",
+            "exercise_file": null,
+            "transition_to_next": "Quick cut with a text flash: SO HOW DO YOU CATCH IT?"
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The 5-Second Row Count Check",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The narrator wraps the AI query in a simple SELECT COUNT star and shows the result: 90 rows. Then a second query shows SELECT COUNT DISTINCT customer_id FROM orders which returns 30. The mismatch is highlighted with big animated numbers \u2014 90 vs 30. Then the corrected query with a subquery approach runs and shows the right $30,000 figure. Final frame: text overlay saying BEFORE YOU SHIP: row count should match your grain.",
+            "what_learner_hears": "Here is the trick. Before you trust any AI query, count the rows. I got 90 rows but I only have 30 customers. That mismatch means the JOIN blew up my grain. The GROUP BY is summing duplicates. Fix the join or aggregate before you join, and now the number is right. One check \u2014 count your rows against your grain \u2014 and you will never ship a silently wrong number again.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [],
+        "key_takeaway": "Before you trust any AI-generated GROUP BY query, count the rows in the result and compare that to the number of distinct values in your grouping column \u2014 if they do not match, the JOIN duplicated rows and your numbers are wrong."
+      }
+    ]
+  },
+  "exercise_file_plan": [],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "beginner",
+    "hands_on_ratio": "0% \u2014 this is a watch-only micro video designed for passive consumption in a social feed",
+    "adapters_needed": [
+      "sql_viewer"
+    ]
+  },
+  "hands_on_style": "light"
+}

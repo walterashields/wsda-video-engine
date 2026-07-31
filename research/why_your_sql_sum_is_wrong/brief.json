@@ -1,0 +1,59 @@
+{
+  "topic": "Why your SQL SUM is wrong",
+  "format": "micro",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "SQL remains the most in-demand data skill in 2024, yet duplicate-row bugs from bad JOINs silently inflate SUM results every day in production dashboards \u2014 and almost nobody teaches this specific gotcha. Data trust and analytics engineering are hot topics, and this is the number-one silent killer of accurate reports.",
+    "target_learner": "Junior to mid-level data analysts or backend developers who write SQL daily and have been burned by numbers that do not match but could never figure out why",
+    "learner_goal": "Instantly recognize when a JOIN is duplicating rows and silently inflating their SUM, and know the one-line fix",
+    "competition_gap": "Most SQL content covers SUM syntax or GROUP BY basics. Almost nobody isolates the specific moment a JOIN creates a fan-out that doubles your revenue overnight \u2014 and shows it visually in a way that makes you feel the horror.",
+    "platform_fit": "TikTok, Instagram Reels, YouTube Shorts \u2014 this is a classic gotcha reveal moment that triggers mass relatability among anyone who has ever had a stakeholder say your numbers are wrong"
+  },
+  "content_structure": {
+    "hook": "Your SQL SUM is adding up to $4.2 million. Your actual revenue is $2.1 million. And your query has zero errors.",
+    "core_promise": "You will see exactly how a normal-looking JOIN silently doubles your SUM and know how to catch it every time.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The JOIN that secretly doubled your revenue",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to identify when a one-to-many JOIN causes SUM to silently inflate and verify it by checking row counts before and after the JOIN.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The crime scene",
+            "duration_seconds": 50,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A clean, simple query: SELECT SUM(amount) FROM orders JOIN payments ON orders.id = payments.order_id. Result shows $4.2M. Then we run SELECT COUNT(*) FROM orders \u2014 10,000 rows. Then SELECT COUNT(*) FROM orders JOIN payments ON orders.id = payments.order_id \u2014 20,000 rows. The row count doubling is highlighted in red with a dramatic zoom.",
+            "what_learner_hears": "Here is a perfectly normal query. No errors. No warnings. SUM says 4.2 million. But watch what happens when I count the rows before and after the JOIN. 10,000 orders went in. 20,000 rows came out. Every order with two payments got duplicated, and SUM happily added both copies. Your revenue just doubled and nobody told you.",
+            "exercise_file": null,
+            "transition_to_next": "Hard cut \u2014 so how do you fix it?"
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The one-line fix",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "The query is rewritten to use SUM(DISTINCT amount) first \u2014 crossed out immediately because it is a trap that removes legitimate duplicate values. Then the real fix: a subquery that pre-aggregates payments before the JOIN. The result now shows $2.1M. A side-by-side before/after is shown. Final frame: text overlay \u2014 Always check your row count before and after a JOIN.",
+            "what_learner_hears": "Your instinct is SUM DISTINCT \u2014 do not do it. If two orders genuinely cost the same amount, you just deleted real data. Instead, aggregate first, then join. Sub-query, SUM the payments table by order_id, THEN join it. Now you get 2.1 million. The real number. One rule: every time you SUM after a JOIN, check your row count. If it grew, your total is lying to you.",
+            "exercise_file": null,
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [],
+        "key_takeaway": "If your row count increases after a JOIN, your SUM is silently wrong \u2014 always aggregate before you join."
+      }
+    ]
+  },
+  "exercise_file_plan": [],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "intermediate",
+    "hands_on_ratio": "0% \u2014 this is a watch-and-absorb micro video designed for social feed consumption",
+    "adapters_needed": [
+      "sql_viewer"
+    ]
+  },
+  "hands_on_style": "moderate"
+}

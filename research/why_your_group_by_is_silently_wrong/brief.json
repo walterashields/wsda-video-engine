@@ -1,0 +1,70 @@
+{
+  "topic": "Why your GROUP BY is silently wrong",
+  "format": "micro",
+  "market_analysis": {
+    "demand_level": "high",
+    "why_now": "SQL remains the most in-demand data skill in 2024-2025 job postings, yet GROUP BY misuse is the single most common silent-failure bug in analytics queries \u2014 and AI code assistants like Copilot and ChatGPT generate this exact mistake constantly, making it more urgent than ever.",
+    "target_learner": "Junior to mid-level data analysts, backend developers, or self-taught SQL users who write GROUP BY queries daily but have never been burned (or do not realize they have been burned) by non-aggregated column selection.",
+    "learner_goal": "Recognize that selecting a non-aggregated column in a GROUP BY query can return arbitrary, misleading data \u2014 and never trust that pattern again.",
+    "competition_gap": "Most SQL content explains GROUP BY syntax correctly but never shows the horrifying moment where the query runs without errors yet returns the WRONG answer. Nobody dramatizes the silent failure. This video makes you feel the betrayal.",
+    "platform_fit": "TikTok, Instagram Reels, YouTube Shorts \u2014 the gotcha reveal format is perfect for short-form; the before/after of a query returning wrong data is visually punchy and shareable among data teams."
+  },
+  "content_structure": {
+    "hook": "This query returns the wrong answer and your database will never tell you.",
+    "core_promise": "You will see exactly how GROUP BY silently picks a random row and lies to your face.",
+    "lessons": [
+      {
+        "lesson_number": 1,
+        "title": "The GROUP BY lie your database keeps from you",
+        "duration_minutes": 1.5,
+        "learning_objective": "By the end of this lesson the learner will be able to identify when a SELECT column is not functionally dependent on the GROUP BY clause and understand that the returned value is arbitrary and unreliable.",
+        "scenes": [
+          {
+            "scene_number": 1,
+            "scene_title": "The query that looks fine",
+            "duration_seconds": 40,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "A simple orders table with columns: customer_id, order_date, product_name, amount. Then a query appears: SELECT customer_id, product_name, MAX(amount) FROM orders GROUP BY customer_id. Results show each customer with a product name and their max amount. A big green checkmark \u2014 no errors. The narrator highlights the product_name column and a red circle pulses around it.",
+            "what_learner_hears": "This query runs perfectly. No errors. But it is lying to you. You asked for each customer's biggest order, and it gave you a product name \u2014 but that product name is NOT from the biggest order. It is from a random row. Your database just shrugged and picked one. Watch.",
+            "exercise_file": null,
+            "transition_to_next": "Smash cut to proof \u2014 run the same query showing the actual data side by side."
+          },
+          {
+            "scene_number": 2,
+            "scene_title": "The proof and the fix",
+            "duration_seconds": 50,
+            "visual_type": "sql_viewer",
+            "what_learner_sees": "Split screen: left side shows the grouped query result where customer 1 got product_name Keyboard with MAX amount 500. Right side shows the raw table filtered to customer 1, revealing the 500-dollar order was actually for Monitor, not Keyboard. The product_name is highlighted in red on both sides showing the mismatch. Then a quick flash of the fix: a subquery or window function approach that returns the correct product_name. MySQL ONLY_FULL_GROUP_BY mode is mentioned in a text overlay as the safety net.",
+            "what_learner_hears": "See? Customer 1's biggest order was a Monitor for 500 bucks. But GROUP BY returned Keyboard. It just grabbed whatever row it felt like. MySQL lets you get away with this by default. Postgres would have slapped you with an error. The fix? Use a window function or a subquery to actually join back to the right row. Or turn on ONLY_FULL_GROUP_BY and let MySQL protect you from yourself. Every non-aggregated column in your SELECT that is not in your GROUP BY is a coin flip. Stop flipping coins with your data.",
+            "exercise_file": "group_by_trap.sql",
+            "transition_to_next": null
+          }
+        ],
+        "exercise_files": [
+          "group_by_trap.sql"
+        ],
+        "key_takeaway": "Any column in your SELECT that is not aggregated and not in your GROUP BY clause can return an arbitrary value from any row in the group \u2014 and most databases will not warn you."
+      }
+    ]
+  },
+  "exercise_file_plan": [
+    {
+      "filename": "group_by_trap.sql",
+      "type": "sql",
+      "purpose": "Contains the CREATE TABLE and INSERT statements for the orders table, the broken GROUP BY query, a proof query showing the mismatch, and the corrected version using a window function \u2014 so the learner can run all three and see the lie for themselves.",
+      "lesson_used_in": [
+        1
+      ]
+    }
+  ],
+  "production_notes": {
+    "tone": "energetic",
+    "pacing": "fast",
+    "complexity": "intermediate",
+    "hands_on_ratio": "20% \u2014 this is a watch-and-absorb video but the exercise file lets motivated viewers replicate it immediately",
+    "adapters_needed": [
+      "sql_viewer"
+    ]
+  },
+  "hands_on_style": "moderate"
+}
