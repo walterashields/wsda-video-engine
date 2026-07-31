@@ -1,706 +1,755 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WSDA SQL Viewer</title>
-<style>
-  :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-dim: #7d8590;
-    --accent: #2f81f7;
-    --accent-glow: rgba(47,129,247,0.15);
-    --green: #3fb950;
-    --green-bg: rgba(63,185,80,0.15);
-    --red: #f85149;
-    --red-bg: rgba(248,81,73,0.15);
-    --yellow: #d29922;
-    --yellow-bg: rgba(210,153,34,0.15);
-    --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--font-sans);
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── Title Card Overlay ── */
-  #title-card {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    padding: 60px;
-    text-align: center;
-  }
-  #title-card.active { display: flex; animation: titleFadeIn 0.6s ease; }
-  @keyframes titleFadeIn {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .title-card-badge {
-    background: var(--red-bg);
-    color: var(--red);
-    border: 1px solid var(--red);
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 32px;
-    animation: badgePulse 2s ease-in-out infinite;
-  }
-  @keyframes badgePulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(248,81,73,0); }
-  }
-  .title-card-headline {
-    font-size: 48px;
-    font-weight: 800;
-    line-height: 1.1;
-    max-width: 900px;
-    margin-bottom: 24px;
-    background: linear-gradient(90deg, #fff 0%, #8b949e 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .title-card-sub {
-    font-size: 22px;
-    color: var(--text-dim);
-    max-width: 700px;
-    line-height: 1.5;
-    margin-bottom: 40px;
-  }
-  .title-card-stakes {
-    font-size: 20px;
-    color: var(--red);
-    font-weight: 600;
-    padding: 16px 32px;
-    border: 2px solid var(--red);
-    border-radius: 12px;
-    background: var(--red-bg);
-    animation: stakesGlow 2s ease-in-out infinite;
-  }
-  @keyframes stakesGlow {
-    0%, 100% { border-color: var(--red); box-shadow: 0 0 20px rgba(248,81,73,0.1); }
-    50% { border-color: #ff7b72; box-shadow: 0 0 30px rgba(248,81,73,0.2); }
-  }
-
-  /* ── Layout ── */
-  .app { display: flex; flex: 1; overflow: hidden; }
-  .sidebar {
-    width: 0;
-    min-width: 0;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-  }
-  .sidebar.expanded { width: 280px; min-width: 280px; }
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-  /* ── Header ── */
-  .header {
-    height: 52px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 12px;
-    font-size: 14px;
-  }
-  .header-brand { font-weight: 800; color: var(--accent); font-size: 16px; }
-  .header-db { color: var(--text-dim); }
-  .header-db strong { color: var(--text); }
-  .header-toggle {
-    margin-left: auto;
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 6px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s;
-  }
-  .header-toggle:hover { color: var(--text); border-color: var(--accent); }
-
-  /* ── Schema Panel ── */
-  .schema-header {
-    padding: 14px 20px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .schema-list { flex: 1; overflow-y: auto; padding: 10px; }
-  .schema-table { margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
-  .schema-table-name {
-    padding: 10px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    background: rgba(255,255,255,0.03);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: background 0.2s;
-  }
-  .schema-table-name:hover { background: rgba(255,255,255,0.06); }
-  .schema-table-name .arrow { font-size: 10px; transition: transform 0.2s; }
-  .schema-table-name.expanded .arrow { transform: rotate(90deg); }
-  .schema-columns {
-    display: none;
-    padding: 6px 14px 10px;
-  }
-  .schema-columns.visible { display: block; }
-  .schema-col {
-    font-size: 13px;
-    padding: 4px 0;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
-  }
-  .schema-col .col-type { color: var(--text-dim); opacity: 0.5; margin-left: 6px; }
-
-  /* ── SQL Editor ── */
-  .sql-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: flex 0.4s ease;
-  }
-  .sql-toolbar {
-    height: 44px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 10px;
-  }
-  .sql-toolbar button {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    padding: 8px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
-  }
-  .sql-toolbar button:hover { opacity: 0.9; }
-  .sql-toolbar .tab {
-    padding: 8px 16px;
-    font-size: 13px;
-    color: var(--text-dim);
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .sql-toolbar .tab.active {
-    color: var(--text);
-    border-bottom-color: var(--accent);
-  }
-  .sql-editor-wrap {
-    flex: 1;
-    position: relative;
-    overflow: auto;
-  }
-  .sql-editor {
-    width: 100%;
-    min-height: 100%;
-    background: var(--bg);
-    border: none;
-    padding: 20px 24px;
-    font-family: var(--font-mono);
-    font-size: 17px;
-    line-height: 1.8;
-    color: var(--text);
-    resize: none;
-    outline: none;
-    white-space: pre;
-    tab-size: 2;
-  }
-
-  /* ── Query Color Coding ── */
-  .query-block { position: relative; margin: 8px 0; border-radius: 8px; overflow: hidden; }
-  .query-block.correct { background: var(--green-bg); border-left: 4px solid var(--green); }
-  .query-block.buggy { background: var(--red-bg); border-left: 4px solid var(--red); }
-  .query-label {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .query-label.correct { background: var(--green); color: #000; }
-  .query-label.buggy { background: var(--red); color: #fff; }
-
-  /* ── Results ── */
-  .results-area {
-    height: 40%;
-    min-height: 180px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    background: var(--surface);
-    transition: height 0.4s ease;
-  }
-  .results-area.zoomed { height: 65%; }
-  .results-header {
-    padding: 12px 20px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .results-header .row-count {
-    font-size: 13px;
-    color: var(--text);
-    font-weight: 600;
-  }
-  .results-table-wrap {
-    flex: 1;
-    overflow: auto;
-  }
-  .results-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 16px;
-  }
-  .results-table th {
-    text-align: left;
-    padding: 12px 20px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    white-space: nowrap;
-  }
-  .results-table td {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--font-mono);
-    font-size: 16px;
-    white-space: nowrap;
-  }
-  .results-table tr:hover td { background: rgba(255,255,255,0.03); }
-
-  /* ── Row Highlighting ── */
-  .results-table tr.highlighted td {
-    background: var(--accent-glow) !important;
-    border-left: 4px solid var(--accent);
-    animation: pulse-row 2s ease-in-out infinite;
-  }
-  @keyframes pulse-row {
-    0%, 100% { background: var(--accent-glow); }
-    50% { background: rgba(47,129,247,0.25); }
-  }
-  .results-table tr.highlighted-red td {
-    background: var(--red-bg) !important;
-    border-left: 4px solid var(--red);
-    animation: pulse-row-red 2s ease-in-out infinite;
-  }
-  @keyframes pulse-row-red {
-    0%, 100% { background: var(--red-bg); }
-    50% { background: rgba(248,81,73,0.25); }
-  }
-  .results-table tr.highlighted-green td {
-    background: var(--green-bg) !important;
-    border-left: 4px solid var(--green);
-    animation: pulse-row-green 2s ease-in-out infinite;
-  }
-  @keyframes pulse-row-green {
-    0%, 100% { background: var(--green-bg); }
-    50% { background: rgba(63,185,80,0.25); }
-  }
-
-  /* ── Cell Callout ── */
-  .cell-callout {
-    position: relative;
-    display: inline-block;
-    background: var(--yellow-bg);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    color: var(--yellow);
-    animation: callout-pop 0.4s ease;
-  }
-  @keyframes callout-pop {
-    0% { transform: scale(0.8); opacity: 0; }
-    60% { transform: scale(1.05); }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .cell-callout::after {
-    content: attr(data-callout);
-    position: absolute;
-    top: -36px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--yellow);
-    color: #000;
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: 10;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  .cell-callout.visible::after { opacity: 1; }
-
-  /* ── Empty State ── */
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--text-dim);
-    font-size: 15px;
-    gap: 16px;
-  }
-  .empty-state .icon {
-    width: 56px;
-    height: 56px;
-    border: 2px solid var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-  }
-
-  /* ── Status Bar ── */
-  .status-bar {
-    height: 32px;
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    font-size: 13px;
-    color: var(--text-dim);
-    gap: 20px;
-  }
-  .status-bar .status-ok { color: var(--green); }
-  .status-bar .status-warn { color: var(--yellow); }
-  .status-bar .status-err { color: var(--red); }
-
-  /* ── Cursor Ring ── */
-  #cursor-ring {
-    position: fixed;
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--accent);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    display: none;
-    transition: all 0.12s ease;
-    box-shadow: 0 0 20px rgba(47,129,247,0.3);
-  }
-  #cursor-ring.active { display: block; }
-</style>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.2">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px 'Helvetica Neue'; color: #000000; color: rgba(0, 0, 0, 0.9); -webkit-text-stroke: rgba(0, 0, 0, 0.9); background-color: #faf9f7}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px 'Helvetica Neue'; color: #000000; color: rgba(0, 0, 0, 0.9); -webkit-text-stroke: rgba(0, 0, 0, 0.9); background-color: #faf9f7; min-height: 17.0px}
+    span.s1 {font-kerning: none}
+  </style>
 </head>
 <body>
-
-<!-- Title Card Overlay -->
-<div id="title-card">
-  <div class="title-card-badge" id="title-badge">SQL Debugging</div>
-  <div class="title-card-headline" id="title-headline">Loading...</div>
-  <div class="title-card-sub" id="title-sub">Loading...</div>
-  <div class="title-card-stakes" id="title-stakes" style="display:none"></div>
-</div>
-
-<!-- Cursor Ring -->
-<div id="cursor-ring"></div>
-
-<div class="app" id="app">
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="schema-header">
-      <span>Schema</span>
-      <span id="schema-count" style="font-size:11px;color:var(--text-dim)"></span>
-    </div>
-    <div class="schema-list" id="schema-list"></div>
-  </div>
-
-  <!-- Main -->
-  <div class="main">
-    <div class="header">
-      <span class="header-brand">WSDA</span>
-      <span style="color:var(--border)">|</span>
-      <span class="header-db" id="header-db">No database loaded</span>
-      <button class="header-toggle" id="toggle-schema" onclick="toggleSchema()">▶ Schema</button>
-    </div>
-
-    <div class="sql-area" id="sql-area">
-      <div class="sql-toolbar">
-        <button onclick="runQuery()">▷ Run</button>
-        <div style="flex:1"></div>
-        <div class="tab active" id="tab-sql">SQL</div>
-        <div class="tab" id="tab-results">Results</div>
-      </div>
-      <div class="sql-editor-wrap">
-        <textarea class="sql-editor" id="sql-editor" placeholder="-- Write your SQL here..." spellcheck="false"></textarea>
-      </div>
-    </div>
-
-    <div class="results-area" id="results-area">
-      <div class="results-header">
-        <span>Results</span>
-        <span class="row-count" id="row-count"></span>
-      </div>
-      <div class="results-table-wrap" id="results-wrap">
-        <div class="empty-state">
-          <div class="icon">▷</div>
-          <span>Run a query to see results</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="status-bar">
-      <span id="status-text">Ready</span>
-      <span style="margin-left:auto" id="status-detail"></span>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── State ──
-let db = null;
-let schemaVisible = false;
-
-// ── Title Card ──
-function showTitleCard(badge, headline, sub, stakes) {
-  document.getElementById('title-badge').textContent = badge || 'SQL Lesson';
-  document.getElementById('title-headline').textContent = headline;
-  document.getElementById('title-sub').textContent = sub || '';
-  const stakesEl = document.getElementById('title-stakes');
-  if (stakes) {
-    stakesEl.textContent = stakes;
-    stakesEl.style.display = 'block';
-  } else {
-    stakesEl.style.display = 'none';
-  }
-  document.getElementById('title-card').classList.add('active');
-}
-function hideTitleCard() {
-  document.getElementById('title-card').classList.remove('active');
-}
-
-// ── Schema Toggle ──
-function toggleSchema() {
-  schemaVisible = !schemaVisible;
-  document.getElementById('sidebar').classList.toggle('expanded', schemaVisible);
-  document.getElementById('toggle-schema').textContent = schemaVisible ? '◀ Collapse' : '▶ Schema';
-}
-function collapseSchema() {
-  schemaVisible = false;
-  document.getElementById('sidebar').classList.remove('expanded');
-  document.getElementById('toggle-schema').textContent = '▶ Schema';
-}
-function expandSchema() {
-  schemaVisible = true;
-  document.getElementById('sidebar').classList.add('expanded');
-  document.getElementById('toggle-schema').textContent = '◀ Collapse';
-}
-
-// ── Row Highlighting ──
-function highlightRow(tableSelector, rowIndex, color) {
-  const table = document.querySelector(tableSelector || '.results-table');
-  if (!table) return;
-  const rows = table.querySelectorAll('tbody tr');
-  rows.forEach(r => r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));
-  if (rows[rowIndex]) {
-    rows[rowIndex].classList.add(color === 'red' ? 'highlighted-red' : color === 'green' ? 'highlighted-green' : 'highlighted');
-  }
-}
-function clearHighlights(tableSelector) {
-  const table = document.querySelector(tableSelector || '.results-table');
-  if (!table) return;
-  table.querySelectorAll('tr').forEach(r => r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));
-}
-
-// ── Cell Callout ──
-function annotateCell(tableSelector, rowIndex, colIndex, text) {
-  const table = document.querySelector(tableSelector || '.results-table');
-  if (!table) return;
-  const rows = table.querySelectorAll('tbody tr');
-  if (!rows[rowIndex]) return;
-  const cells = rows[rowIndex].querySelectorAll('td');
-  if (!cells[colIndex]) return;
-  cells[colIndex].classList.add('cell-callout');
-  cells[colIndex].setAttribute('data-callout', text);
-  setTimeout(() => cells[colIndex].classList.add('visible'), 100);
-}
-function clearAnnotations(tableSelector) {
-  const table = document.querySelector(tableSelector || '.results-table');
-  if (!table) return;
-  table.querySelectorAll('.cell-callout').forEach(c => {
-    c.classList.remove('cell-callout', 'visible');
-    c.removeAttribute('data-callout');
-  });
-}
-
-// ── Query Color Coding ──
-function setQueryColor(startLine, endLine, type) {
-  console.log(`Query lines ${startLine}-${endLine} marked as ${type}`);
-}
-
-// ── Cursor Ring ──
-function moveCursorRing(x, y) {
-  const ring = document.getElementById('cursor-ring');
-  ring.style.left = (x - 18) + 'px';
-  ring.style.top = (y - 18) + 'px';
-  ring.classList.add('active');
-}
-function hideCursorRing() {
-  document.getElementById('cursor-ring').classList.remove('active');
-}
-
-// ── Database Loading ──
-function loadDatabase(name) {
-  document.getElementById('header-db').innerHTML = `Database: <strong>${name}</strong>`;
-  setStatus('Database loaded: ' + name, 'ok');
-}
-
-// ── Schema Rendering ──
-function renderSchema(tables) {
-  const list = document.getElementById('schema-list');
-  list.innerHTML = '';
-  document.getElementById('schema-count').textContent = tables.length + ' tables';
-  tables.forEach(t => {
-    const div = document.createElement('div');
-    div.className = 'schema-table';
-    div.innerHTML = `
-      <div class="schema-table-name" onclick="toggleTable(this)">
-        <span class="arrow">▶</span>
-        <span>${t.name}</span>
-      </div>
-      <div class="schema-columns">
-        ${t.columns.map(c => `<div class="schema-col">${c.name}<span class="col-type">${c.type}</span></div>`).join('')}
-      </div>
-    `;
-    list.appendChild(div);
-  });
-}
-function toggleTable(el) {
-  el.classList.toggle('expanded');
-  el.nextElementSibling.classList.toggle('visible');
-}
-function activateTable(tableName) {
-  document.querySelectorAll('.schema-table-name').forEach(el => {
-    if (el.textContent.includes(tableName)) {
-      el.classList.add('expanded');
-      el.nextElementSibling.classList.add('visible');
-    }
-  });
-}
-
-// ── SQL Editor ──
-function setSQL(content) {
-  document.getElementById('sql-editor').value = content;
-}
-function getSQL() {
-  return document.getElementById('sql-editor').value;
-}
-function highlightSection(sectionName) {
-  console.log('Highlight section:', sectionName);
-}
-
-// ── Query Execution ──
-function runQuery() {
-  setStatus('Running query...', 'warn');
-}
-function showResults(columns, rows, queryName) {
-  const wrap = document.getElementById('results-wrap');
-  if (!rows || rows.length === 0) {
-    wrap.innerHTML = '<div class="empty-state"><div class="icon">∅</div><span>No results</span></div>';
-    document.getElementById('row-count').textContent = '0 rows';
-    return;
-  }
-  let html = '<table class="results-table"><thead><tr>';
-  columns.forEach(c => html += `<th>${c}</th>`);
-  html += '</tr></thead><tbody>';
-  rows.forEach(row => {
-    html += '<tr>';
-    row.forEach(cell => html += `<td>${cell !== null ? cell : 'NULL'}</td>`);
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-  document.getElementById('row-count').textContent = rows.length + ' rows';
-  setStatus('Query complete: ' + (queryName || ''), 'ok');
-}
-function zoomResults() {
-  document.getElementById('results-area').classList.add('zoomed');
-  document.getElementById('sql-area').style.flex = '0 0 35%';
-}
-function resetZoom() {
-  document.getElementById('results-area').classList.remove('zoomed');
-  document.getElementById('sql-area').style.flex = '';
-}
-
-// ── Status ──
-function setStatus(text, type) {
-  const el = document.getElementById('status-text');
-  el.textContent = text;
-  el.className = type === 'ok' ? 'status-ok' : type === 'warn' ? 'status-warn' : type === 'err' ? 'status-err' : '';
-}
-
-// ── Fade Out ──
-function fadeOut() {
-  document.body.style.transition = 'opacity 1.5s ease';
-  document.body.style.opacity = '0';
-}
-
-// ── Init ──
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('WSDA SQL Viewer v2 ready');
-});
-</script>
+<p class="p1"><span class="s1">&lt;!DOCTYPE html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;html lang="en"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;meta charset="UTF-8"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;title&gt;WSDA SQL Viewer&lt;/title&gt;</span></p>
+<p class="p1"><span class="s1">&lt;style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>:root {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--bg: #0d1117;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--surface: #161b22;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--border: #30363d;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--text: #e6edf3;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--text-dim: #7d8590;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--accent: #2f81f7;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--accent-glow: rgba(47,129,247,0.15);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--green: #3fb950;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--green-bg: rgba(63,185,80,0.15);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--red: #f85149;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--red-bg: rgba(248,81,73,0.15);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--yellow: #d29922;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--yellow-bg: rgba(210,153,34,0.15);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>--font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>* { box-sizing: border-box; margin: 0; padding: 0; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>body {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-family: var(--font-sans);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 100vh;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>overflow: hidden;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Title Card Overlay ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>#title-card {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: fixed;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>top: 0; left: 0; right: 0; bottom: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>justify-content: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>z-index: 1000;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 60px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-align: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>#title-card.active { display: flex; animation: titleFadeIn 0.6s ease; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes titleFadeIn {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>from { opacity: 0; transform: scale(0.98); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>to { opacity: 1; transform: scale(1); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.title-card-badge {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--red-bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--red);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: 1px solid var(--red);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 8px 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-transform: uppercase;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>letter-spacing: 0.1em;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>margin-bottom: 32px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: badgePulse 2s ease-in-out infinite;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes badgePulse {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,0.3); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>50% { box-shadow: 0 0 0 8px rgba(248,81,73,0); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.title-card-headline {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 48px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 800;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>line-height: 1.1;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>max-width: 900px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>margin-bottom: 24px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: linear-gradient(90deg, #fff 0%, #8b949e 100%);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>-webkit-background-clip: text;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>-webkit-text-fill-color: transparent;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.title-card-sub {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 22px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>max-width: 700px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>line-height: 1.5;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>margin-bottom: 40px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.title-card-stakes {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--red);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 600;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 16px 32px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: 2px solid var(--red);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--red-bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: stakesGlow 2s ease-in-out infinite;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes stakesGlow {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0%, 100% { border-color: var(--red); box-shadow: 0 0 20px rgba(248,81,73,0.1); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>50% { border-color: #ff7b72; box-shadow: 0 0 30px rgba(248,81,73,0.2); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Layout ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.app { display: flex; flex: 1; overflow: hidden; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sidebar {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>width: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>min-width: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--surface);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-right: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>overflow: hidden;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sidebar.expanded { width: 280px; min-width: 280px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Header ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 52px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--surface);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 0 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>gap: 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header-brand { font-weight: 800; color: var(--accent); font-size: 16px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header-db { color: var(--text-dim); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header-db strong { color: var(--text); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header-toggle {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>margin-left: auto;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: transparent;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 6px 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 8px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>cursor: pointer;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: all 0.2s;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.header-toggle:hover { color: var(--text); border-color: var(--accent); }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Schema Panel ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-header {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 14px 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 11px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-transform: uppercase;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>letter-spacing: 0.08em;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>justify-content: space-between;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-list { flex: 1; overflow-y: auto; padding: 10px; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-table { margin-bottom: 10px; border-radius: 8px; overflow: hidden; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-table-name {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 10px 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 600;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: rgba(255,255,255,0.03);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>cursor: pointer;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>gap: 10px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: background 0.2s;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-table-name:hover { background: rgba(255,255,255,0.06); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-table-name .arrow { font-size: 10px; transition: transform 0.2s; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-table-name.expanded .arrow { transform: rotate(90deg); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-columns {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 6px 14px 10px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-columns.visible { display: block; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-col {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 4px 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-family: var(--font-mono);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.schema-col .col-type { color: var(--text-dim); opacity: 0.5; margin-left: 6px; }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ SQL Editor ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-area {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex: 1;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>overflow: hidden;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: flex 0.4s ease;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-toolbar {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 44px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--surface);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 0 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>gap: 10px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-toolbar button {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--accent);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: #fff;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 8px 18px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 8px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>cursor: pointer;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: opacity 0.2s;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-toolbar button:hover { opacity: 0.9; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-toolbar .tab {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 8px 16px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 2px solid transparent;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>cursor: pointer;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: all 0.2s;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-toolbar .tab.active {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom-color: var(--accent);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-editor-wrap {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex: 1;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: relative;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>overflow: auto;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.sql-editor {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>width: 100%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>min-height: 100%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 20px 24px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-family: var(--font-mono);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 17px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>line-height: 1.8;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>resize: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>outline: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>white-space: pre;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>tab-size: 2;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Query Color Coding ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-block { position: relative; margin: 8px 0; border-radius: 8px; overflow: hidden; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-block.correct { background: var(--green-bg); border-left: 4px solid var(--green); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-block.buggy { background: var(--red-bg); border-left: 4px solid var(--red); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-label {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: absolute;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>top: 8px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>right: 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 4px 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 6px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 11px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-transform: uppercase;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>letter-spacing: 0.05em;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-label.correct { background: var(--green); color: #000; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.query-label.buggy { background: var(--red); color: #fff; }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Results ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-area {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 40%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>min-height: 180px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-top: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--surface);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: height 0.4s ease;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-area.zoomed { height: 65%; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-header {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 12px 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 11px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-transform: uppercase;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>letter-spacing: 0.06em;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>justify-content: space-between;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-header .row-count {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 600;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table-wrap {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex: 1;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>overflow: auto;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>width: 100%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-collapse: collapse;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 16px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table th {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-align: left;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 12px 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>text-transform: uppercase;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>letter-spacing: 0.06em;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: sticky;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>top: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>white-space: nowrap;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table td {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 12px 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-bottom: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-family: var(--font-mono);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 16px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>white-space: nowrap;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table tr:hover td { background: rgba(255,255,255,0.03); }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Row Highlighting ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table tr.highlighted td {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--accent-glow) !important;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-left: 4px solid var(--accent);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: pulse-row 2s ease-in-out infinite;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes pulse-row {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0%, 100% { background: var(--accent-glow); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>50% { background: rgba(47,129,247,0.25); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table tr.highlighted-red td {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--red-bg) !important;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-left: 4px solid var(--red);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: pulse-row-red 2s ease-in-out infinite;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes pulse-row-red {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0%, 100% { background: var(--red-bg); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>50% { background: rgba(248,81,73,0.25); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.results-table tr.highlighted-green td {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--green-bg) !important;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-left: 4px solid var(--green);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: pulse-row-green 2s ease-in-out infinite;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes pulse-row-green {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0%, 100% { background: var(--green-bg); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>50% { background: rgba(63,185,80,0.25); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Cell Callout ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.cell-callout {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: relative;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: inline-block;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--yellow-bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 4px 10px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 6px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--yellow);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>animation: callout-pop 0.4s ease;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>@keyframes callout-pop {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>0% { transform: scale(0.8); opacity: 0; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>60% { transform: scale(1.05); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>100% { transform: scale(1); opacity: 1; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.cell-callout::after {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>content: attr(data-callout);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: absolute;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>top: -36px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>left: 50%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transform: translateX(-50%);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--yellow);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: #000;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 5px 14px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 6px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 12px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-weight: 700;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>white-space: nowrap;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>opacity: 0;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: opacity 0.3s;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>pointer-events: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>z-index: 10;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>box-shadow: 0 4px 12px rgba(0,0,0,0.3);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.cell-callout.visible::after { opacity: 1; }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Empty State ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.empty-state {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>flex-direction: column;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>justify-content: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 100%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 15px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>gap: 16px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.empty-state .icon {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>width: 56px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 56px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: 2px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 50%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>justify-content: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 24px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Status Bar ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.status-bar {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 32px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>background: var(--bg);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-top: 1px solid var(--border);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: flex;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>align-items: center;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>padding: 0 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>font-size: 13px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>color: var(--text-dim);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>gap: 20px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.status-bar .status-ok { color: var(--green); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.status-bar .status-warn { color: var(--yellow); }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>.status-bar .status-err { color: var(--red); }</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>/* ═══ Cursor Ring ═══ */</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>#cursor-ring {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>position: fixed;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>width: 36px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>height: 36px;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border: 3px solid var(--accent);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>border-radius: 50%;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>pointer-events: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>z-index: 9999;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>display: none;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>transition: all 0.12s ease;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>box-shadow: 0 0 20px rgba(47,129,247,0.3);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>#cursor-ring.active { display: block; }</span></p>
+<p class="p1"><span class="s1">&lt;/style&gt;</span></p>
+<p class="p1"><span class="s1">&lt;base target="_blank"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;body&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;!-- Title Card Overlay --&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div id="title-card"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="title-card-badge" id="title-badge"&gt;SQL Debugging&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="title-card-headline" id="title-headline"&gt;Loading...&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="title-card-sub" id="title-sub"&gt;Loading...&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="title-card-stakes" id="title-stakes" style="display:none"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;!-- Cursor Ring --&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div id="cursor-ring"&gt;&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;div class="app" id="app"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- Sidebar --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="sidebar" id="sidebar"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="schema-header"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span&gt;Schema&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span id="schema-count" style="font-size:11px;color:var(--text-dim)"&gt;&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="schema-list" id="schema-list"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;!-- Main --&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div class="main"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="header"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span class="header-brand"&gt;WSDA&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span style="color:var(--border)"&gt;|&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span class="header-db" id="header-db"&gt;No database loaded&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;button class="header-toggle" id="toggle-schema" onclick="toggleSchema()"&gt;▶ Schema&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="sql-area" id="sql-area"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="sql-toolbar"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;button onclick="runQuery()"&gt;▷ Run&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div style="flex:1"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="tab active" id="tab-sql"&gt;SQL&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="tab" id="tab-results"&gt;Results&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="sql-editor-wrap"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;textarea class="sql-editor" id="sql-editor" placeholder="-- Write your SQL here..." spellcheck="false"&gt;&lt;/textarea&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="results-area" id="results-area"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="results-header"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;span&gt;Results&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;span class="row-count" id="row-count"&gt;&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="results-table-wrap" id="results-wrap"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;div class="empty-state"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;div class="icon"&gt;▷&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>&lt;span&gt;Run a query to see results&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;div class="status-bar"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span id="status-text"&gt;Ready&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;span style="margin-left:auto" id="status-detail"&gt;&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;script&gt;</span></p>
+<p class="p1"><span class="s1">// ── State ──</span></p>
+<p class="p1"><span class="s1">let db = null;</span></p>
+<p class="p1"><span class="s1">let schemaVisible = false;</span></p>
+<p class="p1"><span class="s1">let currentSchema = [];</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Title Card ──</span></p>
+<p class="p1"><span class="s1">function showTitleCard(badge, headline, sub, stakes) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('title-badge').textContent = badge || 'SQL Lesson';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('title-headline').textContent = headline;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('title-sub').textContent = sub || '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const stakesEl = document.getElementById('title-stakes');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (stakes) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>stakesEl.textContent = stakes;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>stakesEl.style.display = 'block';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>} else {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>stakesEl.style.display = 'none';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('title-card').classList.add('active');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function hideTitleCard() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('title-card').classList.remove('active');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Schema Toggle ──</span></p>
+<p class="p1"><span class="s1">function toggleSchema() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>schemaVisible = !schemaVisible;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sidebar').classList.toggle('expanded', schemaVisible);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('toggle-schema').textContent = schemaVisible ? '◀ Collapse' : '▶ Schema';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function collapseSchema() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>schemaVisible = false;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sidebar').classList.remove('expanded');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('toggle-schema').textContent = '▶ Schema';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function expandSchema() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>schemaVisible = true;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sidebar').classList.add('expanded');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('toggle-schema').textContent = '◀ Collapse';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Row Highlighting ──</span></p>
+<p class="p1"><span class="s1">function highlightRow(tableSelector, rowIndex, color) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const table = document.querySelector(tableSelector || '.results-table');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!table) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const rows = table.querySelectorAll('tbody tr');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>rows.forEach(r =&gt; r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (rows[rowIndex]) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>rows[rowIndex].classList.add(color === 'red' ? 'highlighted-red' : color === 'green' ? 'highlighted-green' : 'highlighted');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function clearHighlights(tableSelector) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const table = document.querySelector(tableSelector || '.results-table');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!table) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>table.querySelectorAll('tr').forEach(r =&gt; r.classList.remove('highlighted', 'highlighted-red', 'highlighted-green'));</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Cell Callout ──</span></p>
+<p class="p1"><span class="s1">function annotateCell(tableSelector, rowIndex, colIndex, text) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const table = document.querySelector(tableSelector || '.results-table');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!table) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const rows = table.querySelectorAll('tbody tr');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!rows[rowIndex]) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const cells = rows[rowIndex].querySelectorAll('td');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!cells[colIndex]) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>cells[colIndex].classList.add('cell-callout');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>cells[colIndex].setAttribute('data-callout', text);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>setTimeout(() =&gt; cells[colIndex].classList.add('visible'), 100);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function clearAnnotations(tableSelector) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const table = document.querySelector(tableSelector || '.results-table');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!table) return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>table.querySelectorAll('.cell-callout').forEach(c =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>c.classList.remove('cell-callout', 'visible');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>c.removeAttribute('data-callout');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>});</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Query Color Coding ──</span></p>
+<p class="p1"><span class="s1">function setQueryColor(startLine, endLine, type) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>console.log(`Query lines ${startLine}-${endLine} marked as ${type}`);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Cursor Ring ──</span></p>
+<p class="p1"><span class="s1">function moveCursorRing(x, y) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const ring = document.getElementById('cursor-ring');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ring.style.left = (x - 18) + 'px';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ring.style.top = (y - 18) + 'px';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ring.classList.add('active');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function hideCursorRing() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('cursor-ring').classList.remove('active');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Database Loading ──</span></p>
+<p class="p1"><span class="s1">function loadDatabase(name) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('header-db').innerHTML = `Database: &lt;strong&gt;${name}&lt;/strong&gt;`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>setStatus('Database loaded: ' + name, 'ok');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Schema Rendering ──</span></p>
+<p class="p1"><span class="s1">function renderSchema(tables) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>currentSchema = tables || [];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const list = document.getElementById('schema-list');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>list.innerHTML = '';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('schema-count').textContent = tables.length + ' tables';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>tables.forEach(t =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const div = document.createElement('div');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>div.className = 'schema-table';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>div.innerHTML = `</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="schema-table-name" onclick="toggleTable(this)"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;span class="arrow"&gt;▶&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>&lt;span&gt;${t.name}&lt;/span&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;div class="schema-columns"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>${t.columns.map(c =&gt; `&lt;div class="schema-col"&gt;${c.name}&lt;span class="col-type"&gt;${c.type}&lt;/span&gt;&lt;/div&gt;`).join('')}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>`;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>list.appendChild(div);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>});</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function toggleTable(el) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>el.classList.toggle('expanded');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>el.nextElementSibling.classList.toggle('visible');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function activateTable(tableName) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.querySelectorAll('.schema-table-name').forEach(el =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const nameSpan = el.querySelector('span:last-child');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if (nameSpan &amp;&amp; nameSpan.textContent.trim() === tableName) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>el.classList.add('expanded');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>el.nextElementSibling.classList.add('visible');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>});</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── showSchema: fetch from API or use cached data ──</span></p>
+<p class="p1"><span class="s1">function showSchema() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (currentSchema &amp;&amp; currentSchema.length &gt; 0) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>renderSchema(currentSchema);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>fetch('/api/show-schema', {method: 'POST', headers: {'Content-Type': 'application/json'}})</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.then(r =&gt; r.json())</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.then(data =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>if (data.schema) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>const tables = [];</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>for (const [name, info] of Object.entries(data.schema)) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>if (!info.is_view) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>tables.push({</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>name: name,</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">              </span>columns: info.columns || []</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">            </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">          </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>currentSchema = tables;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">        </span>renderSchema(tables);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>})</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.catch(err =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">      </span>console.log('Schema API not available (expected for silent renderer):', err);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>});</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── SQL Editor ──</span></p>
+<p class="p1"><span class="s1">function setSQL(content) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sql-editor').value = content;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function getSQL() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>return document.getElementById('sql-editor').value;</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function highlightSection(sectionName) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>console.log('Highlight section:', sectionName);</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Query Execution ──</span></p>
+<p class="p1"><span class="s1">function runQuery() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>setStatus('Running query...', 'warn');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function showResults(columns, rows, queryName) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const wrap = document.getElementById('results-wrap');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>if (!rows || rows.length === 0) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>wrap.innerHTML = '&lt;div class="empty-state"&gt;&lt;div class="icon"&gt;∅&lt;/div&gt;&lt;span&gt;No results&lt;/span&gt;&lt;/div&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>document.getElementById('row-count').textContent = '0 rows';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>return;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>}</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>let html = '&lt;table class="results-table"&gt;&lt;thead&gt;&lt;tr&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>columns.forEach(c =&gt; html += `&lt;th&gt;${c}&lt;/th&gt;`);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>html += '&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>rows.forEach(row =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>html += '&lt;tr&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>row.forEach(cell =&gt; html += `&lt;td&gt;${cell !== null ? cell : 'NULL'}&lt;/td&gt;`);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>html += '&lt;/tr&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>});</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>html += '&lt;/tbody&gt;&lt;/table&gt;';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>wrap.innerHTML = html;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('row-count').textContent = rows.length + ' rows';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>setStatus('Query complete: ' + (queryName || ''), 'ok');</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function zoomResults() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('results-area').classList.add('zoomed');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sql-area').style.flex = '0 0 35%';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function resetZoom() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('results-area').classList.remove('zoomed');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.getElementById('sql-area').style.flex = '';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Status ──</span></p>
+<p class="p1"><span class="s1">function setStatus(text, type) {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>const el = document.getElementById('status-text');</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>el.textContent = text;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>el.className = type === 'ok' ? 'status-ok' : type === 'warn' ? 'status-warn' : type === 'err' ? 'status-err' : '';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Fade Out ──</span></p>
+<p class="p1"><span class="s1">function fadeOut() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.body.style.transition = 'opacity 1.5s ease';</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>document.body.style.opacity = '0';</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">// ── Init ──</span></p>
+<p class="p1"><span class="s1">window.addEventListener('DOMContentLoaded', () =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>console.log('WSDA SQL Viewer v2.1 ready');</span></p>
+<p class="p1"><span class="s1">});</span></p>
+<p class="p1"><span class="s1">&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
 </body>
 </html>

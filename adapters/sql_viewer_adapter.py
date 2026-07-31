@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-WSDA SQL Viewer Adapter v2 — Production-ready with visual effects
+WSDA SQL Viewer Adapter v2.1 — Production-ready with visual effects
 
-This adapter drives the new viewer_v2.html with all visual features:
+This adapter drives the viewer.html with all visual features:
 - Title cards for opening hooks
 - Schema collapse/expand for clean visuals
 - Row highlighting (blue/red/green) for emphasis
@@ -22,7 +22,6 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 VIEWER_URL = "http://localhost:7010/viewer"
-
 
 class SQLViewerAdapterV2:
     """Production-ready SQL viewer adapter with full visual effects support."""
@@ -48,15 +47,34 @@ class SQLViewerAdapterV2:
         if self.playwright:
             await self.playwright.stop()
 
+    def _get_schema(self, db_path: str) -> list:
+        """Read SQLite schema and return format expected by renderSchema()."""
+        try:
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+            tables = []
+            for (name,) in cur.fetchall():
+                cur.execute(f"PRAGMA table_info({name})")
+                cols = [{"name": r[1], "type": r[2]} for r in cur.fetchall()]
+                tables.append({"name": name, "columns": cols})
+            conn.close()
+            return tables
+        except Exception as e:
+            print(f"[AdapterV2] Could not read schema: {e}")
+            return []
+
     # ── Title Card ──
     async def show_title_card(self, badge: str = "SQL Lesson", headline: str = "",
                               sub: str = "", stakes: str = ""):
         """Display full-screen title card. Call this as FIRST event."""
         await self.page.evaluate(f"""
-            showTitleCard({json.dumps(badge)}, {json.dumps(headline)},
-                          {json.dumps(sub)}, {json.dumps(stakes)});
+        showTitleCard(
+            {json.dumps(badge)}, {json.dumps(headline)},
+            {json.dumps(sub)}, {json.dumps(stakes)}
+        );
         """)
-        await asyncio.sleep(0.6)  # Wait for CSS animation
+        await asyncio.sleep(0.6)
 
     async def hide_title_card(self):
         """Dismiss title card overlay."""
@@ -99,7 +117,7 @@ class SQLViewerAdapterV2:
     async def show_results(self, columns: list, rows: list, query_name: str = ""):
         """Display query results."""
         await self.page.evaluate(f"""
-            showResults({json.dumps(columns)}, {json.dumps(rows)}, {json.dumps(query_name)});
+        showResults({json.dumps(columns)}, {json.dumps(rows)}, {json.dumps(query_name)});
         """)
         await asyncio.sleep(0.3)
 
@@ -117,7 +135,7 @@ class SQLViewerAdapterV2:
     async def annotate_cell(self, row_index: int, col_index: int, text: str):
         """Add floating callout on a cell."""
         await self.page.evaluate(f"""
-            annotateCell(null, {row_index}, {col_index}, {json.dumps(text)});
+        annotateCell(null, {row_index}, {col_index}, {json.dumps(text)});
         """)
         await asyncio.sleep(0.4)
 
@@ -139,19 +157,21 @@ class SQLViewerAdapterV2:
     async def set_query_color(self, start_line: int, end_line: int, label_type: str):
         """Color-code query block as 'correct' or 'buggy'."""
         await self.page.evaluate(f"""
-            setQueryColor({start_line}, {end_line}, {json.dumps(label_type)});
+        setQueryColor({start_line}, {end_line}, {json.dumps(label_type)});
         """)
         await asyncio.sleep(0.2)
 
     # ── Database ──
     async def open_database(self, db_path: str):
-        """Load SQLite database."""
-        # Copy DB to viewer accessible location
+        """Load SQLite database and render its schema."""
         await self.page.evaluate(f"loadDatabase({json.dumps(Path(db_path).name)});")
+        schema = self._get_schema(db_path)
+        if schema:
+            await self.page.evaluate(f"renderSchema({json.dumps(schema)});")
         await asyncio.sleep(0.5)
 
     async def show_schema(self):
-        """Display database schema."""
+        """Display database schema (fetches from API if not already rendered)."""
         await self.page.evaluate("showSchema();")
         await asyncio.sleep(0.3)
 
@@ -221,7 +241,6 @@ class SQLViewerAdapterV2:
             await handler(event)
         else:
             print(f"[AdapterV2] Unknown event type: {etype}")
-
 
 # ── Backwards Compatibility ──
 class SQLViewerAdapter(SQLViewerAdapterV2):
