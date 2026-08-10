@@ -1,0 +1,105 @@
+lesson_id: sql-fundamentals-02
+title: SQL Subqueries vs JOINs Unveiled
+course_id: sql-fundamentals
+lesson_num: 2
+concept: SQL Subqueries vs JOINs
+events:
+- id: '1'
+  type: show_title_card
+  params:
+    badge: SQL Fundamentals
+    headline: SQL Subqueries vs JOINs Unveiled
+    sub: Three analysts ran the same report. Three got different numbers.
+    stakes: Your CEO doesn't care whose query is right. She cares that revenue is
+      inconsistent.
+  narration: SQL Subqueries versus JOINs. Three analysts, three different results.
+    Why does this matter? Because your CEO only sees inconsistency in revenue.
+- id: '2'
+  type: hide_title_card
+  narration: Let's dive in and see why these differences happen.
+- id: '3'
+  type: open_database
+  params:
+    asset: path/to/database.db
+  narration: 'We have three tables to consider: products, sales, and categories.'
+  asset: assets/sql-fundamentals.db
+- id: '4'
+  type: show_schema
+  narration: Each table holds essential data for calculating sales per product category.
+- id: '5'
+  type: open_file
+  params:
+    asset: path/to/sql_fundamentals_02.sql
+  narration: 'To answer one simple question: What are the total sales per product
+    category?'
+  asset: assets/queries.sql
+- id: '6'
+  type: highlight_section
+  params:
+    section: query_1
+  narration: First up, a subquery calculates total sales for each product, then sums
+    them by category.
+- id: '7'
+  type: run_query
+  params:
+    query_ref: query_1
+  narration: Let's see what it finds.
+- id: '8'
+  type: show_result
+  narration: It gives us a breakdown per category, but is it reliable?
+- id: '9'
+  type: pause
+  params:
+    duration: 1
+- id: '10'
+  type: highlight_section
+  params:
+    section: query_2
+  narration: Next, a direct JOIN approach aggregates sales by category. This might
+    look straightforward, but watch out for potential duplications.
+- id: '11'
+  type: run_query
+  params:
+    query_ref: query_2
+  narration: Let's check its results.
+- id: '12'
+  type: show_result
+  narration: Same numbers again. Or are they?
+- id: '13'
+  type: pause
+  params:
+    duration: 1
+- id: '14'
+  type: highlight_section
+  params:
+    section: query_3
+  narration: Finally, a more complex subquery ensures accurate aggregation before
+    joining with categories.
+- id: '15'
+  type: run_query
+  params:
+    query_ref: query_3
+  narration: Let's see how it handles the data.
+- id: '16'
+  type: show_result
+  narration: It matches the others too. So what's the deal?
+- id: '17'
+  type: set_layout
+  params:
+    mode: compare
+  narration: Let's compare all three approaches.
+- id: '18'
+  type: compare_results
+  params:
+    targets:
+    - query_1
+    - query_2
+    - query_3
+  narration: They all produce the same numbers, but not all scenarios are this forgiving.
+- id: '19'
+  type: zoom_results
+  narration: The takeaway? Choose the right tool for the job.
+- id: '20'
+  type: fade_out
+  narration: Subqueries and JOINs both have their place. Use them wisely, and your
+    data will paint the most accurate picture.

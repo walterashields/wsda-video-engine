@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSDA SQL Viewer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0B0D12;
+      --bg-secondary: #11131A;
+      --bg-tertiary: #161922;
+      --border: #1E2130;
+      --text-primary: #E2E8F0;
+      --text-secondary: #64748B;
+      --accent-blue: #3B82F6;
+      --accent-green: #22C55E;
+      --accent-red: #EF4444;
+      --sql-keyword: #EC4899;
+      --sql-function: #22D3EE;
+      --sql-string: #EAB308;
+      --sql-number: #A78BFA;
+      --sql-comment: #475569;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Bar */
+    .topbar {
+      height: 48px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .logo { font-weight: 800; color: var(--accent-blue); font-size: 14px; letter-spacing: 0.05em; }
+    .db-badge {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .db-badge .name { color: var(--text-primary); font-weight: 600; }
+    .lesson-badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+      padding: 4px 12px;
+      border-radius: 4px;
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.4s ease;
+    }
+    .lesson-badge.active { opacity: 1; transform: scale(1); }
+
+    /* Main Layout */
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    /* Schema Sidebar */
+    .schema {
+      width: 240px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .schema-header {
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+    }
+    .schema-list { padding: 8px; overflow-y: auto; }
+    .table-item {
+      margin-bottom: 4px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .table-name {
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      transition: background 0.2s;
+    }
+    .table-name:hover { background: var(--bg-tertiary); }
+    .table-name::before {
+      content: '▶';
+      font-size: 8px;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+    .table-item.expanded .table-name::before { transform: rotate(90deg); }
+    .columns {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .table-item.expanded .columns { max-height: 200px; }
+    .column {
+      padding: 6px 12px 6px 32px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+    .column .type { color: var(--sql-function); font-size: 10px; }
+
+    /* Content Area */
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Toolbar */
+    .toolbar {
+      height: 44px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+    .run-btn {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+      border: none;
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.5;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .run-btn.active { opacity: 1; pointer-events: all; }
+    .run-btn::before { content: '▶'; font-size: 9px; }
+
+    /* SQL Editor */
+    .editor {
+      flex: 1;
+      background: var(--bg-primary);
+      overflow-y: auto;
+      padding: 20px 24px;
+    }
+    .query-block {
+      margin-bottom: 20px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .query-block.visible { opacity: 1; transform: translateY(0); }
+    .query-block.active .query-label { color: var(--accent-blue); }
+    .query-block.active {
+      background: rgba(59, 130, 246, 0.05);
+      margin: 0 -24px;
+      padding: 16px 24px;
+      border-left: 3px solid var(--accent-blue);
+    }
+    .query-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+    .query-block.active .query-label { text-shadow: 0 0 20px rgba(59,130,246,0.4); }
+
+    pre {
+      background: transparent !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      font-size: 13px !important;
+      line-height: 1.6 !important;
+    }
+    code { font-family: inherit !important; }
+
+    /* Results Panel */
+    .results {
+      height: 280px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+    .results-header {
+      padding: 12px 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      flex: 1;
+      overflow: hidden;
+    }
+    .result-col {
+      background: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: all 0.4s ease;
+    }
+    .result-col.visible { opacity: 1; transform: scale(1); }
+    .result-col-header {
+      padding: 10px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .result-col-body {
+      flex: 1;
+      overflow: auto;
+      padding: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 6px 8px; text-align: left; }
+    th { color: var(--text-secondary); font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { color: var(--text-primary); border-bottom: 1px solid rgba(30,33,48,0.5); }
+    tr:last-child td { border-bottom: none; }
+    .num { color: var(--sql-number); font-variant-numeric: tabular-nums; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      font-size: 12px;
+      gap: 8px;
+    }
+    .empty-state .icon {
+      width: 40px; height: 40px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Status Bar */
+    .status {
+      height: 28px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .status .ok { color: var(--accent-green); margin-left: 4px; }
+
+    /* Narration Subtitle */
+    .subtitle {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(11, 13, 18, 0.95);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
+      max-width: 80%;
+      text-align: center;
+      opacity: 0;
+      transition: all 0.4s ease;
+      pointer-events: none;
+      z-index: 100;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .subtitle.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Loading spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">WSDA</div>
+    <div class="db-badge">Database: <span class="name" id="dbName">No database loaded</span></div>
+    <div class="lesson-badge" id="lessonBadge">SQL Lesson</div>
+  </div>
+
+  <div class="main">
+    <div class="schema">
+      <div class="schema-header">
+        <span>Schema</span>
+        <span id="tableCount">0 tables</span>
+      </div>
+      <div class="schema-list" id="schemaList"></div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <button class="run-btn" id="runBtn">Run</button>
+        <span style="margin-left:auto;font-size:11px;color:var(--text-secondary);">SQL Editor</span>
+      </div>
+      <div class="editor" id="editor"></div>
+      <div class="results">
+        <div class="results-header">Results</div>
+        <div class="results-grid" id="resultsGrid">
+          <div class="result-col" id="res0"><div class="result-col-body"><div class="empty-state"><div class="icon">▶</div>Run a query to see results</div></div></div>
+          <div class="result-col" id="res1"><div class="result-col-body"><div class="empty-state"><div class="icon">▶</div>Run a query to see results</div></div></div>
+          <div class="result-col" id="res2"><div class="result-col-body"><div class="empty-state"><div class="icon">▶</div>Run a query to see results</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status">Ready <span class="ok" id="statusText"></span></div>
+  <div class="subtitle" id="subtitle"></div>
+
+  <script>
+    // ============================================================
+    // DATABASE SETUP — Populated with realistic demo data
+    // ============================================================
+    let db;
+    const schema = {
+      categories: [
+        { name: 'category_id', type: 'INTEGER' },
+        { name: 'category_name', type: 'TEXT' }
+      ],
+      products: [
+        { name: 'product_id', type: 'INTEGER' },
+        { name: 'category_id', type: 'INTEGER' },
+        { name: 'product_name', type: 'TEXT' },
+        { name: 'price', type: 'REAL' }
+      ],
+      sales: [
+        { name: 'sale_id', type: 'INTEGER' },
+        { name: 'product_id', type: 'INTEGER' },
+        { name: 'quantity', type: 'INTEGER' },
+        { name: 'sale_date', type: 'TEXT' }
+      ]
+    };
+
+    async function initDB() {
+      const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
+      db = new SQL.Database();
+
+      db.run(`CREATE TABLE categories (category_id INTEGER PRIMARY KEY, category_name TEXT);`);
+      db.run(`CREATE TABLE products (product_id INTEGER PRIMARY KEY, category_id INTEGER, product_name TEXT, price REAL);`);
+      db.run(`CREATE TABLE sales (sale_id INTEGER PRIMARY KEY, product_id INTEGER, quantity INTEGER, sale_date TEXT);`);
+
+      // Insert demo data
+      const cats = [
+        [1, 'Electronics'], [2, 'Clothing'], [3, 'Home & Garden']
+      ];
+      const prods = [
+        [1, 1, 'Wireless Mouse', 29.99],
+        [2, 1, 'USB-C Cable', 12.50],
+        [3, 1, 'Mechanical Keyboard', 89.99],
+        [4, 2, 'Cotton T-Shirt', 19.99],
+        [5, 2, 'Denim Jeans', 49.99],
+        [6, 2, 'Running Shoes', 79.99],
+        [7, 3, 'LED Desk Lamp', 34.99],
+        [8, 3, 'Storage Bin Set', 24.99]
+      ];
+      const salesData = [
+        [1, 1, 5, '2024-01-15'], [2, 1, 3, '2024-01-16'],
+        [3, 2, 10, '2024-01-15'], [4, 3, 2, '2024-01-17'],
+        [5, 4, 8, '2024-01-15'], [6, 5, 4, '2024-01-18'],
+        [7, 6, 3, '2024-01-16'], [8, 7, 6, '2024-01-15'],
+        [9, 8, 4, '2024-01-17'], [10, 1, 7, '2024-01-18']
+      ];
+
+      cats.forEach(r => db.run('INSERT INTO categories VALUES (?,?)', r));
+      prods.forEach(r => db.run('INSERT INTO products VALUES (?,?,?,?)', r));
+      salesData.forEach(r => db.run('INSERT INTO sales VALUES (?,?,?,?)', r));
+
+      document.getElementById('dbName').textContent = 'sql-fundamentals.db';
+      document.getElementById('statusText').textContent = 'Database loaded: sql-fundamentals.db';
+      renderSchema();
+    }
+
+    function renderSchema() {
+      const list = document.getElementById('schemaList');
+      document.getElementById('tableCount').textContent = `${Object.keys(schema).length} tables`;
+
+      Object.entries(schema).forEach(([table, cols]) => {
+        const item = document.createElement('div');
+        item.className = 'table-item';
+        item.innerHTML = `
+          <div class="table-name" onclick="this.parentElement.classList.toggle('expanded')">${table}</div>
+          <div class="columns">
+            ${cols.map(c => `<div class="column"><span>${c.name}</span><span class="type">${c.type}</span></div>`).join('')}
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // ============================================================
+    // QUERY MANAGEMENT
+    // ============================================================
+    const queries = [
+      {
+        label: 'Query 1',
+        sql: `SELECT c.category_name, SUM(s.total_sales) AS total_sales
+FROM (
+    SELECT p.category_id, p.product_id, SUM(s.quantity * p.price) AS total_sales
+    FROM sales s
+    JOIN products p ON s.product_id = p.product_id
+    GROUP BY p.category_id, p.product_id
+) s
+JOIN categories c ON s.category_id = c.category_id
+GROUP BY c.category_name;`
+      },
+      {
+        label: 'Query 2',
+        sql: `SELECT c.category_name, SUM(s.quantity * p.price) AS total_sales
+FROM sales s
+JOIN products p ON s.product_id = p.product_id
+JOIN categories c ON p.category_id = c.category_id
+GROUP BY c.category_name;`
+      },
+      {
+        label: 'Query 3',
+        sql: `SELECT c.category_name, SUM(s.total_sales) AS total_sales
+FROM (
+    SELECT p.category_id, SUM(s.quantity * p.price) AS total_sales
+    FROM sales s
+    JOIN products p ON s.product_id = p.product_id
+    GROUP BY p.category_id
+) s
+JOIN categories c ON s.category_id = c.category_id
+GROUP BY c.category_name;`
+      }
+    ];
+
+    function renderQueries() {
+      const editor = document.getElementById('editor');
+      editor.innerHTML = '';
+      queries.forEach((q, i) => {
+        const block = document.createElement('div');
+        block.className = 'query-block';
+        block.id = `query-${i}`;
+        block.innerHTML = `
+          <div class="query-label">${q.label}</div>
+          <pre><code class="language-sql">${escapeHtml(q.sql)}</code></pre>
+        `;
+        editor.appendChild(block);
+      });
+      Prism.highlightAll();
+    }
+
+    function escapeHtml(t) {
+      return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ============================================================
+    // LESSON API — Controlled by Python Director
+    // ============================================================
+    window.lessonAPI = {
+      // Phase 0: Intro
+      showBadge: () => document.getElementById('lessonBadge').classList.add('active'),
+      hideBadge: () => document.getElementById('lessonBadge').classList.remove('active'),
+
+      // Phase 1: Schema reveal
+      expandSchema: () => {
+        document.querySelectorAll('.table-item').forEach((el, i) => {
+          setTimeout(() => el.classList.add('expanded'), i * 200);
+        });
+      },
+
+      // Phase 2: Query reveal (one by one)
+      showQuery: (index) => {
+        const el = document.getElementById(`query-${index}`);
+        if (el) el.classList.add('visible');
+      },
+
+      // Phase 3: Highlight active query
+      highlightQuery: (index) => {
+        document.querySelectorAll('.query-block').forEach((el, i) => {
+          el.classList.toggle('active', i === index);
+        });
+        const el = document.getElementById(`query-${index}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+
+      // Phase 4: Run query and show results
+      runQuery: async (index) => {
+        const resCol = document.getElementById(`res${index}`);
+        const body = resCol.querySelector('.result-col-body');
+        const q = queries[index];
+
+        // Header
+        resCol.querySelector('.result-col-header')?.remove();
+        const hdr = document.createElement('div');
+        hdr.className = 'result-col-header';
+        hdr.textContent = q.label;
+        resCol.prepend(hdr);
+
+        // Loading
+        body.innerHTML = '<div class="spinner"></div>';
+        resCol.classList.add('visible');
+
+        // Execute (small delay for visual effect)
+        await new Promise(r => setTimeout(r, 600));
+
+        try {
+          const res = db.exec(q.sql);
+          if (res.length === 0) {
+            body.innerHTML = '<div class="empty-state"><div class="icon">∅</div>No results</div>';
+            return;
+          }
+          const cols = res[0].columns;
+          const rows = res[0].values;
+          let html = '<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+          html += rows.map(row => '<tr>' + row.map((cell, ci) => {
+            const isNum = typeof cell === 'number' || (ci === 1 && !isNaN(parseFloat(cell)));
+            return `<td${isNum ? ' class="num"' : ''}>${cell}</td>`;
+          }).join('') + '</tr>').join('');
+          html += '</tbody></table>';
+          body.innerHTML = html;
+        } catch (e) {
+          body.innerHTML = `<div class="empty-state" style="color:var(--accent-red)"><div class="icon">!</div>${e.message}</div>`;
+        }
+      },
+
+      // Subtitle / narration cue
+      setSubtitle: (text) => {
+        const el = document.getElementById('subtitle');
+        el.textContent = text;
+        el.classList.add('visible');
+      },
+      clearSubtitle: () => {
+        document.getElementById('subtitle').classList.remove('visible');
+      },
+
+      // Enable run button visual
+      enableRun: () => document.getElementById('runBtn').classList.add('active'),
+
+      // Click run button visual
+      flashRun: () => {
+        const btn = document.getElementById('runBtn');
+        btn.style.background = 'var(--accent-blue)';
+        btn.style.color = '#fff';
+        setTimeout(() => {
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 400);
+      },
+
+      // Compare all results side-by-side
+      showComparison: () => {
+        document.querySelectorAll('.result-col').forEach(el => el.classList.add('visible'));
+      }
+    };
+
+    // Initialize
+    initDB().then(() => renderQueries());
+  </script>
+</body>
+</html>

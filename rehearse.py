@@ -1,82 +1,54 @@
 #!/usr/bin/env python3
 """
-WSDA Video Engine — Rehearsal Mode
-Dry-runs a lesson at 2x speed with verbose logging.
-No recording. No MP4.
-Use this to validate your production card before committing to a full record.
+WSDA v3 — Rehearse a lesson from a production card.
 
 Usage:
-    python rehearse.py courses/novabridge/video_1_1/production_card.yml
-    python rehearse.py courses/novabridge/video_1_1/production_card.yml --resume e08
-    python rehearse.py courses/novabridge/video_1_1/production_card.yml --speed 3
+    python3 rehearse.py courses/novabridge/video_1_1/production_card.yml
+
+Renders the lesson visually (headless) and saves an MP4 to output/.
 """
 
 import asyncio
-import json
 import sys
-import yaml
 from pathlib import Path
 
-import click
-from rich.console import Console
-
-# Make sure project root is in path
-sys.path.insert(0, str(Path(__file__).parent))
-
-from engine.compiler import compile
-from engine.timeline_runner import TimelineRunner
-
-console = Console()
+from renderer import render_card
 
 
-@click.command()
-@click.argument("card_path")
-@click.option("--resume", default=None, help="Resume from event ID (e.g. e08)")
-@click.option("--speed", default=2.0, type=float, help="Playback speed multiplier (default: 2.0)")
-@click.option("--no-compile", is_flag=True, help="Skip recompile, use existing timeline JSON")
-def rehearse(card_path: str, resume: str | None, speed: float, no_compile: bool):
-    """Rehearse a lesson without recording."""
+async def main():
+    if len(sys.argv) < 2:
+        print("Usage: python3 rehearse.py <production_card.yml>")
+        sys.exit(1)
 
-    card_path = Path(card_path)
-    timeline_path = card_path.parent / "lesson_timeline.json"
+    card_path = Path(sys.argv[1]).resolve()
+    if not card_path.exists():
+        print(f"Not found: {card_path}")
+        sys.exit(1)
 
-    # Load settings
-    settings_path = Path(__file__).parent / "config" / "settings.yml"
-    settings = {}
-    if settings_path.exists():
-        with open(settings_path) as f:
-            settings = yaml.safe_load(f)
+    # Find viewer.html — check common locations
+    viewer_paths = [
+        Path(__file__).parent / "viewer.html",
+        Path(__file__).parent / "web" / "templates" / "viewer.html",
+        Path(__file__).parent / "v3" / "viewer.html",
+    ]
+    viewer_path = None
+    for p in viewer_paths:
+        if p.exists():
+            viewer_path = p
+            break
 
-    # Compile (or load existing)
-    if no_compile and timeline_path.exists():
-        console.print(f"[dim]Loading existing timeline: {timeline_path}[/dim]")
-        from engine.schemas import LessonTimeline
-        with open(timeline_path) as f:
-            timeline = LessonTimeline(**json.load(f))
-    else:
-        timeline = compile(card_path)
+    if not viewer_path:
+        print("Error: viewer.html not found. Searched:")
+        for p in viewer_paths:
+            print(f"  {p}")
+        sys.exit(1)
 
-    # Run rehearsal
-    runner = TimelineRunner(
-        timeline=timeline,
-        rehearsal=True,
-        speed=speed,
-        resume_from=resume,
-        settings=settings,
-    )
+    viewer_html = viewer_path.read_text()
 
-    async def go():
-        audit = await runner.run()
-
-        # Write audit log
-        audit_path = card_path.parent.parent.parent.parent / "output" / f"{timeline.lesson_id}_rehearsal_{audit.run_started[:10]}.json"
-        audit_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(audit_path, "w") as f:
-            json.dump(audit.model_dump(), f, indent=2)
-        console.print(f"\n[dim]Audit log: {audit_path}[/dim]")
-
-    asyncio.run(go())
+    output_dir = Path(__file__).parent / "output" / card_path.parent.name
+    mp4_path = await render_card(card_path, viewer_html, output_dir, headless=True)
+    print(f"\nDone: {mp4_path}")
 
 
 if __name__ == "__main__":
-    rehearse()
+    asyncio.run(main())

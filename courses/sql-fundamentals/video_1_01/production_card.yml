@@ -1,0 +1,13 @@
+lesson_id: sql-fundamentals-01
+title: Decoding COUNT vs SUM Traps
+course_id: sql-fundamentals
+lesson_num: 1
+concept: Understanding the differences between COUNT and SUM in SQL
+events:
+- id: e00
+  type: show_title_card
+  narration: ''
+  badge: SQL Lesson
+  headline: Lesson
+  sub: ''
+  stakes: ''
