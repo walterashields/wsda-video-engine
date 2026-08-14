@@ -23,13 +23,24 @@ Lesson scripts are YAML (see courses/metabase_poc/*.yml for the format):
             admin_last_name, site_name}
   events: [{id, type, ...type-specific fields, narration?}]
 
-Event types implemented: setup_or_login, click_new_question,
-select_database, select_table, add_filter, visualize, highlight_section,
-show_result, save_question, add_to_dashboard, pause.
+Event types implemented: click_new_question, select_database,
+select_table, add_filter, visualize, highlight_section, show_result,
+save_question, add_to_dashboard, pause. Login/account setup is handled
+separately, before recording starts (see run_lesson): it's pure demo-
+environment provisioning, not a teaching moment, and a first cut of this
+lesson showed 20+ seconds of dead login-screen time before anything
+instructional happened. Login now runs in an unrecorded browser context;
+its authenticated session (storage_state) is carried over into the
+recorded context, so the video opens already logged in.
 
-Narration convention (matches AGENTS.md's "Common Pitfalls" for the main
-pipeline): only highlight_section and show_result events carry narration
-text; every other event is a silent action. Show first, then explain.
+Narration convention (updated 2026-08-14, matches AGENTS.md): two tiers.
+Short "here's what I'm doing" lines (a sentence or less) on most action
+events (click_new_question, select_table, add_filter, save_question,
+add_to_dashboard), sized with a short pause buffer so they don't leave
+dead air after they finish. Longer "why this matters" narration stays on
+highlight_section/show_result only, sized with a longer buffer. Every
+event should either say something or be brief; no event should sit
+silent for many seconds with nothing changing on screen.
 
 Usage:
     python3 automation/metabase_driver.py courses/metabase_poc/video_1_1/lesson_script.yml
@@ -120,10 +131,7 @@ async def _ensure_account(page, target):
 
 
 # --- event actions ------------------------------------------------------
-
-async def action_setup_or_login(page, event, target):
-    await _ensure_account(page, target)
-
+# (account setup/login is not an event; see run_lesson's unrecorded phase)
 
 async def action_click_new_question(page, event, target):
     await page.get_by_test_id("app-bar").get_by_role("button", name="New").click()
@@ -177,16 +185,24 @@ async def action_save_question(page, event, target):
     save_button = page.get_by_test_id("save-question-button")
     await save_button.click()
     # wait for the actual save round-trip to finish (dialog closes) rather
-    # than a fixed sleep: a fixed 1200ms sometimes wasn't enough margin for
-    # the "Saved" toast add_to_dashboard depends on to reliably appear,
-    # confirmed live (intermittent failures on the very next event).
+    # than a fixed sleep, confirmed live this matters for reliability.
     await save_button.wait_for(state="detached", timeout=15000)
+
+    # Click the post-save "Add this to a dashboard" toast immediately, with
+    # no pause in between: it auto-dismisses on its own timer, and a first
+    # re-cut of this lesson put a narrated pause (needed for the "let's
+    # save this" line) between save completing and this click, so the
+    # toast was reliably gone by the time add_to_dashboard's own action ran.
+    # Clicking it here, inside the same action and before any pause, means
+    # the picker dialog it opens is a stable modal (not time-limited) by
+    # the time the pause/narration for this event plays.
+    await page.get_by_text("Add this to a dashboard", exact=True).click()
     await page.wait_for_timeout(500)
 
 
 async def action_add_to_dashboard(page, event, target):
-    await page.get_by_text("Add this to a dashboard", exact=True).click()
-    await page.wait_for_timeout(500)
+    # picks up from the dashboard picker dialog opened at the end of
+    # action_save_question (see the comment there for why)
     await page.get_by_text("New dashboard", exact=True).click()
     await page.wait_for_timeout(500)
     await page.get_by_placeholder("My new dashboard").fill(event["dashboard_name"])
@@ -203,7 +219,6 @@ async def action_pause(page, event, target):
 
 
 ACTIONS = {
-    "setup_or_login": action_setup_or_login,
     "click_new_question": action_click_new_question,
     "select_database": action_select_database,
     "select_table": action_select_table,
@@ -244,17 +259,38 @@ async def run_lesson(card_path, output_dir):
     video_dir = output_dir / f"{lesson_id}_raw"
     video_dir.mkdir(parents=True, exist_ok=True)
 
-    clock = Clock()
     audit_events = []
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
+
+        # Unrecorded setup/login phase: pure demo-environment provisioning,
+        # not instructional content. Runs in its own context so none of it
+        # ends up in the video; its authenticated cookies are exported via
+        # storage_state and carried into the recorded context below, so the
+        # video opens already logged in rather than showing the login screen.
+        setup_context = await browser.new_context(viewport=VIEWPORT)
+        setup_page = await setup_context.new_page()
+        await _ensure_account(setup_page, target)
+        storage_state = await setup_context.storage_state()
+        await setup_context.close()
+
         context = await browser.new_context(
             viewport=VIEWPORT,
+            storage_state=storage_state,
             record_video_dir=str(video_dir),
             record_video_size=VIEWPORT,
         )
+        # Recording starts at context creation, so the clock's zero-point
+        # must start here too, not any earlier. Starting it before the
+        # unrecorded login phase (a real bug in the first re-cut attempt)
+        # offset every audit timestamp by however long login took relative
+        # to the actual video, which would have scheduled every narration
+        # clip that many seconds late against what's on screen.
+        clock = Clock()
         page = await context.new_page()
+        await page.goto(target["base_url"])
+        await page.wait_for_load_state("networkidle")
 
         for event in events:
             event_id = event["id"]

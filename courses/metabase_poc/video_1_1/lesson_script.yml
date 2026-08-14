@@ -1,4 +1,4 @@
-# Metabase Phase 2 proof-of-concept lesson script.
+# Metabase Phase 2 proof-of-concept lesson script (re-cut, 2026-08-14).
 #
 # Consumed by automation/metabase_driver.py (records the run, writes an
 # AuditLog-shaped audit.json) and then narration/audit_narrator.py (mixes
@@ -6,13 +6,36 @@
 # driver's audit log event order, positionally, since audit_narrator.py
 # matches them by position/id, not timestamp.
 #
-# Narration convention: only highlight_section and show_result events
-# carry narration text, matching AGENTS.md's rule for the main pipeline
-# ("Narration should live on highlight_section and show_result events").
-# Every pause event's `duration` was precomputed from its preceding
-# narration using the same formula documented in AGENTS.md:
-#   duration = (word_count / 145) * 60 + 8s buffer
-# Pause durations after silent action events are a short fixed 1.5-2s.
+# CHANGES FROM THE FIRST CUT, after reviewing video_1_1:
+#   1. Login/setup is no longer an event here at all. It ran unrecorded
+#      (see metabase_driver.py's run_lesson) after the first cut showed
+#      20+ seconds of dead login-screen time before any teaching started.
+#   2. Narration now covers every notable action, not just
+#      highlight_section/show_result: click_new_question, select_table,
+#      add_filter, save_question, and add_to_dashboard each get a short
+#      "here's what I'm doing" line. The longer "why this matters"
+#      narration stays on highlight_section/show_result. select_database
+#      and visualize stay silent, brief administrative clicks with
+#      nothing to teach.
+#   3. Pause durations use two buffers depending on narration length, so
+#      short lines don't leave dead air after they finish:
+#        short narration: duration = (word_count / 145) * 60 + 2.0s
+#        long narration:  duration = (word_count / 145) * 60 + 8.0s
+#        no narration (silent action): a short fixed 1.0s settle time
+#      (the words-per-minute formula and the 8s long buffer match
+#      AGENTS.md's documented pause-sizing rule for the main pipeline;
+#      the short buffer is new, sized for one-sentence lines so they don't
+#      get the same padding built for longer paragraphs. Started at 1.5s;
+#      raised to 2.0s after a real run showed 2 of 8 short clips landing
+#      within under 1s of their pause window using the macOS `say`
+#      fallback voice, whose actual pacing ran a bit slower than the
+#      145wpm the formula assumes. Re-check this if switching TTS voices.)
+#   4. save_question now also clicks the post-save "Add this to a
+#      dashboard" toast immediately (see the comment in metabase_driver.py's
+#      action_save_question), since that toast auto-dismisses on its own
+#      timer and the narrated pause after saving was reliably outlasting
+#      it. add_to_dashboard picks up from the already-open picker dialog.
+#      That's also why e08's narration now mentions the dashboard too.
 
 lesson_id: "metabase_poc_video_1_1"
 title: "Build Your First Question in Metabase"
@@ -28,88 +51,92 @@ target:
 
 events:
   - id: "e01"
-    type: "setup_or_login"
+    type: "click_new_question"
+    narration: "Let's start a new question in Metabase."
   - id: "e01_pause"
     type: "pause"
-    duration: 2.0
+    duration: 4.9
 
   - id: "e02"
-    type: "click_new_question"
-  - id: "e02_pause"
-    type: "pause"
-    duration: 1.5
-
-  - id: "e03"
     type: "select_database"
     database: "Sample Database"
-  - id: "e03_pause"
+  - id: "e02_pause"
     type: "pause"
-    duration: 1.5
+    duration: 1.0
 
-  - id: "e04"
+  - id: "e03"
     type: "select_table"
     table: "Orders"
-  - id: "e04_pause"
+    narration: >-
+      We'll use the Orders table, where each row is a single customer
+      purchase.
+  - id: "e03_pause"
     type: "pause"
-    duration: 1.5
+    duration: 7.4
 
-  - id: "e05"
+  - id: "e04"
     type: "highlight_section"
     selector_text: "Orders"
     narration: >-
-      This is the Orders table from Metabase's built in sample database.
-      Each row is a single order, with columns for the customer, product,
-      subtotal, tax, and total.
-  - id: "e05_pause"
+      Each row here represents a single order, with columns for the
+      customer, product, subtotal, tax, and total.
+  - id: "e04_pause"
     type: "pause"
-    duration: 19.5
+    duration: 15.0
 
-  - id: "e06"
+  - id: "e05"
     type: "add_filter"
     field: "Total"
     min: 50
     max: 1000
+    narration: >-
+      Now let's filter down to just the higher value orders, between
+      fifty and a thousand dollars.
+  - id: "e05_pause"
+    type: "pause"
+    duration: 8.6
+
+  - id: "e06"
+    type: "visualize"
   - id: "e06_pause"
     type: "pause"
-    duration: 1.5
+    duration: 1.0
 
   - id: "e07"
-    type: "visualize"
-  - id: "e07_pause"
-    type: "pause"
-    duration: 1.5
-
-  - id: "e08"
     type: "highlight_section"
     selector_text: "Total is between 50 and 1000"
     narration: >-
       Metabase applied our filter and now shows only orders with a total
       between fifty and one thousand dollars. This narrows thousands of
       rows down to the high value orders we actually care about.
-  - id: "e08_pause"
+  - id: "e07_pause"
     type: "pause"
     duration: 22.0
 
-  - id: "e09"
+  - id: "e08"
     type: "save_question"
     question_name: "High Value Orders"
-  - id: "e09_pause"
+    narration: >-
+      Let's save this question, then pin it to a dashboard so it's easy
+      to find later.
+  - id: "e08_pause"
     type: "pause"
-    duration: 1.5
+    duration: 8.6
 
-  - id: "e10"
+  - id: "e09"
     type: "add_to_dashboard"
     dashboard_name: "WSDA Metabase Demo Dashboard"
-  - id: "e10_pause"
+    narration: "We'll create a new dashboard to hold it."
+  - id: "e09_pause"
     type: "pause"
-    duration: 1.5
+    duration: 5.3
 
-  - id: "e11"
+  - id: "e10"
     type: "show_result"
     narration: >-
-      That's it. The question is saved and pinned to a new dashboard,
-      ready to revisit any time without rebuilding the filter from
-      scratch.
-  - id: "e11_pause"
+      And that's the whole workflow: filter the data you care about,
+      save it as a question, and pin it to a dashboard so it's always
+      one click away.
+  - id: "e10_pause"
     type: "pause"
-    duration: 17.5
+    duration: 19.6
