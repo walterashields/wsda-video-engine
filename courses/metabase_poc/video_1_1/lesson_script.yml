@@ -1,0 +1,115 @@
+# Metabase Phase 2 proof-of-concept lesson script.
+#
+# Consumed by automation/metabase_driver.py (records the run, writes an
+# AuditLog-shaped audit.json) and then narration/audit_narrator.py (mixes
+# in ElevenLabs narration). Event `id` order here must exactly match the
+# driver's audit log event order, positionally, since audit_narrator.py
+# matches them by position/id, not timestamp.
+#
+# Narration convention: only highlight_section and show_result events
+# carry narration text, matching AGENTS.md's rule for the main pipeline
+# ("Narration should live on highlight_section and show_result events").
+# Every pause event's `duration` was precomputed from its preceding
+# narration using the same formula documented in AGENTS.md:
+#   duration = (word_count / 145) * 60 + 8s buffer
+# Pause durations after silent action events are a short fixed 1.5-2s.
+
+lesson_id: "metabase_poc_video_1_1"
+title: "Build Your First Question in Metabase"
+course: "metabase_poc"
+
+target:
+  base_url: "http://localhost:3000"
+  admin_email: "admin@wsda.local"
+  admin_password: "WsdaDemo123!"
+  admin_first_name: "WSDA"
+  admin_last_name: "Admin"
+  site_name: "WSDA Metabase Demo"
+
+events:
+  - id: "e01"
+    type: "setup_or_login"
+  - id: "e01_pause"
+    type: "pause"
+    duration: 2.0
+
+  - id: "e02"
+    type: "click_new_question"
+  - id: "e02_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e03"
+    type: "select_database"
+    database: "Sample Database"
+  - id: "e03_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e04"
+    type: "select_table"
+    table: "Orders"
+  - id: "e04_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e05"
+    type: "highlight_section"
+    selector_text: "Orders"
+    narration: >-
+      This is the Orders table from Metabase's built in sample database.
+      Each row is a single order, with columns for the customer, product,
+      subtotal, tax, and total.
+  - id: "e05_pause"
+    type: "pause"
+    duration: 19.5
+
+  - id: "e06"
+    type: "add_filter"
+    field: "Total"
+    min: 50
+    max: 1000
+  - id: "e06_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e07"
+    type: "visualize"
+  - id: "e07_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e08"
+    type: "highlight_section"
+    selector_text: "Total is between 50 and 1000"
+    narration: >-
+      Metabase applied our filter and now shows only orders with a total
+      between fifty and one thousand dollars. This narrows thousands of
+      rows down to the high value orders we actually care about.
+  - id: "e08_pause"
+    type: "pause"
+    duration: 22.0
+
+  - id: "e09"
+    type: "save_question"
+    question_name: "High Value Orders"
+  - id: "e09_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e10"
+    type: "add_to_dashboard"
+    dashboard_name: "WSDA Metabase Demo Dashboard"
+  - id: "e10_pause"
+    type: "pause"
+    duration: 1.5
+
+  - id: "e11"
+    type: "show_result"
+    narration: >-
+      That's it. The question is saved and pinned to a new dashboard,
+      ready to revisit any time without rebuilding the filter from
+      scratch.
+  - id: "e11_pause"
+    type: "pause"
+    duration: 17.5
