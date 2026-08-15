@@ -23,14 +23,30 @@ Lesson scripts are YAML (see courses/metabase_poc/*.yml for the format):
             admin_last_name, site_name}
   events: [{id, type, ...type-specific fields, narration?}]
 
-Event types implemented: highlight_target, click_new_question,
-select_database, select_table, add_filter, visualize, highlight_section,
-clear_highlight, show_result, save_question, add_to_dashboard, narrate,
-pause. `narrate` is a pure no-op (no click, no highlight) for narration
-beats with nothing to anchor to on screen -- currently just the
-lesson-opening scenario/outcome statement required by
+Event types implemented: highlight_target, highlight_targets,
+click_new_question, select_database, select_table, add_filter, visualize,
+highlight_section, clear_highlight, show_result, save_question,
+add_to_dashboard, narrate, pause. `narrate` is a pure no-op (no click, no
+highlight) for narration beats with nothing to anchor to on screen --
+currently just the lesson-opening scenario/outcome statement required by
 LESSON_CONTENT_STANDARD.md, which has to play before the first action
 fires.
+
+Data-capture rule (added 2026-08-14, fix pass 4, see
+LESSON_CONTENT_STANDARD.md): narration must never name a value, column,
+or field that isn't actually visible and highlighted on screen at that
+moment. Two mechanisms support this, both software-agnostic (no
+Metabase-specific verbs): (1) any highlight_target or highlight_targets
+event can carry a `pre_actions` list of primitive click/fill steps run
+BEFORE the highlight is drawn, so data that only appears after some setup
+interaction (a filter's min/max inputs don't exist until the picker is
+open and a field is chosen) is on screen and highlighted during its own
+narrated pause, not typed for the first time later in the commit event,
+after the pause has already played. (2) highlight_targets (plural)
+highlights several elements at once -- e.g. several named columns -- for
+narration that references more than one structure in the same breath,
+since a single highlight_target can only anchor to one.
+
 Login/account setup is handled separately, before recording starts (see
 run_lesson): it's pure demo-environment provisioning, not a teaching
 moment, and a first cut of this lesson showed 20+ seconds of dead
@@ -83,7 +99,7 @@ ROOT = Path(__file__).parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "output"
 VIEWPORT = {"width": 1920, "height": 1080}
 HIGHLIGHT_COLOR = "#06c015"  # WSDA brand green
-HIGHLIGHT_OVERLAY_ID = "__wsda_highlight__"
+HIGHLIGHT_OVERLAY_CLASS = "__wsda_highlight__"
 # how long the highlight sits alone on screen before its narrated pause
 # starts, so the eye finds it before anything else happens. Raised from
 # 700ms (2026-08-14, fix pass 3): a first-time-learner pacing pass found
@@ -118,6 +134,7 @@ def _resolve_locator(page, spec):
       {"kind": "app_bar_button", "name": "New"}
       {"kind": "text", "value": "Orders"}
       {"kind": "test_id", "value": "qb-save-button"}
+      {"kind": "placeholder", "value": "Min"}
     Kept as a small, explicit dispatch rather than a generic selector
     string so lesson scripts stay readable and each kind can pick the
     most stable anchor available (data-testid, role, or exact text)."""
@@ -128,26 +145,66 @@ def _resolve_locator(page, spec):
         return page.get_by_text(spec["value"], exact=True).first
     if kind == "test_id":
         return page.get_by_test_id(spec["value"])
+    if kind == "placeholder":
+        return page.get_by_placeholder(spec["value"])
     raise ValueError(f"unknown locator kind {kind!r}")
 
 
-async def _draw_highlight_box(page, locator):
+async def _run_pre_actions(page, pre_actions):
+    """Runs small primitive UI steps (click / fill) before a highlight is
+    drawn, for data that doesn't exist on screen until some setup
+    interaction happens -- a filter's min/max inputs, for instance, don't
+    exist until the filter picker is opened and a field is chosen. Added
+    for the data-capture requirement in LESSON_CONTENT_STANDARD.md:
+    narration must never reference a value or structure that isn't
+    actually visible and highlighted on screen at that moment, so the
+    driver needs a way to make that data appear BEFORE the highlight
+    event's narrated pause starts, not only during the later commit
+    event. Deliberately just two primitives (click, fill), not
+    Metabase-specific verbs, so this same mechanism covers a filter
+    picker on any future platform: whatever the app, revealing typed
+    input generally reduces to "click this control, type that value."""
+    for step in pre_actions or []:
+        if "click" in step:
+            locator = _resolve_locator(page, step["click"])
+            await locator.click()
+            await page.wait_for_timeout(step.get("wait_ms", 400))
+        elif "fill" in step:
+            locator = _resolve_locator(page, step["fill"])
+            await locator.fill(str(step["text"]))
+            await page.wait_for_timeout(step.get("wait_ms", 200))
+        else:
+            raise ValueError(f"unknown pre_action step {step!r}")
+
+
+async def _draw_highlight_box(page, locator, clear_existing=True, box_id=None):
     """Injects a positioned overlay div sized to the element's real
     bounding_box(), rather than outlining the element in place: an
     outline can be clipped by a parent's overflow:hidden, and an overlay
     guarantees visibility and z-index regardless of the target's own
     stacking context. Pixel-accurate to what's actually being clicked,
-    not an approximate or hardcoded region."""
+    not an approximate or hardcoded region.
+
+    clear_existing=False lets multiple boxes coexist (see
+    action_highlight_targets, plural): narration naming several columns
+    or fields at once needs all of them visibly highlighted together,
+    not just one. Overlays share a CSS class rather than a single fixed
+    id so _clear_highlight can remove any number of them at once."""
+    if clear_existing:
+        await _clear_highlight(page)
     box = await locator.bounding_box()
     if box is None:
         print("[metabase_driver] highlight target not visible, skipping overlay")
         return None
     await page.evaluate(
-        """({box, color, id}) => {
-            const existing = document.getElementById(id);
-            if (existing) existing.remove();
+        """({box, color, id, cls}) => {
+            if (id) {
+                const existing = document.getElementById(id);
+                if (existing) existing.remove();
+            }
             const el = document.createElement('div');
-            el.id = id;
+            if (id) el.id = id;
+            el.className = cls;
             el.style.position = 'fixed';
             el.style.left = box.x + 'px';
             el.style.top = box.y + 'px';
@@ -160,7 +217,7 @@ async def _draw_highlight_box(page, locator):
             el.style.pointerEvents = 'none';
             document.body.appendChild(el);
         }""",
-        {"box": box, "color": HIGHLIGHT_COLOR, "id": HIGHLIGHT_OVERLAY_ID},
+        {"box": box, "color": HIGHLIGHT_COLOR, "id": box_id, "cls": HIGHLIGHT_OVERLAY_CLASS},
     )
     return box
 
@@ -168,8 +225,10 @@ async def _draw_highlight_box(page, locator):
 async def _clear_highlight(page):
     try:
         await page.evaluate(
-            """(id) => { const el = document.getElementById(id); if (el) el.remove(); }""",
-            HIGHLIGHT_OVERLAY_ID,
+            """(cls) => {
+                document.querySelectorAll('.' + cls).forEach(el => el.remove());
+            }""",
+            HIGHLIGHT_OVERLAY_CLASS,
         )
     except Exception as exc:
         # page may have navigated between draw and clear; nothing to clean up
@@ -249,12 +308,35 @@ async def _ensure_account(page, target):
 # (account setup/login is not an event; see run_lesson's unrecorded phase)
 
 async def action_highlight_target(page, event, target):
-    """Locates the real element (no click), draws a pixel-accurate overlay
-    around it, and holds briefly before returning. Does NOT remove the
-    overlay, it stays up through this event's narrated pause, cleared by
-    the commit event that follows (see module docstring)."""
+    """Runs any pre_actions (see _run_pre_actions) to reveal data that
+    doesn't exist on screen yet, locates the real element (no click),
+    draws a pixel-accurate overlay around it, and holds briefly before
+    returning. Does NOT remove the overlay, it stays up through this
+    event's narrated pause, cleared by the commit event that follows
+    (see module docstring)."""
+    await _run_pre_actions(page, event.get("pre_actions"))
     locator = _resolve_locator(page, event["locator"])
     await _draw_highlight_box(page, locator)
+    await page.wait_for_timeout(HIGHLIGHT_LEAD_MS)
+
+
+async def action_highlight_targets(page, event, target):
+    """Plural counterpart to action_highlight_target: highlights SEVERAL
+    elements at once, all held through the same narrated pause. Exists
+    for the data-capture requirement in LESSON_CONTENT_STANDARD.md --
+    narration that names several columns/fields together (e.g. "columns
+    for User ID, Product ID, and Total") must have all of them visible
+    and highlighted at once, not just one, and not just a generic region
+    around the table. Runs pre_actions first for the same reason
+    action_highlight_target does."""
+    await _run_pre_actions(page, event.get("pre_actions"))
+    await _clear_highlight(page)
+    for i, spec in enumerate(event["locators"]):
+        locator = _resolve_locator(page, spec)
+        await _draw_highlight_box(
+            page, locator, clear_existing=False,
+            box_id=f"{HIGHLIGHT_OVERLAY_CLASS}_{i}",
+        )
     await page.wait_for_timeout(HIGHLIGHT_LEAD_MS)
 
 
@@ -284,14 +366,14 @@ async def action_select_table(page, event, target):
 
 
 async def action_add_filter(page, event, target):
-    await page.get_by_text("Add filters to narrow your answer", exact=True).click()
-    await page.wait_for_timeout(400)
-    await page.get_by_text(event["field"], exact=True).click()
-    await page.wait_for_timeout(400)
-    if "min" in event:
-        await page.get_by_placeholder("Min").fill(str(event["min"]))
-    if "max" in event:
-        await page.get_by_placeholder("Max").fill(str(event["max"]))
+    """Submits the filter picker only. Opening the picker, choosing the
+    field, and typing the min/max values now happens in the preceding
+    highlight_target event's pre_actions instead of here, so those actual
+    values are visible and highlighted on screen during their narrated
+    pause -- not typed for the first time down here, after the pause has
+    already played (see LESSON_CONTENT_STANDARD.md's data-capture rule
+    and metabase_poc's lesson_script.yml for the pre_actions this
+    depends on)."""
     await page.get_by_role("button", name="Add filter").click()
     await page.wait_for_timeout(400)
     await page.wait_for_timeout(POST_ACTION_HOLD_MS)
@@ -378,6 +460,7 @@ async def action_narrate(page, event, target):
 
 ACTIONS = {
     "highlight_target": action_highlight_target,
+    "highlight_targets": action_highlight_targets,
     "clear_highlight": action_clear_highlight,
     "click_new_question": action_click_new_question,
     "select_database": action_select_database,

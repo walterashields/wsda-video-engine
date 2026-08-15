@@ -1,4 +1,4 @@
-# Metabase Phase 2 proof-of-concept lesson script (fix pass 3, 2026-08-14).
+# Metabase Phase 2 proof-of-concept lesson script (fix pass 4, 2026-08-14).
 #
 # Consumed by automation/metabase_driver.py (records the run, writes an
 # AuditLog-shaped audit.json) and then narration/audit_narrator.py (mixes
@@ -54,6 +54,50 @@
 #      formula below (e03_pause bumped 7.8 -> 8.0 by narration/qa.py's
 #      auto-fix after a live run: the edge-tts clip ran fractionally
 #      longer than the formula estimated).
+#
+# CHANGES THIS PASS (fix pass 4, data-capture + transcript-grounded standard):
+#   1. LESSON_CONTENT_STANDARD.md gained a 5th hard rule and a whole
+#      section grounded in the transcripts of Walter's own flagship
+#      LinkedIn Learning course: narration must never name a value,
+#      column, or field that isn't visible and highlighted on screen at
+#      that moment. Two real gaps in THIS script violated it before this
+#      pass:
+#        - The old e04 highlighted the generic word "Orders" while
+#          narrating specific column names -- the columns themselves were
+#          never shown, and the narration named columns ("customer",
+#          "product") that don't even match this table's real headers
+#          (User ID, Product ID). First attempt at a fix just pointed
+#          highlight_targets at "User ID" text right after selecting the
+#          table -- confirmed BROKEN live: that locator timed out,
+#          because at that point in the flow the screen is still
+#          Metabase's query-builder editor (Data/Filter/Summarize
+#          sections), not a data grid. Column headers don't exist on
+#          screen at all until after Visualize runs. Fixed by reordering
+#          the events, not just adding a highlight: the column-discussion
+#          beat (renamed e06, was e04) now runs AFTER visualize (e05, was
+#          e06), where the real column headers are actually on screen,
+#          confirmed by extracting a frame from a live recording. Filter
+#          (renamed e04, was e05) now runs first, still inside the
+#          editor view where it always worked. Narration also now names
+#          the real headers (User ID, Product ID) instead of invented
+#          ones.
+#      - The filter step (e04_hl) highlighted only the closed "Add
+#          filters..." button while narrating the actual filter numbers
+#          (50 and 1000) -- neither number was ever visible. Now uses
+#          highlight_target's new pre_actions to open the picker, choose
+#          the Total field, and type both values BEFORE the
+#          highlight/narration, then highlights both the Min and Max
+#          inputs (highlight_targets) so the real numbers being discussed
+#          are on screen throughout. e04_commit (add_filter) now only
+#          submits; it no longer opens the picker or types the values
+#          itself, since pre_actions already did that -- see
+#          automation/metabase_driver.py's action_add_filter docstring.
+#   2. LESSON_CONTENT_STANDARD.md also now flags (not fixed here) that
+#      this single-video PoC can't yet exhibit the proven course's
+#      chapter-opener/challenge structure, since there's no other video
+#      in this "chapter" to recap against or apply the skill against
+#      independently. See the standard's "Where metabase_poc still falls
+#      short" section.
 #
 # select_database and visualize stay un-highlighted and un-narrated:
 # they're silent, administrative clicks with nothing to teach (per
@@ -121,41 +165,50 @@ events:
     type: "select_table"
     table: "Orders"
 
-  - id: "e04"
-    type: "highlight_section"
-    selector_text: "Orders"
-    narration: >-
-      Each row here is one purchase, with columns for the customer, the
-      product, and the total. Subtotal and tax are just how Metabase
-      gets there. Total is the number that actually tells us whether an
-      order is worth following up on.
-  - id: "e04_pause"
-    type: "pause"
-    duration: 25.0
-  - id: "e04_clear"
-    type: "clear_highlight"
-
-  - id: "e05_hl"
-    type: "highlight_target"
-    locator: {"kind": "text", "value": "Add filters to narrow your answer"}
+  - id: "e04_hl"
+    type: "highlight_targets"
+    pre_actions:
+      - click: {"kind": "text", "value": "Add filters to narrow your answer"}
+      - click: {"kind": "text", "value": "Total"}
+      - fill: {"kind": "placeholder", "value": "Min"}
+        text: "50"
+      - fill: {"kind": "placeholder", "value": "Max"}
+        text: "1000"
+    locators:
+      - {"kind": "placeholder", "value": "Min"}
+      - {"kind": "placeholder", "value": "Max"}
     narration: >-
       We'll filter Total between fifty and a thousand dollars, since
       anything less isn't worth a personal outreach, and anything more
       is already handled by sales.
-  - id: "e05_pause"
+  - id: "e04_pause"
     type: "pause"
     duration: 12.3
-  - id: "e05_commit"
+  - id: "e04_commit"
     type: "add_filter"
-    field: "Total"
-    min: 50
-    max: 1000
 
-  - id: "e06"
+  - id: "e05"
     type: "visualize"
-  - id: "e06_pause"
+  - id: "e05_pause"
     type: "pause"
     duration: 1.0
+
+  - id: "e06"
+    type: "highlight_targets"
+    locators:
+      - {"kind": "text", "value": "User ID"}
+      - {"kind": "text", "value": "Product ID"}
+      - {"kind": "text", "value": "Total"}
+    narration: >-
+      Each row here is one purchase. User ID tells us who bought it,
+      Product ID tells us what they bought, and Total is what they
+      paid, the number that actually tells us whether an order is
+      worth following up on.
+  - id: "e06_pause"
+    type: "pause"
+    duration: 24.6
+  - id: "e06_clear"
+    type: "clear_highlight"
 
   - id: "e07"
     type: "highlight_section"
