@@ -1,0 +1,241 @@
+# Metabase PoC, video 1.2: "See Revenue Trends at a Glance" (2026-08-15).
+#
+# Written from scratch (not a copy-edit of video_1_1's filter/save/dashboard
+# script) specifically to test whether LESSON_CONTENT_STANDARD.md and
+# automation/metabase_driver.py's mechanisms generalize to a structurally
+# different Metabase workflow: Summarize (aggregate) -> Visualize -> switch
+# chart type -> Save -> Dashboard, instead of video_1_1's Filter ->
+# Visualize -> Save -> Dashboard. Real UI selectors below (the Summarize
+# function/group-by pickers, the chart-type picker) were discovered via a
+# throwaway Playwright exploration script against the live demo instance
+# before writing this script, not guessed -- one guess was wrong and is
+# recorded in automation/metabase_driver.py's _resolve_locator docstring
+# (chart-type option labels are DOM siblings of their buttons, not
+# children, so text-based clicking silently does nothing; fixed by using
+# each option's own test-id instead).
+#
+# New driver mechanism added for this script: `click_option`, a generic
+# single-click commit action (see automation/metabase_driver.py). Reused
+# rather than writing a bespoke action function for Summarize's function
+# picker and group-by picker, since "open a list, highlight the option
+# about to be chosen, click it" is the same shape as add_filter's pattern
+# but without a separate submit button -- selecting IS committing here.
+#
+# QA_CHECKLIST.md (repo root) was run against this render after recording;
+# see this session's commit message for the honest pass/fail breakdown of
+# which items needed no further work versus which needed a fix.
+#
+# select_database stays silent, same as video_1_1 and for the same
+# reason: this demo environment has exactly one database, so there is no
+# real decision being made, and narrating a non-decision would be filler,
+# not a defensible carve-out under LESSON_CONTENT_STANDARD.md's rule 3
+# (motivated by the scenario, not arbitrary). Flagged as a judgment call,
+# not a default -- see this session's commit message.
+#
+# Unlike video_1_1, the moment results first appear (after `visualize`) is
+# NOT silent this time: e07 explicitly highlights the resulting chart's
+# axis labels and explains why Metabase drew a line automatically. Fixing
+# that exact gap, flagged against video_1_1 in LESSON_CONTENT_STANDARD.md,
+# was one of the things this script was written to test.
+#
+# Concept-intro pacing (lead_ms / post_hold_ms: 3000) is applied to every
+# step introducing something for the first time IN THIS VIDEO: starting a
+# question, Summarize's Sum-of picker, the chart-type switch, saving, and
+# pinning to a dashboard. This video is still a standalone PoC, not a
+# sequel to video_1_1 (no chapter structure exists yet, per
+# LESSON_CONTENT_STANDARD.md's "Where metabase_poc still falls short"
+# section), so "question" and "save" get first-time treatment again here
+# rather than being treated as already-taught.
+#
+# Pause durations, two buffers depending on narration length:
+#   short narration: duration = (word_count / 145) * 60 + 2.0s
+#   long narration:  duration = (word_count / 145) * 60 + 8.0s
+#   no narration (silent action): a short fixed 1.0s settle time
+
+lesson_id: "metabase_poc_video_1_2"
+title: "See Revenue Trends at a Glance"
+course: "metabase_poc"
+
+target:
+  base_url: "http://localhost:3000"
+  admin_email: "admin@wsda.local"
+  admin_password: "WsdaDemo123!"
+  admin_first_name: "WSDA"
+  admin_last_name: "Admin"
+  site_name: "WSDA Metabase Demo"
+
+events:
+  - id: "e00_intro"
+    type: "narrate"
+    narration: >-
+      Your manager keeps asking whether revenue is trending up or down,
+      but all you can hand her is a spreadsheet of individual orders,
+      and nobody can eyeball a trend in that. By the end of this, you'll
+      turn that same order data into a single chart she can glance at
+      and understand in seconds.
+  - id: "e00_pause"
+    type: "pause"
+    duration: 30.3
+
+  - id: "e01_hl"
+    type: "highlight_target"
+    locator: {"kind": "app_bar_button", "name": "New"}
+    lead_ms: 3000
+    narration: >-
+      We'll start a new question again, since in Metabase every chart
+      still begins as a question first, a saved query, before it's ever
+      drawn as a chart. Charts aren't a separate thing from questions,
+      they're just one way of displaying a question's answer.
+  - id: "e01_pause"
+    type: "pause"
+    duration: 25.8
+  - id: "e01_commit"
+    type: "click_new_question"
+    post_hold_ms: 3000
+
+  - id: "e02"
+    type: "select_database"
+    database: "Sample Database"
+  - id: "e02_pause"
+    type: "pause"
+    duration: 1.0
+
+  - id: "e03_hl"
+    type: "highlight_target"
+    locator: {"kind": "text", "value": "Orders"}
+    narration: >-
+      We're using Orders again, since Total is the column that holds
+      what a customer actually paid, and revenue is just every order's
+      Total added together.
+  - id: "e03_pause"
+    type: "pause"
+    duration: 12.3
+  - id: "e03_commit"
+    type: "select_table"
+    table: "Orders"
+
+  - id: "e04_hl"
+    type: "highlight_target"
+    pre_actions:
+      - click: {"kind": "text", "value": "Pick a function or metric"}
+      - click: {"kind": "text", "value": "Sum of ..."}
+    locator: {"kind": "text", "value": "Total"}
+    lead_ms: 3000
+    narration: >-
+      Now we'll summarize instead of just listing rows. Summarize means
+      Metabase calculates one number across many rows at once, and
+      we're asking for the sum of every order's Total, so we get one
+      running total instead of thousands of individual amounts.
+  - id: "e04_pause"
+    type: "pause"
+    duration: 25.0
+  - id: "e04_commit"
+    type: "click_option"
+    locator: {"kind": "text", "value": "Total"}
+    post_hold_ms: 3000
+
+  - id: "e05_hl"
+    type: "highlight_target"
+    pre_actions:
+      - click: {"kind": "text", "value": "Pick a column to group by"}
+    locator: {"kind": "text", "value": "Created At"}
+    narration: >-
+      We'll group those totals by Created At, the date of each order,
+      so instead of one giant total we get one total per time period.
+  - id: "e05_pause"
+    type: "pause"
+    duration: 12.3
+  - id: "e05_commit"
+    type: "click_option"
+    locator: {"kind": "text", "value": "Created At"}
+
+  - id: "e06"
+    type: "visualize"
+  - id: "e06_pause"
+    type: "pause"
+    duration: 1.0
+
+  - id: "e07"
+    type: "highlight_targets"
+    locators:
+      - {"kind": "text", "value": "Sum of Total"}
+      - {"kind": "text", "value": "Created At: Month"}
+    lead_ms: 3000
+    narration: >-
+      And there it is. Metabase saw that Created At is a date and
+      automatically drew this as a line, since a line is the shape that
+      shows a trend over time best. You can already see revenue
+      climbing hard through the first year, then leveling off toward
+      the end.
+  - id: "e07_pause"
+    type: "pause"
+    duration: 28.3
+  - id: "e07_clear"
+    type: "clear_highlight"
+
+  - id: "e08_hl"
+    type: "highlight_target"
+    pre_actions:
+      - click: {"kind": "test_id", "value": "viz-type-button"}
+    locator: {"kind": "test_id", "value": "Bar-button"}
+    lead_ms: 3000
+    narration: >-
+      Metabase actually lets us pick a different shape for the same
+      data. We'll switch to a bar chart instead of a line, since bars
+      make it easier to compare one specific month against another,
+      while a line is better for seeing the overall trend. Neither is
+      more correct, they just answer slightly different questions.
+  - id: "e08_pause"
+    type: "pause"
+    duration: 30.3
+  - id: "e08_commit"
+    type: "click_option"
+    locator: {"kind": "test_id", "value": "Bar-button"}
+    post_hold_ms: 3000
+
+  - id: "e09_hl"
+    type: "highlight_target"
+    pre_actions:
+      - click: {"kind": "button", "value": "Done"}
+    locator: {"kind": "test_id", "value": "qb-save-button"}
+    lead_ms: 3000
+    narration: >-
+      We'll save this as a question too, and call it Monthly Revenue
+      Trend, so your manager can pull up this exact chart herself
+      anytime, instead of asking you to rebuild it every time she wants
+      a gut check on revenue.
+  - id: "e09_pause"
+    type: "pause"
+    duration: 24.6
+  - id: "e09_commit"
+    type: "save_question"
+    question_name: "Monthly Revenue Trend"
+    post_hold_ms: 3000
+
+  - id: "e10_hl"
+    type: "highlight_target"
+    locator: {"kind": "text", "value": "New dashboard"}
+    lead_ms: 3000
+    narration: >-
+      We'll pin it to a new dashboard too, called Revenue Overview, a
+      page she can bookmark once and never need to ask you for this
+      again.
+  - id: "e10_pause"
+    type: "pause"
+    duration: 18.8
+  - id: "e10_commit"
+    type: "add_to_dashboard"
+    dashboard_name: "Revenue Overview"
+    post_hold_ms: 3000
+
+  - id: "e11"
+    type: "show_result"
+    narration: >-
+      That's a full trend chart built from raw orders. Summarize the
+      data, let Metabase draw it, pick the shape that actually answers
+      the question, and save it somewhere she can find herself. Next
+      time she asks if revenue is up or down, you point her at one link
+      instead of pulling a report.
+  - id: "e11_pause"
+    type: "pause"
+    duration: 29.9

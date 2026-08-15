@@ -24,9 +24,13 @@ Lesson scripts are YAML (see courses/metabase_poc/*.yml for the format):
   events: [{id, type, ...type-specific fields, narration?}]
 
 Event types implemented: highlight_target, highlight_targets,
-click_new_question, select_database, select_table, add_filter, visualize,
-highlight_section, clear_highlight, show_result, save_question,
-add_to_dashboard, narrate, pause. `narrate` is a pure no-op (no click, no
+click_new_question, select_database, select_table, add_filter,
+click_option, visualize, highlight_section, clear_highlight, show_result,
+save_question, add_to_dashboard, narrate, pause. click_option is a
+generic single-click commit (see its docstring) for "pick one thing from
+an already-open picker" steps, e.g. Summarize's function/column lists,
+that don't need their own bespoke action function. `narrate` is a pure
+no-op (no click, no
 highlight) for narration beats with nothing to anchor to on screen --
 currently just the lesson-opening scenario/outcome statement required by
 LESSON_CONTENT_STANDARD.md, which has to play before the first action
@@ -160,9 +164,20 @@ def _resolve_locator(page, spec):
       {"kind": "text", "value": "Orders"}
       {"kind": "test_id", "value": "qb-save-button"}
       {"kind": "placeholder", "value": "Min"}
+      {"kind": "button", "value": "Done"}
     Kept as a small, explicit dispatch rather than a generic selector
     string so lesson scripts stay readable and each kind can pick the
-    most stable anchor available (data-testid, role, or exact text)."""
+    most stable anchor available (data-testid, role, or exact text).
+
+    Confirmed live (2026-08-15, fix pass 6): "text" is not always safe for
+    a labeled icon button. Metabase's chart-type picker renders each
+    option as <button>[icon]</button><div>Bar</div> -- the label is a
+    SIBLING of the button, not a child, so `get_by_text("Bar")` finds
+    real text on the page but clicking it does nothing (the click lands
+    outside the actual button). Confirmed via a strict-mode violation
+    error surfacing the real per-option test ids (e.g. "Bar-button") when
+    probing this live; use "test_id" for controls like this rather than
+    assuming a visible label is inside its clickable element."""
     kind = spec["kind"]
     if kind == "app_bar_button":
         return page.get_by_test_id("app-bar").get_by_role("button", name=spec["name"])
@@ -172,6 +187,8 @@ def _resolve_locator(page, spec):
         return page.get_by_test_id(spec["value"])
     if kind == "placeholder":
         return page.get_by_placeholder(spec["value"])
+    if kind == "button":
+        return page.get_by_role("button", name=spec["value"], exact=True)
     raise ValueError(f"unknown locator kind {kind!r}")
 
 
@@ -407,6 +424,21 @@ async def action_add_filter(page, event, target):
     await _clear_highlight(page)
 
 
+async def action_click_option(page, event, target):
+    """Generic single-click commit: clicks the SAME locator the preceding
+    highlight_target already pointed at, to finalize a selection from a
+    picker opened by that event's pre_actions. Exists so a new "pick one
+    thing from an already-open list" step doesn't need its own bespoke
+    action function -- that shape (open a picker, highlight the option
+    about to be chosen, click it) is generic across Metabase's various
+    pickers (Summarize's function list, its group-by column list, ...)
+    and likely any future platform's equivalent pickers too."""
+    locator = _resolve_locator(page, event["locator"])
+    await locator.click()
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
+    await _clear_highlight(page)
+
+
 async def action_visualize(page, event, target):
     await page.get_by_role("button", name="Visualize").click()
     await page.wait_for_timeout(1200)
@@ -417,10 +449,11 @@ async def action_highlight_section(page, event, target):
     matters" narration over something already visible, no click involved.
     Leaves the overlay up through this event's own narrated pause; a
     following clear_highlight event removes it (no commit action to
-    piggyback the removal onto, unlike the click-driven events)."""
+    piggyback the removal onto, unlike the click-driven events). Honors
+    `lead_ms` like highlight_target(s) does."""
     locator = page.get_by_text(event["selector_text"], exact=True).first
     await _draw_highlight_box(page, locator)
-    await page.wait_for_timeout(HIGHLIGHT_LEAD_MS)
+    await page.wait_for_timeout(event.get("lead_ms", HIGHLIGHT_LEAD_MS))
 
 
 async def action_show_result(page, event, target):
@@ -505,6 +538,7 @@ ACTIONS = {
     "select_database": action_select_database,
     "select_table": action_select_table,
     "add_filter": action_add_filter,
+    "click_option": action_click_option,
     "visualize": action_visualize,
     "highlight_section": action_highlight_section,
     "show_result": action_show_result,
