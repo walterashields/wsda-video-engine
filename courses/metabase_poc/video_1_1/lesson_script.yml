@@ -1,41 +1,69 @@
-# Metabase Phase 2 proof-of-concept lesson script (re-cut, 2026-08-14).
+# Metabase Phase 2 proof-of-concept lesson script (fix pass 3, 2026-08-14).
 #
 # Consumed by automation/metabase_driver.py (records the run, writes an
 # AuditLog-shaped audit.json) and then narration/audit_narrator.py (mixes
-# in ElevenLabs narration). Event `id` order here must exactly match the
-# driver's audit log event order, positionally, since audit_narrator.py
-# matches them by position/id, not timestamp.
+# in narration). Event `id` order here must exactly match the driver's
+# audit log event order, positionally, since audit_narrator.py matches
+# them by position/id, not timestamp.
 #
-# CHANGES FROM THE FIRST CUT, after reviewing video_1_1:
-#   1. Login/setup is no longer an event here at all. It ran unrecorded
-#      (see metabase_driver.py's run_lesson) after the first cut showed
-#      20+ seconds of dead login-screen time before any teaching started.
-#   2. Narration now covers every notable action, not just
-#      highlight_section/show_result: click_new_question, select_table,
-#      add_filter, save_question, and add_to_dashboard each get a short
-#      "here's what I'm doing" line. The longer "why this matters"
-#      narration stays on highlight_section/show_result. select_database
-#      and visualize stay silent, brief administrative clicks with
-#      nothing to teach.
-#   3. Pause durations use two buffers depending on narration length, so
-#      short lines don't leave dead air after they finish:
-#        short narration: duration = (word_count / 145) * 60 + 2.0s
-#        long narration:  duration = (word_count / 145) * 60 + 8.0s
-#        no narration (silent action): a short fixed 1.0s settle time
-#      (the words-per-minute formula and the 8s long buffer match
-#      AGENTS.md's documented pause-sizing rule for the main pipeline;
-#      the short buffer is new, sized for one-sentence lines so they don't
-#      get the same padding built for longer paragraphs. Started at 1.5s;
-#      raised to 2.0s after a real run showed 2 of 8 short clips landing
-#      within under 1s of their pause window using the macOS `say`
-#      fallback voice, whose actual pacing ran a bit slower than the
-#      145wpm the formula assumes. Re-check this if switching TTS voices.)
-#   4. save_question now also clicks the post-save "Add this to a
-#      dashboard" toast immediately (see the comment in metabase_driver.py's
-#      action_save_question), since that toast auto-dismisses on its own
-#      timer and the narrated pause after saving was reliably outlasting
-#      it. add_to_dashboard picks up from the already-open picker dialog.
-#      That's also why e08's narration now mentions the dashboard too.
+# CHANGES THIS PASS (audio, pacing, content):
+#   1. Audio: root cause of "no audio in final render" was not TTS or
+#      muxing at all. automation/metabase_driver.py picked the source
+#      webm to transcode via glob.glob(video_dir/"*.webm")[0]; video_dir
+#      accumulates a .webm from every past run, uncleaned, and glob's
+#      order kept returning the SAME leftover ~111s file from an early
+#      session run every time, regardless of what had just actually been
+#      recorded. run_lesson now gets the exact file for the page just
+#      recorded from Playwright's own page.video().path() instead, with
+#      no directory-scan ambiguity, plus a duration sanity check against
+#      the driver's own measured wall-clock recording time as a safety
+#      net. Separately, narration/audit_narrator.py now also logs which
+#      TTS tier (ElevenLabs / edge-tts / say) actually produced each
+#      clip, and hard-fails after render if the output has no audible
+#      audio track, instead of reporting success on a silent video.
+#      Nothing changed here in this script for either fix.
+#   2. Pacing: automation/metabase_driver.py's HIGHLIGHT_LEAD_MS went
+#      from 700ms to 1500ms, giving the eye more time to find a
+#      highlighted element before its narration starts talking about it.
+#      This delays the following pause's start (and therefore the
+#      commit action's click) by the same amount; confirmed against real
+#      audit.json timestamps after the change, not just the configured
+#      constant (see the driver's comment on that constant).
+#   3. Content: every narration line in this script was rewritten against
+#      the new LESSON_CONTENT_STANDARD.md (repo root). Read against that
+#      standard, essentially every line in the previous pass was
+#      mechanical-only ("now we select Orders", "we'll create a new
+#      dashboard to hold it") with no stated reason and no scenario
+#      attached: the lesson filtered orders between $50 and $1,000 for
+#      no given reason, and saved a question and pinned a dashboard for
+#      no reason beyond "so it's easy to find later". This pass:
+#        - Adds a lesson-opening scenario/outcome statement (a new
+#          `narrate` event, e00_intro) before any action starts: a
+#          manager wants a list of genuinely valuable customers for a
+#          loyalty outreach, and by the end of the lesson the viewer can
+#          produce that as a saved, shareable answer instead of a
+#          one-off query someone has to keep asking for.
+#        - Every remaining narration line now states a reason for the
+#          step (why Orders and not People/Products, why $50-$1,000
+#          specifically, why save as a question, why a dashboard), tied
+#          back to that scenario, not just what's being clicked.
+#        - No line assumes familiarity with Metabase's own vocabulary
+#          ("question", "dashboard") without saying what that word means
+#          here.
+#      Pause durations recalculated for the new text using the existing
+#      formula below (e03_pause bumped 7.8 -> 8.0 by narration/qa.py's
+#      auto-fix after a live run: the edge-tts clip ran fractionally
+#      longer than the formula estimated).
+#
+# select_database and visualize stay un-highlighted and un-narrated:
+# they're silent, administrative clicks with nothing to teach (per
+# LESSON_CONTENT_STANDARD.md, silence is only for steps that genuinely
+# carry no reasoning to teach, not a default).
+#
+# Pause durations, two buffers depending on narration length:
+#   short narration: duration = (word_count / 145) * 60 + 2.0s
+#   long narration:  duration = (word_count / 145) * 60 + 8.0s
+#   no narration (silent action): a short fixed 1.0s settle time
 
 lesson_id: "metabase_poc_video_1_1"
 title: "Build Your First Question in Metabase"
@@ -50,12 +78,28 @@ target:
   site_name: "WSDA Metabase Demo"
 
 events:
-  - id: "e01"
-    type: "click_new_question"
-    narration: "Let's start a new question in Metabase."
+  - id: "e00_intro"
+    type: "narrate"
+    narration: >-
+      Your manager wants a list of your best customers, people worth a
+      personal thank-you, but that list doesn't exist yet. It's buried
+      in raw order data. By the end of this, you'll turn that data into
+      a saved answer she can check herself, anytime.
+  - id: "e00_pause"
+    type: "pause"
+    duration: 26.2
+
+  - id: "e01_hl"
+    type: "highlight_target"
+    locator: {"kind": "app_bar_button", "name": "New"}
+    narration: >-
+      We'll start a new question, since in Metabase every saved answer
+      begins as one.
   - id: "e01_pause"
     type: "pause"
-    duration: 4.9
+    duration: 7.8
+  - id: "e01_commit"
+    type: "click_new_question"
 
   - id: "e02"
     type: "select_database"
@@ -64,37 +108,48 @@ events:
     type: "pause"
     duration: 1.0
 
-  - id: "e03"
-    type: "select_table"
-    table: "Orders"
+  - id: "e03_hl"
+    type: "highlight_target"
+    locator: {"kind": "text", "value": "Orders"}
     narration: >-
-      We'll use the Orders table, where each row is a single customer
-      purchase.
+      We're using Orders, not People or Products, since best customers
+      means real money spent.
   - id: "e03_pause"
     type: "pause"
-    duration: 7.4
+    duration: 8.0
+  - id: "e03_commit"
+    type: "select_table"
+    table: "Orders"
 
   - id: "e04"
     type: "highlight_section"
     selector_text: "Orders"
     narration: >-
-      Each row here represents a single order, with columns for the
-      customer, product, subtotal, tax, and total.
+      Each row here is one purchase, with columns for the customer, the
+      product, and the total. Subtotal and tax are just how Metabase
+      gets there. Total is the number that actually tells us whether an
+      order is worth following up on.
   - id: "e04_pause"
     type: "pause"
-    duration: 15.0
+    duration: 25.0
+  - id: "e04_clear"
+    type: "clear_highlight"
 
-  - id: "e05"
+  - id: "e05_hl"
+    type: "highlight_target"
+    locator: {"kind": "text", "value": "Add filters to narrow your answer"}
+    narration: >-
+      We'll filter Total between fifty and a thousand dollars, since
+      anything less isn't worth a personal outreach, and anything more
+      is already handled by sales.
+  - id: "e05_pause"
+    type: "pause"
+    duration: 12.3
+  - id: "e05_commit"
     type: "add_filter"
     field: "Total"
     min: 50
     max: 1000
-    narration: >-
-      Now let's filter down to just the higher value orders, between
-      fifty and a thousand dollars.
-  - id: "e05_pause"
-    type: "pause"
-    duration: 8.6
 
   - id: "e06"
     type: "visualize"
@@ -106,37 +161,50 @@ events:
     type: "highlight_section"
     selector_text: "Total is between 50 and 1000"
     narration: >-
-      Metabase applied our filter and now shows only orders with a total
-      between fifty and one thousand dollars. This narrows thousands of
-      rows down to the high value orders we actually care about.
+      This is the list your manager actually wanted. Every row here is
+      a real purchase in the fifty to a thousand dollar range, exactly
+      who's worth reaching out to. Right now it's still just a query
+      result though, nothing is saved yet.
   - id: "e07_pause"
     type: "pause"
-    duration: 22.0
+    duration: 25.4
+  - id: "e07_clear"
+    type: "clear_highlight"
 
-  - id: "e08"
-    type: "save_question"
-    question_name: "High Value Orders"
+  - id: "e08_hl"
+    type: "highlight_target"
+    locator: {"kind": "test_id", "value": "qb-save-button"}
     narration: >-
-      Let's save this question, then pin it to a dashboard so it's easy
-      to find later.
+      We'll save this as a question now, so it becomes something we can
+      come back to without rebuilding it.
   - id: "e08_pause"
     type: "pause"
-    duration: 8.6
+    duration: 9.9
+  - id: "e08_commit"
+    type: "save_question"
+    question_name: "High Value Orders"
 
-  - id: "e09"
-    type: "add_to_dashboard"
-    dashboard_name: "WSDA Metabase Demo Dashboard"
-    narration: "We'll create a new dashboard to hold it."
+  - id: "e09_hl"
+    type: "highlight_target"
+    locator: {"kind": "text", "value": "New dashboard"}
+    narration: >-
+      We'll create a new dashboard, since that's where saved questions
+      live, somewhere your manager can check on her own.
   - id: "e09_pause"
     type: "pause"
-    duration: 5.3
+    duration: 9.9
+  - id: "e09_commit"
+    type: "add_to_dashboard"
+    dashboard_name: "WSDA Metabase Demo Dashboard"
 
   - id: "e10"
     type: "show_result"
     narration: >-
-      And that's the whole workflow: filter the data you care about,
-      save it as a question, and pin it to a dashboard so it's always
-      one click away.
+      That's the whole path from a question to an answer someone else
+      can use. Filter to the customers who matter, save it as a
+      question, pin it to a dashboard, and now that best customer list
+      your manager wanted isn't a favor you do once. It's something she
+      can check herself, anytime.
   - id: "e10_pause"
     type: "pause"
-    duration: 19.6
+    duration: 29.5
