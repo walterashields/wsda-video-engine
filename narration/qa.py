@@ -28,6 +28,16 @@ from rich import box
 
 console = Console()
 
+# Per-format maximum pause duration. QA will not extend pauses beyond this,
+# preventing the audio-fit loop from fighting verify.py's format-length cap.
+MAX_PAUSE_SECONDS = {
+    "micro": 2.5,
+    "short-video": 6.0,
+    "tutorial": 10.0,
+    "lesson": 8.0,
+    "course": 10.0,
+}
+
 
 def wav_duration_s(path: Path) -> float:
     if not path.exists():
@@ -194,7 +204,10 @@ def check_number_accuracy(narration: str, query_results: dict, event_id: str) ->
 @click.option("--work-dir", default=None, help="Directory containing synthesized WAV clips")
 @click.option("--fix", is_flag=True, help="Auto-fix pause durations in production card")
 @click.option("--db", default=None, help="Override database path")
-def qa(audit_path, card_path, work_dir, fix, db):
+@click.option("--format", "fmt", default=None,
+              type=click.Choice(["micro","short-video","tutorial","lesson","course"]),
+              help="Format constraint for pause caps")
+def qa(audit_path, card_path, work_dir, fix, db, fmt):
     """
     QA check: verify narration timing and number accuracy before render.
     """
@@ -205,6 +218,9 @@ def qa(audit_path, card_path, work_dir, fix, db):
         audit = json.load(f)
     with open(card_path) as f:
         card = yaml.safe_load(f)
+
+    fmt = fmt or card.get("format", "lesson")
+    max_pause_s = MAX_PAUSE_SECONDS.get(fmt, 8.0)
 
     lesson_dir = card_path.parent
 
@@ -315,15 +331,22 @@ def qa(audit_path, card_path, work_dir, fix, db):
         if clip_dur and window:
             if clip_dur > window * 0.97:  # 3% buffer
                 overage = clip_dur - window
-                needed = clip_dur + 6.0
+                # Request enough room for the clip plus a small buffer, but never
+                # exceed the format's per-pause cap. If the clip is longer than
+                # the cap, the script must be shortened, not the pause stretched.
+                needed = min(clip_dur + 1.5, max_pause_s)
+                capped = needed >= max_pause_s
                 issues.append({
                     'type':    'TIMING',
                     'event':   eid,
-                    'message': f"Clip {clip_dur:.1f}s exceeds window {window:.1f}s by {overage:.1f}s",
-                    'fix':     f"Increase {pause_id} duration to {needed:.0f}s",
+                    'message': (f"Clip {clip_dur:.1f}s exceeds window {window:.1f}s by {overage:.1f}s"
+                                f"{' (capped by format max)' if capped else ''}"),
+                    'fix':     (f"Increase {pause_id} to {needed:.1f}s; if still tight, shorten narration"
+                                if capped else f"Increase {pause_id} duration to {needed:.1f}s"),
                     'pause_id': pause_id,
                     'needed_dur': needed,
                     'actual_window': window,
+                    'capped': capped,
                 })
         elif clip_dur and not window:
             issues.append({
@@ -384,9 +407,11 @@ def qa(audit_path, card_path, work_dir, fix, db):
             # generator that dumps unquoted plain scalars), reporting 0
             # fixes even though issues were correctly found.
             events_by_id = {e.get('id'): e for e in card_events if isinstance(e, dict)}
+            any_capped = False
             for issue in timing_fixes:
                 pause_id = issue['pause_id']
                 needed = issue['needed_dur']
+                any_capped = any_capped or issue.get('capped', False)
                 pause_event = events_by_id.get(pause_id)
                 if pause_event is not None:
                     old_dur = pause_event.get('duration')
@@ -401,6 +426,11 @@ def qa(audit_path, card_path, work_dir, fix, db):
                     yaml.dump(card, sort_keys=False, allow_unicode=True, width=100)
                 )
             console.print(f"[green]✓[/green] Fixed {len(fixes)} pause durations in {card_path.name}")
+            if any_capped:
+                console.print(
+                    f"[yellow]⚠ Some pauses hit the {fmt} format cap of {max_pause_s}s. "
+                    "Narration may still be cut; shorten the script for this format.[/yellow]"
+                )
             console.print("[dim]Re-run recording to apply changes[/dim]")
 
     return len(issues)

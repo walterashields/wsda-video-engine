@@ -13,7 +13,8 @@ The narration for event X plays during the PAUSE that follows event X.
 Not immediately after event X completes.
 """
 
-import json, os, struct, subprocess, sys, wave
+import asyncio
+import json, os, re, struct, subprocess, sys, wave
 from pathlib import Path
 import click, yaml
 from rich.console import Console
@@ -35,30 +36,98 @@ def get_video_duration(path: Path) -> float:
 
 
 def synthesize(text: str, path: Path, voice: str, rate: int,
-               el_key=None, el_voice=None):
+               el_key=None, el_voice=None) -> str:
+    """Synthesize a WAV clip. ElevenLabs is tried first; if it fails, fall
+    back to edge-tts, then to macOS say. Returns which tier actually
+    produced the audio ("elevenlabs" | "edge-tts" | "say") so a caller can
+    log what really happened for this clip instead of assuming the
+    preferred tier worked. If every tier fails, raises RuntimeError with
+    all three failure reasons -- this must never return silently without
+    either a tier name or an exception, since a caller treating "no
+    exception" as "audio exists" is exactly how a silent clip slips
+    through into a "successful" render."""
+    failures = []
+
     if el_key and el_voice:
-        import urllib.request, json as _j
-        payload = _j.dumps({"text": text, "model_id": "eleven_multilingual_v2",
-            "voice_settings": {"stability": 0.5, "similarity_boost": 0.75,
-                               "style": 0.0, "use_speaker_boost": True}}).encode()
-        req = urllib.request.Request(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{el_voice}",
-            data=payload,
-            headers={"xi-api-key": el_key, "Content-Type": "application/json",
-                     "Accept": "audio/mpeg"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            mp3 = path.with_suffix(".mp3")
-            mp3.write_bytes(resp.read())
+        try:
+            import urllib.request, json as _j
+            payload = _j.dumps({"text": text, "model_id": "eleven_multilingual_v2",
+                "voice_settings": {"stability": 0.5, "similarity_boost": 0.75,
+                                   "style": 0.0, "use_speaker_boost": True}}).encode()
+            req = urllib.request.Request(
+                f"https://api.elevenlabs.io/v1/text-to-speech/{el_voice}",
+                data=payload,
+                headers={"xi-api-key": el_key, "Content-Type": "application/json",
+                         "Accept": "audio/mpeg"})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                mp3 = path.with_suffix(".mp3")
+                mp3.write_bytes(resp.read())
+            subprocess.run(["ffmpeg", "-y", "-i", str(mp3), "-ar", str(SAMPLE_RATE),
+                            "-ac", "1", str(path)], check=True, capture_output=True)
+            mp3.unlink(missing_ok=True)
+            return "elevenlabs"
+        except Exception as e:
+            failures.append(f"ElevenLabs: {e}")
+            console.print(f"  [yellow]ElevenLabs failed ({e}), trying fallback...[/yellow]")
+
+    # Fallback 1: edge-tts (cross-platform, no API key)
+    try:
+        import edge_tts
+        # edge-tts default speed is roughly 180 wpm; express requested rate as %
+        rate_pct = int(round((rate - 180) / 180 * 100))
+        edge_voice = voice if voice and "-" in voice else "en-US-AriaNeural"
+        communicate = edge_tts.Communicate(text, edge_voice, rate=f"{rate_pct:+d}%")
+        mp3 = path.with_suffix(".mp3")
+        asyncio.run(communicate.save(str(mp3)))
         subprocess.run(["ffmpeg", "-y", "-i", str(mp3), "-ar", str(SAMPLE_RATE),
                         "-ac", "1", str(path)], check=True, capture_output=True)
         mp3.unlink(missing_ok=True)
-    else:
+        return "edge-tts"
+    except Exception as e:
+        failures.append(f"edge-tts: {e}")
+
+    # Fallback 2: macOS say
+    try:
         aiff = path.with_suffix(".aiff")
         subprocess.run(["say", "-v", voice, "-r", str(rate), "-o", str(aiff), text],
                        check=True, capture_output=True)
         subprocess.run(["ffmpeg", "-y", "-i", str(aiff), "-ar", str(SAMPLE_RATE),
                         "-ac", "1", str(path)], check=True, capture_output=True)
         aiff.unlink(missing_ok=True)
+        return "say"
+    except Exception as e:
+        failures.append(f"say: {e}")
+
+    raise RuntimeError("all TTS tiers failed -- " + "; ".join(failures))
+
+
+def _verify_audio(path: Path) -> tuple[bool, str]:
+    """Confirm the rendered file actually has audible sound, not just an
+    audio stream that exists but is silent. A muxed AAC track full of
+    zeros (e.g. every clip failed synthesis in a way that didn't raise,
+    or build_track()'s buffer never got any clips placed into it) would
+    still probe as "has an audio stream" and exit ffmpeg 0 -- this checks
+    the actual signal, which is the only thing that tells you whether a
+    viewer will hear anything."""
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a",
+         "-show_entries", "stream=index", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    )
+    if not probe.stdout.strip():
+        return False, "no audio stream found in the output file"
+
+    vol = subprocess.run(
+        ["ffmpeg", "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    m = re.search(r"mean_volume:\s*(-?[\d.]+|-inf)\s*dB", vol.stderr)
+    if not m or m.group(1) == "-inf":
+        return False, "audio stream is present but completely silent (mean volume -inf dB)"
+    mean_db = float(m.group(1))
+    if mean_db < -50.0:
+        return False, f"audio stream is present but near-silent (mean volume {mean_db:.1f} dB)"
+    return True, f"mean volume {mean_db:.1f} dB"
 
 
 def wav_duration_s(path: Path) -> float:
@@ -245,22 +314,36 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
 
     console.print(f"\n[bold]Synthesizing {len(schedule)} clips...[/bold]")
     synth_failures = []
+    tier_counts = {"elevenlabs": 0, "edge-tts": 0, "say": 0}
     for i, entry in enumerate(schedule):
         wav = work_dir / f"clip_{i:03d}_{entry['event_id']}.wav"
         try:
-            synthesize(entry["text"], wav, voice, rate,
-                       el_key=_el_key if use_el else None,
-                       el_voice=_el_voice if use_el else None)
+            tier = synthesize(entry["text"], wav, voice, rate,
+                               el_key=_el_key if use_el else None,
+                               el_voice=_el_voice if use_el else None)
+            tier_counts[tier] += 1
             entry["wav_path"] = str(wav)
+            entry["tier"] = tier
             dur = wav_duration_s(wav)
             words = len(entry["text"].split())
             console.print(
                 f"  {entry['start_s']:5.1f}s  {dur:.1f}s  "
-                f"[dim]{words}w[/dim]  {entry['text'][:55]}"
+                f"[dim]{words}w[/dim]  [cyan]{tier:>10}[/cyan]  {entry['text'][:45]}"
             )
         except Exception as e:
             console.print(f"  [red]Failed {entry['event_id']}: {e}[/red]")
             synth_failures.append((entry['event_id'], str(e)))
+
+    # Which tier actually produced this run's audio, not just which one was
+    # requested -- ElevenLabs being configured doesn't mean it's the tier
+    # that fired for any given clip.
+    console.print(
+        f"\n[bold]TTS tier usage:[/bold] "
+        f"ElevenLabs {tier_counts['elevenlabs']}, "
+        f"edge-tts {tier_counts['edge-tts']}, "
+        f"say {tier_counts['say']}, "
+        f"failed {len(synth_failures)} (of {len(schedule)} clips)"
+    )
 
     # A completely (or mostly) silent video that still reports "Production
     # complete" is worse than an obvious crash — it wastes a full recording
@@ -297,11 +380,13 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     from narration.qa import qa as run_qa
     from click.testing import CliRunner
     runner_cli = CliRunner()
+    fmt = card.get("format", "lesson")
     qa_result = runner_cli.invoke(run_qa, [
         str(audit_path),
         str(card_path),
         "--work-dir", str(work_dir),
         "--fix",
+        "--format", fmt,
     ])
     console.print(qa_result.output)
 
@@ -329,8 +414,26 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     console.print(f"\n[bold]Rendering...[/bold]")
     render(video_path, track, output, duration)
 
+    # A "successful" render with no audible sound is worse than a crash:
+    # it exits 0, looks complete, and wastes a full recording cycle before
+    # anyone notices by actually watching it. Verify the muxed output for
+    # real instead of trusting ffmpeg's exit code alone.
+    console.print(f"\n[bold]Verifying rendered audio...[/bold]")
+    audio_ok, audio_detail = _verify_audio(output)
+    if not audio_ok:
+        console.print(Panel(
+            f"[bold red]Render completed but the output has no audible "
+            f"audio track.[/bold red]\n\n"
+            f"{audio_detail}\n\n"
+            f"This is a hard failure, not a warning -- not reporting "
+            f"success for a silent video.",
+            title="Audio verification failed", border_style="red",
+        ))
+        sys.exit(1)
+
     console.print(Panel(
-        f"[bold green]Done.[/bold green]\n\nVideo: [cyan]{output}[/cyan]",
+        f"[bold green]Done.[/bold green]\n\nVideo: [cyan]{output}[/cyan]\n"
+        f"Audio: [green]{audio_detail}[/green]",
         title="Complete", border_style="green"
     ))
 
