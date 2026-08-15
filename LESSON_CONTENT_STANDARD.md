@@ -15,6 +15,11 @@ Delivery quality and content quality are checked separately and neither
 substitutes for the other. A lesson can pass every timing/sync check in
 `verify.py` and `narration/qa.py` and still fail this standard.
 
+This document is what to write. `QA_CHECKLIST.md` (repo root) is how to
+verify a rendered lesson against everything found and fixed so far,
+delivery and content both — run it against every new render before
+calling the lesson done.
+
 As of the second pass on this document, the five rules below aren't a
 generic best-practice guess — rules 1 through 4 are validated, and rule 5
 is directly motivated, against the transcripts of Walter's own LinkedIn
