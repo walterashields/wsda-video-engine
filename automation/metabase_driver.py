@@ -26,7 +26,11 @@ Lesson scripts are YAML (see courses/metabase_poc/*.yml for the format):
 Event types implemented: highlight_target, highlight_targets,
 click_new_question, select_database, select_table, add_filter,
 click_option, visualize, highlight_section, clear_highlight, show_result,
-save_question, add_to_dashboard, narrate, pause. click_option is a
+save_question, add_to_dashboard, open_saved_item, narrate, pause.
+open_saved_item finds and opens an existing question/dashboard by name
+via search (added for video_1_3, which opens a dashboard built by a
+prior video's requires_state instead of creating something new).
+click_option is a
 generic single-click commit (see its docstring) for "pick one thing from
 an already-open picker" steps, e.g. Summarize's function/column lists,
 that don't need their own bespoke action function. `narrate` is a pure
@@ -185,13 +189,22 @@ def _resolve_locator(page, spec):
     if kind == "app_bar_button":
         return page.get_by_test_id("app-bar").get_by_role("button", name=spec["name"])
     if kind == "text":
-        return page.get_by_text(spec["value"], exact=True).first
+        # `index` (added 2026-08-15, video_1_3 work) picks the nth match
+        # rather than always the first, for narration that names a value
+        # appearing identically on screen more than once at once -- e.g.
+        # a dashboard filter mapped to "Orders.Created At" on two
+        # different cards, both rendered as the exact same chip text.
+        return page.get_by_text(spec["value"], exact=True).nth(spec.get("index", 0))
     if kind == "test_id":
         return page.get_by_test_id(spec["value"])
     if kind == "placeholder":
         return page.get_by_placeholder(spec["value"])
     if kind == "button":
         return page.get_by_role("button", name=spec["value"], exact=True)
+    if kind == "label":
+        # aria-label match, for icon-only controls with no visible text
+        # at all (e.g. the dashboard edit "pencil icon").
+        return page.get_by_label(spec["value"], exact=True)
     raise ValueError(f"unknown locator kind {kind!r}")
 
 
@@ -405,6 +418,24 @@ async def action_select_database(page, event, target):
     await page.wait_for_timeout(400)
 
 
+async def action_open_saved_item(page, event, target):
+    """Opens an existing saved question or dashboard by name, via
+    Metabase's search rather than a direct URL -- keeps every navigation
+    in this driver anchored to visible UI text/labels, consistent with
+    the rest of the file, rather than needing to know an item's internal
+    id. Added for video_1_3, which opens a dashboard built by a prior
+    video's requires_state instead of building a new item from scratch.
+    Silent/administrative like select_database: which saved item to open
+    is not a decision with reasoning to teach, it's how you get to the
+    screen where the actual lesson starts."""
+    await page.get_by_label("Search", exact=True).click()
+    await page.wait_for_timeout(400)
+    await page.get_by_placeholder("Search for anything…").fill(event["name"])
+    await page.wait_for_timeout(1200)
+    await page.keyboard.press("Enter")
+    await page.wait_for_timeout(1200)
+
+
 async def action_select_table(page, event, target):
     await page.get_by_text(event["table"], exact=True).click()
     await page.wait_for_timeout(800)
@@ -581,6 +612,7 @@ ACTIONS = {
     "clear_highlight": action_clear_highlight,
     "click_new_question": action_click_new_question,
     "select_database": action_select_database,
+    "open_saved_item": action_open_saved_item,
     "select_table": action_select_table,
     "add_filter": action_add_filter,
     "click_option": action_click_option,

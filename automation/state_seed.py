@@ -33,10 +33,22 @@ much of this session's own testing produced duplicate "High Value
 Orders" cards from repeated runs. A seeding step that isn't idempotent
 would just move that same problem here.
 
-Kept deliberately minimal: one filter operator (`between`, the only one
-any current lesson script needs), one query shape (single-table MBQL
-with an optional filter), one dashboard action (contains a named card).
-Extend as real lesson scripts need more, not speculatively ahead of that.
+Kept deliberately minimal, extended only as real lesson scripts have
+needed more, not speculatively ahead of that: one filter operator
+(`between`), one aggregation function (`sum`, added 2026-08-15 for
+video_1_3's requires_state, which needs to seed a chart question --
+`Monthly Revenue Trend` -- not just a filtered-table question, proving
+this schema needed a real extension rather than holding unmodified
+across a second use), one dashboard action (contains named cards, now
+plural).
+
+  - type: "question"
+    name: "Monthly Revenue Trend"
+    database: "Sample Database"
+    table: "Orders"
+    display: "bar"
+    aggregation: {function: "sum", field: "Total"}
+    breakout: {field: "Created At", granularity: "month"}
 """
 
 import sys
@@ -81,8 +93,20 @@ def _resolve_table_and_fields(base_url, headers, database_name, table_name):
     if table is None:
         raise ValueError(f"table {table_name!r} not found in database {database_name!r}")
 
-    fields = {f["name"].lower(): f["id"] for f in table["fields"]}
+    fields = {_normalize_field_name(f["name"]): f["id"] for f in table["fields"]}
     return db["id"], table["id"], fields
+
+
+def _normalize_field_name(name: str) -> str:
+    """Confirmed live (2026-08-15, video_1_3 work): Metabase's real
+    column names use underscores (CREATED_AT), but a lesson script writes
+    the human-readable version (Created At), matching what's shown in the
+    UI. A naive `.lower()` lookup worked for one-word fields like Total
+    by coincidence and broke immediately on the first two-word field,
+    raising a KeyError rather than silently producing a wrong result --
+    still worth normalizing properly rather than relying on continuing to
+    get lucky with single-word field names."""
+    return name.lower().replace("_", " ")
 
 
 def _build_filter_mbql(spec, fields):
@@ -91,10 +115,27 @@ def _build_filter_mbql(spec, fields):
     Extend this dispatch, not the caller, when a lesson needs another
     operator."""
     operator = spec["operator"]
-    field_id = fields[spec["field"].lower()]
+    field_id = fields[_normalize_field_name(spec["field"])]
     if operator == "between":
         return ["between", ["field", field_id, None], spec["min"], spec["max"]]
     raise ValueError(f"unsupported filter operator {operator!r}")
+
+
+def _build_aggregation_mbql(spec, fields):
+    """Only `sum` is implemented, since it's the only aggregation any
+    current lesson script needs (see module docstring's minimalism
+    note). Extend this dispatch when a lesson needs another."""
+    function = spec["function"]
+    field_id = fields[_normalize_field_name(spec["field"])]
+    if function == "sum":
+        return ["sum", ["field", field_id, None]]
+    raise ValueError(f"unsupported aggregation function {function!r}")
+
+
+def _build_breakout_mbql(spec, fields):
+    field_id = fields[_normalize_field_name(spec["field"])]
+    options = {"temporal-unit": spec["granularity"]} if "granularity" in spec else None
+    return ["field", field_id, options]
 
 
 def _find_active_card_by_name(base_url, headers, name):
@@ -123,6 +164,10 @@ def _seed_question(base_url, headers, spec) -> int:
     query = {"source-table": table_id}
     if "filter" in spec:
         query["filter"] = _build_filter_mbql(spec["filter"], fields)
+    if "aggregation" in spec:
+        query["aggregation"] = [_build_aggregation_mbql(spec["aggregation"], fields)]
+    if "breakout" in spec:
+        query["breakout"] = [_build_breakout_mbql(spec["breakout"], fields)]
 
     payload = {
         "name": spec["name"],

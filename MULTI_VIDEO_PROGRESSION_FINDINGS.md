@@ -1,21 +1,25 @@
 # Multi-Video Progression: Findings
 
-A scoped test, not a system. This connects exactly two existing videos
-(`courses/metabase_poc/video_1_1` and `video_1_2`) to learn what a real
-multi-video course actually requires, the same way the Metabase target
-itself was proven out as a scoped PoC before committing to building it
-out. It does not build a general multi-video course orchestrator — see
-"What would actually be needed" below for what that would still take.
+A scoped test, not a system. This connects three existing videos
+(`courses/metabase_poc/video_1_1`, `video_1_2`, `video_1_3`) to learn what
+a real multi-video course actually requires, the same way the Metabase
+target itself was proven out as a scoped PoC before committing to
+building it out. It does not build a general multi-video course
+orchestrator — see "What would actually be needed" below for what that
+would still take.
 
 **Status: the environment architecture question this document originally
-raised has been decided and implemented, not left open.** The first pass
-proved continuity manually against one continuous Metabase session; a
-second pass replaced that with API-seeded state and re-proved the same
-result — `video_1_2` recorded fully independently, `video_1_1` never
-run — against a genuinely fresh environment. Both passes are recorded
-below, in order, because the first pass's finding (continuity requires
-*some* mechanism, not independent fresh containers with no bridge at
-all) is what motivated the second pass's design.
+raised has been decided, implemented, and now proven repeatable across a
+third, structurally different video — not a one-off that happened to
+work for a single pair.** The first pass proved continuity manually
+against one continuous Metabase session; a second pass replaced that with
+API-seeded state and re-proved the same result — `video_1_2` recorded
+fully independently, `video_1_1` never run — against a genuinely fresh
+environment. A third pass then tested whether that mechanism generalizes
+past the one pair it was built on, with `video_1_3` — a workflow neither
+prior video's automation exercised. All three passes are recorded below,
+in order, because each one's finding motivated the next pass's design or
+scope.
 
 ## Method
 
@@ -190,62 +194,204 @@ API state, not the audit log**: re-ran, confirmed via `GET
 /api/dashboard/17` that it contains both `High Value Orders` and `Monthly
 Revenue Trend` on the one real dashboard, no duplicate created.
 
+## Pass 2's verdict: generalizes to one pair, not yet proven past that
+
+**Both the narration technique and the state mechanism generalize across
+`video_1_1` → `video_1_2`.** The recap technique was already content, not
+code, and never depended on which state-bridging approach was used. The
+state mechanism, after this pass, is genuinely reusable in principle:
+`requires_state` is plain data any future lesson script can declare,
+`state_seed.py`'s seeding functions are generic (resolve any table/field
+by name, build a `between` filter, create/reuse a card, create/reuse a
+dashboard, attach cards to it) rather than hardcoded to this specific
+pair of videos, and `action_add_to_dashboard` now handles all three real
+UI branches found rather than assuming one.
+
+What was still true and worth restating at the time: this proved the
+*mechanism* on one pair of videos, built and debugged against exactly
+that pair. "Generic in principle" and "proven to generalize" are
+different claims — pass 3 exists to close that gap.
+
+## Pass 3: does the mechanism hold on a third, different video, or was it coincidence?
+
+`video_1_3` ("One Filter, Both Charts") was deliberately chosen to be
+structurally different from both priors, not a third instance of either
+one's shape: `video_1_1` builds and filters a question, `video_1_2`
+summarizes and charts one, `video_1_3` opens the *existing* dashboard
+from the first two videos, adds a dashboard-level filter, and connects it
+to both existing charts' `Created At` field at once. It's also the first
+video whose `requires_state` needs a chart question (`Monthly Revenue
+Trend`, a Sum aggregation with a month breakout), not just a filtered
+table like `High Value Orders`.
+
+The transcripts were re-read specifically for how a *third*-in-sequence
+video's opening differs from a second one — not assumed to be the same
+pattern as `video_1_2`'s recap. `05_04` (third video in that chapter's
+sequence) turned out to use the same light, scenario-continuation
+register as `05_03` (second in sequence) — no heavier formal recap just
+because it's video 3, but a brief "thus far" acknowledgment of
+accumulated progress that the second video's opening didn't need yet.
+`06_03` (third video after a chapter-opener) has almost no recap at all,
+since it continues the immediately preceding video's own task rather than
+opening a new stakeholder request. `video_1_3`'s new material (a
+dashboard filter spanning two existing charts) is a new stakeholder
+request, closer to `05_04`'s shape, so its opening names both existing
+artifacts (necessary here specifically because the whole teaching point
+is that *one* filter controls *two* things) but stays in the same light,
+story-driven register as `video_1_2`'s opening — not a heavier
+chapter-style rundown just because it's third.
+
+Recorded completely independently: every existing artifact was archived
+first (confirmed via the API — zero active matches for either question
+name or the dashboard name), then `video_1_3` was run from a fresh
+container with **neither `video_1_1` nor `video_1_2` actually run this
+pass**. The driver's seeding step created all three `requires_state`
+artifacts fresh via the API before Playwright even started. 15/15 events
+succeeded.
+
+### The honest answer: the mechanism's format held; its implementation did not, and a real bug was found in extending it
+
+This is the actual finding this pass exists to produce, not "video_1_3
+works":
+
+- **What held unmodified:** the `requires_state` declarative format
+  itself, `seed_required_state()`'s orchestration (seed all questions,
+  then all dashboards, resolve by name), its idempotency behavior, and —
+  notably, since this was the more dangerous of the two video_1_2 bugs —
+  `action_add_to_dashboard`'s fixed priority order (named target before
+  "New dashboard" before bare Save). `video_1_3` doesn't call
+  `action_add_to_dashboard` at all (it edits an already-pinned dashboard
+  directly, via `open_saved_item` and a filter-mapping flow), so this
+  isn't a retest of the same code path — it's a second, independent
+  question asked of the same dashboard-state layer, and it answered
+  clean: `GET /api/dashboard/20` after recording showed exactly one
+  active dashboard, both cards present, no duplicates.
+- **What needed real extension:** `state_seed.py`'s question-seeding
+  schema only supported a `filter` key before this pass.
+  `Monthly Revenue Trend` needed a `sum` aggregation and a `month`
+  breakout — tested against the old schema first and got a plain
+  `KeyError`, confirming the gap directly rather than guessing it would
+  eventually need extending. Fixed by adding `_build_aggregation_mbql`
+  and `_build_breakout_mbql` and wiring them into `_seed_question`.
+- **A real, separate bug found while extending it:** the original
+  field-name lookup did a bare `.lower()` on the spec's field name. That
+  happened to work for `"Total"` (Metabase's real column is `TOTAL`) by
+  coincidence, and broke immediately on `"Created At"` (Metabase's real
+  column is `CREATED_AT`, underscore, not space) — a plain `KeyError`,
+  not a silent wrong result, but still a real defect that had been
+  latent since the very first `requires_state` spec and simply never
+  been exercised by a multi-word field name until now. Fixed with a real
+  `_normalize_field_name` helper (`.lower().replace("_", " ")`), applied
+  consistently everywhere a field name is looked up, not a special case
+  for this one field.
+- **Three small driver mechanisms were new, not extensions of existing
+  bugs:** `action_open_saved_item` (search + Enter, needed because this
+  video opens an existing dashboard rather than building something new),
+  an `"index"` option on the `"text"` locator kind, and a new `"label"`
+  locator kind (both needed for the dashboard filter-mapping UI, which
+  reuses the same visible text — "Orders.Created At", "Select…" — for
+  more than one control on screen at once).
+
+So: the *shape* of the API-seeded architecture — declare state as data,
+seed it via HTTP before recording, verify against real state after —
+held without any redesign. Its *implementation* had a real gap (no
+aggregation/breakout support) and a real latent bug (field-name
+normalization), both found by actually building a genuinely different
+third video, not by inspecting the code for problems in the abstract.
+That is the difference between "generic in principle" (pass 2's claim)
+and "proven to generalize" (this pass's claim) — and it took a real
+video with real new requirements to tell them apart.
+
+### Verified against real API state, not just the audit log
+
+Per `QA_CHECKLIST.md` item 9 and the discipline the video_1_2 pass's
+silent duplicate-dashboard bug established: queried the live Metabase API
+after recording, not just trusted the driver's "15/15 events succeeded."
+Confirmed exactly one active copy each of `High Value Orders` (id 66),
+`Monthly Revenue Trend` (id 67), and `WSDA Metabase Demo Dashboard` (id
+20); the dashboard's one `Date` parameter is mapped to both cards via the
+same field (13, `Created At`) through matching `parameter_mappings` —
+exactly what the narration claims ("one filter, both charts") and exactly
+what manual UI exploration produced when this workflow was first
+prototyped by hand. No duplication, no orphaned card, no silent wrong
+target. All nine `QA_CHECKLIST.md` items were run against the rendered
+output and passed, including a frame-level check that both
+"Orders.Created At" chips are highlighted simultaneously at the core
+teaching moment (item 7) and the sequencing check that every commit event
+fires only after its preceding highlight/pause completes (item 4).
+Metabase state was archived back to a clean slate afterward, matching the
+repeatability discipline established in pass 1 and pass 2.
+
 ## Does this generalize, or was it special-cased?
 
-**Both the narration technique and the state mechanism generalize now.**
-The recap technique was already content, not code, and never depended on
-which state-bridging approach was used. The state mechanism, after this
-pass, is genuinely reusable: `requires_state` is plain data any future
-lesson script can declare, `state_seed.py`'s seeding functions are
-generic (resolve any table/field by name, build a `between` filter,
-create/reuse a card, create/reuse a dashboard, attach cards to it) rather
-than hardcoded to this specific pair of videos, and `action_add_to_dashboard`
-now handles all three real UI branches found rather than assuming one.
-
-What's still true and worth restating: this proves the *mechanism* on one
-pair of videos, not a general orchestrator across an arbitrary N. See
-below for what scaling past that would still need.
+**Yes, past a single pair, with one honest caveat.** Three structurally
+different videos (filter/save/dashboard; summarize/chart-type;
+dashboard-filter-spanning-two-charts) now all seed their prerequisite
+state via the same declarative mechanism, verified against real API state
+each time, with zero continuous-session dependency between any of them.
+The caveat: every extension so far (the `sum`/breakout addition, the
+field-normalization fix, the three new driver mechanisms) was demand-
+driven by an actual video that needed it, not built ahead of need — which
+is the right discipline for a PoC, but it also means the schema's
+coverage is still exactly as wide as three videos' worth of real
+requirements, not wider. See below for what's still untested.
 
 ## What would actually be needed for a real multi-video course
 
-1. **Lesson script format** — done for the one relationship type tested
-   (`requires_state` naming questions/dashboards and how they're built).
-   Not yet covering every artifact type Metabase has (models, metrics,
-   collections) or richer query shapes (joins, multiple filters,
-   aggregations beyond a single `between`) — extend
-   `state_seed.py`'s dispatch as real lesson scripts need them, not
-   speculatively ahead of that, same discipline as everything else this
-   session.
+1. **Lesson script format** — proven across three relationship shapes now
+   (a filtered table, a Sum/breakout chart, a dashboard filter mapped to
+   two existing cards). Still not covering every artifact type Metabase
+   has (models, metrics, collections) or richer query shapes (joins,
+   multiple filters/aggregations combined, filter operators beyond
+   `between`) — extend `state_seed.py`'s dispatch as real lesson scripts
+   need them, not speculatively ahead of that, same discipline that
+   produced the aggregation/breakout addition and the field-normalization
+   fix in pass 3.
 2. **Driver state-awareness** — done for `add_to_dashboard`'s three
-   branches. Other actions that could plausibly hit similar
-   already-exists branches (`save_question` itself, if a question with
-   the same name already exists) haven't been tested against that
-   condition yet, because nothing has forced it yet.
-3. **Environment architecture** — decided: API-seeded state per
-   recording, not a long-lived shared instance. Any single video can now
-   be re-recorded, edited, or recorded out of order independently,
-   without cascading re-recording of everything before or after it.
-4. **QA** — a `requires_state`-aware check now belongs in
-   `QA_CHECKLIST.md` proper (not added yet, since this is the first
-   lesson to use the field): confirm, before recording, that everything
-   `requires_state` declares either already exists or was just seeded,
-   by the same API query `state_seed.py` already performs.
+   branches, and now independently exercised (not just re-tested) by
+   `video_1_3`'s different dashboard-editing path with a clean real-state
+   result. Other actions that could plausibly hit similar already-exists
+   branches (`save_question` itself, if a question with the same name
+   already exists) still haven't been tested against that condition,
+   because nothing has forced it yet.
+3. **Environment architecture** — decided and now proven repeatable:
+   API-seeded state per recording, not a long-lived shared instance. Any
+   single video can be re-recorded, edited, or recorded out of order
+   independently, without cascading re-recording of everything before or
+   after it — demonstrated directly by recording `video_1_3` with neither
+   prior video having actually run this pass.
+4. **QA** — `QA_CHECKLIST.md` item 9 (added after pass 2, exercised
+   again in pass 3) covers this: confirm, before calling a lesson done,
+   that everything `requires_state` declares actually exists in that real
+   shape after recording, by the same API query `state_seed.py` itself
+   performs.
 5. **Not yet built**: anything that orchestrates *which* videos need
    seeding for a given course, in what order, or manages a real N-video
-   dependency graph. This pass hand-wrote `requires_state` for one known
-   pair; a real system would need lesson generation (or authoring
-   tooling) to produce it automatically from a course outline.
+   dependency graph. Three passes have each hand-written `requires_state`
+   for one specific video; a real system would need lesson generation (or
+   authoring tooling) to produce it automatically from a course outline.
+   Three data points is still not enough to say the schema/dispatch
+   extension pattern will keep holding cheaply as N grows further —
+   worth another structurally-different video before believing that
+   without re-checking.
 
 ## Bottom line
 
-Two videos read as one progressing course, and now do so from
-independent, fully rebuildable state rather than a fragile continuous
-session. Getting there took two real passes: the first proved continuity
-was necessary and found one UI-branching bug by brute force; the second
-implemented the actual architecture, and in doing so found a *second*,
-more dangerous bug — a silent wrong-click that reported success while
-producing the wrong result — which only real-state verification (not
-trusting "N/N events succeeded") caught. That second finding is arguably
-the more important one: it's a direct, first-hand demonstration of why
-`QA_CHECKLIST.md` insists automated pass/fail is not sufficient on its
-own, from inside the very work meant to make this system more reliable.
+Three videos read as one progressing course, from independent, fully
+rebuildable state rather than a fragile continuous session, and the
+mechanism has now been shown to generalize rather than just work once.
+Getting there took three real passes: the first proved continuity was
+necessary and found one UI-branching bug by brute force; the second
+implemented the actual architecture and found a more dangerous
+second bug — a silent wrong-click that reported success while producing
+the wrong result — caught only by real-state verification, not trusting
+"N/N events succeeded"; the third built a genuinely different third video
+against that architecture and found the honest limits of "generic in
+principle" — the declarative format and orchestration held unmodified,
+but the seeding implementation needed a real feature it didn't have
+(aggregation/breakout support) and had a real latent bug (field-name
+normalization) that a filtered-table-only test history had simply never
+exercised. Each pass's bug was caught by the same discipline: querying
+real application state after recording, not trusting a clean audit log —
+`QA_CHECKLIST.md` item 9's whole reason for existing, now with three
+independent instances behind it instead of one.
