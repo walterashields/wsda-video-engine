@@ -41,11 +41,47 @@
 # Concept-intro pacing (lead_ms / post_hold_ms: 3000) is applied to every
 # step introducing something for the first time IN THIS VIDEO: starting a
 # question, Summarize's Sum-of picker, the chart-type switch, saving, and
-# pinning to a dashboard. This video is still a standalone PoC, not a
-# sequel to video_1_1 (no chapter structure exists yet, per
-# LESSON_CONTENT_STANDARD.md's "Where metabase_poc still falls short"
-# section), so "question" and "save" get first-time treatment again here
-# rather than being treated as already-taught.
+# pinning to a dashboard. Kept as first-time treatment even now that this
+# is video 2 of a sequence (see below): the RECAP in the opening covers
+# what was accomplished last time (a saved, filtered question on a
+# dashboard), but "question," "save," and "dashboard" as UI mechanics are
+# still being taught fresh here -- a real learner watching video 1
+# immediately before this one has seen the click sequence exactly once,
+# which doesn't yet earn "repeated action" treatment the way it would a
+# few videos into an actual chapter.
+#
+# CHANGES THIS PASS (multi-video progression test, 2026-08-15): this
+# video's opening (e00_intro/e00_pause only -- nothing else in this
+# script changed) was rewritten to recap video_1_1 and frame this
+# video's new material as building on it, testing whether the two
+# videos can read as one progressing course rather than two standalone
+# demos. Modeled on the transcripts' WITHIN-chapter video-to-video
+# transition pattern specifically (e.g. 05_02 -> 05_03: "management is
+# happy with X we found... but now they'd like to know Y"), not the
+# heavier MM30 chapter-opener pattern ("so far we've learned A, B, C,
+# but we haven't yet...") -- the filter-to-chart step here is a smaller,
+# same-scenario capability increment, closer in scope to a within-chapter
+# video boundary than a full new-chapter topic jump like single-table to
+# multi-table joins. The recap continues the STORY (what the manager
+# asked for and got, now asking for more) rather than reciting pedagogy
+# ("in the last video you learned to filter").
+#
+# This required actually recording video_1_1 and video_1_2 back to back
+# against the SAME Metabase demo state, without archiving video_1_1's
+# artifacts in between, unlike every prior test run this session (which
+# always cleaned up afterward to keep the environment repeatable). The
+# recap narration names a specific artifact ("High Value Orders... pinned
+# to a dashboard"); for that to be true rather than a nice-sounding
+# fiction, the referenced question and dashboard need to actually exist
+# when this video records. Doing so surfaced a real Metabase UI-branching
+# bug in action_add_to_dashboard (it assumes zero existing dashboards;
+# with exactly one already present, Metabase skips the "New dashboard"
+# prompt this action waits for and merges straight into editing it
+# instead) -- worked around for this one render, not fixed, since fixing
+# it is real driver work, not part of this scoped test. See
+# MULTI_VIDEO_PROGRESSION_FINDINGS.md (repo root) for the full write-up:
+# what worked, what broke, and what a real multi-video system would
+# need.
 #
 # Pause durations, two buffers depending on narration length:
 #   short narration: duration = (word_count / 145) * 60 + 2.0s
@@ -68,14 +104,17 @@ events:
   - id: "e00_intro"
     type: "narrate"
     narration: >-
-      Your manager keeps asking whether revenue is trending up or down,
-      but all you can hand her is a spreadsheet of individual orders,
-      and nobody can eyeball a trend in that. By the end of this, you'll
-      turn that same order data into a single chart she can glance at
-      and understand in seconds.
+      Remember that High Value Orders list you saved and pinned to a
+      dashboard last time? Your manager's been checking it herself ever
+      since, exactly like you set it up to do. But now she has a new
+      question: is revenue actually trending up, or does it just feel
+      that way from scrolling a list of orders? A filtered list can't
+      answer that, so by the end of this, you'll turn that same order
+      data into a single chart she can glance at and understand in
+      seconds.
   - id: "e00_pause"
     type: "pause"
-    duration: 30.3
+    duration: 43.6
 
   - id: "e01_hl"
     type: "highlight_target"
