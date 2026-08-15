@@ -22,6 +22,56 @@ Learning flagship course, *SQL Essential Training* (500K+ learners, 4.8
 stars). See "Grounded in SQL Essential Training" below for the specific
 patterns pulled from those transcripts.
 
+## The governing principle
+
+Every rule below is a specific case of one umbrella principle. State it
+explicitly, because the specific cases will always be an incomplete list
+and new gaps of the same shape will keep turning up (rule 5 exists
+because two more instances of this same principle were found live, after
+rules 1 through 4 were already written):
+
+> Every single component involved in a step must be displayed on screen
+> and explained in narration. Nothing may be assumed to be already
+> understood by the learner unless it has been explicitly shown and
+> described. If an interface element, result, saved item, or outcome
+> appears on screen, it must be called out — what it is, what it means,
+> why it's there — at the moment it appears. Silence over a visible,
+> meaningful screen element is a gap, not a stylistic choice.
+
+When checking a lesson against this document and none of the five
+specific rules below quite names what's wrong, check it against this
+principle directly: is there anything on screen right now that the
+narration is silent about, or that the learner is expected to already
+understand without having been told?
+
+### Corollary: first-time concepts need more time than repeated actions
+
+The governing principle has a pacing consequence, not just a narration-
+content one. A step that introduces a brand-new concept for the first
+time — what a "saved question" is, what a "dashboard" is, the first time
+any tool-specific object type appears — is not the same kind of moment as
+a step that repeats an action type the learner has already seen earlier
+in the same lesson. Giving both the same brief hold time and the same
+depth of narration under-serves the first-time concept: the learner needs
+real time to register a new idea, not the glance-length treatment
+appropriate for a click they've already watched happen twice before.
+
+Concretely: a step introducing a new concept for the first time should
+get (a) longer on-screen hold/highlight time than a repeated action, and
+(b) narration that explains what the resulting object *is* and *why it
+matters*, not just that the action completed. "Now we save this" confirms
+a click happened. "This saves it as a question, which we can reopen,
+rerun, or add to a dashboard without rebuilding it" teaches what a saved
+question actually is. The first sentence is fine for the second or third
+time a familiar action repeats; it fails this standard the first time a
+genuinely new concept is introduced.
+
+`automation/metabase_driver.py` supports this with per-event `lead_ms`
+(on a highlight event) and `post_hold_ms` (on a commit action) overrides
+— see that module's `CONCEPT_INTRO_HOLD_MS` — but the driver has no way
+to know which concepts are new for a given lesson; a script author has to
+recognize a first-time concept and opt it into the longer treatment.
+
 ## The five rules
 
 ### 1. Open with the outcome, before any action starts
@@ -222,6 +272,33 @@ proof-of-concept with only one video, not a chapter. Building out
 challenge) would be needed to fully match the proven structure, not just
 match it at the single-video level.
 
+Re-checked against the governing principle above (fix pass 5); found and
+flagging the following, not fixed this pass:
+
+- **The moment the query's actual results first appear (the `visualize`
+  step) is completely silent.** Arguably the single most important
+  moment in the lesson — the answer to the business question appearing
+  for the first time — has no narration calling it out at all.
+- **The database-picker screen (`select_database`) is a visible decision
+  screen that's silently clicked through**, same shape as the gap rule 5
+  fixed for filter values and columns, just not yet applied to this
+  step.
+- **The "New" button's dropdown menu** (Question / Dashboard / other
+  options) briefly appears with a choice being made silently among
+  several options, never acknowledged.
+- **The save dialog's and dashboard dialog's name fields are typed
+  inside the commit actions with no on-screen highlight of the typing.**
+  Fix pass 5 added the specific names ("High Value Orders", "WSDA
+  Metabase Demo Dashboard") to the *narration*, verbally, but a fuller
+  fix would give these the same `pre_actions`/`highlight_targets`
+  treatment the filter values got in fix pass 4, so the typed name is
+  actually visible, not just spoken.
+- **The filter step's operator (defaults to "Between") is never called
+  out as a choice** among other available operators.
+- **`e07` doesn't state the actual resulting row count** of the filtered
+  results, unlike the transcript-grounded pattern documented above ("we
+  have 111 rows that satisfy...").
+
 ## Enforcement
 
 - **SQL/AI pipeline** (`generator/prompts.py` → production cards →
@@ -232,11 +309,14 @@ match it at the single-video level.
   this document.
 - **Metabase automation path** (hand-authored `lesson_script.yml` →
   `automation/metabase_driver.py`): rule 5 has driver-level support
-  (`pre_actions`, `highlight_targets` — see automation/metabase_driver.py's
-  module docstring), but nothing here is automatically *checked*. Every
-  `lesson_script.yml` narration line should be checked against this
-  standard by hand before recording, the same way `courses/metabase_poc/
-  video_1_1/lesson_script.yml` was rewritten against it.
+  (`pre_actions`, `highlight_targets`), and the first-time-concept pacing
+  corollary has driver-level support (`lead_ms`, `post_hold_ms`,
+  `CONCEPT_INTRO_HOLD_MS`) — see automation/metabase_driver.py's module
+  docstring for both. Nothing here is automatically *checked*, though:
+  every `lesson_script.yml` narration line and pacing choice should be
+  checked against this standard by hand before recording, the same way
+  `courses/metabase_poc/video_1_1/lesson_script.yml` was rewritten
+  against it.
 - **Any future content adapter** added to this system inherits this
   standard by default; if it doesn't fit one of the five rules as
   written, that's a sign the adapter's format needs its own explicit
@@ -262,3 +342,10 @@ Before recording, for every lesson:
 - [ ] Does narration state the actual resulting number/value after an
       action, tied to a specific visible column, rather than a vague
       description of the outcome?
+- [ ] Is there anything visible on screen right now — an interface
+      element, a result, a saved item, an outcome — that narration is
+      silent about, or that assumes the learner already understands it?
+- [ ] For every step that introduces a concept for the first time (not a
+      repeated action type), does it get longer hold time and narration
+      that explains what the resulting object *is* and *why it matters*,
+      not just that the action completed?

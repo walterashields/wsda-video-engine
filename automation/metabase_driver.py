@@ -47,6 +47,18 @@ highlights several elements at once -- e.g. several named columns -- for
 narration that references more than one structure in the same breath,
 since a single highlight_target can only anchor to one.
 
+Concept-introduction pacing (added 2026-08-14, fix pass 5, see
+LESSON_CONTENT_STANDARD.md): a step that introduces a brand-new concept
+for the first time (what a "question" is, what a "dashboard" is) needs
+more on-screen time than a step that repeats an action type the learner
+has already seen this lesson. Any highlight_target(s) event accepts
+`lead_ms` and any commit action accepts `post_hold_ms` on the event to
+override the module defaults (HIGHLIGHT_LEAD_MS / POST_ACTION_HOLD_MS);
+see CONCEPT_INTRO_HOLD_MS for the recommended value for a first-time
+concept. This is opt-in per event, not automatic -- the driver has no way
+to know which concepts are "new" for a given lesson, only the lesson
+script author does.
+
 Login/account setup is handled separately, before recording starts (see
 run_lesson): it's pure demo-environment provisioning, not a teaching
 moment, and a first cut of this lesson showed 20+ seconds of dead
@@ -115,6 +127,19 @@ HIGHLIGHT_LEAD_MS = 1500
 # how long the highlight stays up after a commit action's click(s), so the
 # result of the click is visible before the highlight disappears
 POST_ACTION_HOLD_MS = 700
+# Recommended lead/hold value for a step that introduces a brand-new
+# concept for the first time (added 2026-08-14, fix pass 5, see
+# LESSON_CONTENT_STANDARD.md's "first-time concept vs. repeated action"
+# distinction): a first-time-taught object type -- what a "question" is,
+# what a "dashboard" is -- needs real time to register, not the same
+# brief glance as a click the learner has already seen this lesson. Not
+# read anywhere automatically; both action_highlight_target(s) and every
+# commit action read their lead/hold from the event itself
+# (`lead_ms` / `post_hold_ms`), falling back to the defaults above, so a
+# lesson script opts a specific event into this longer treatment by
+# setting `lead_ms: 3000` / `post_hold_ms: 3000` explicitly. This value
+# is just the documented convention for that number, not enforced.
+CONCEPT_INTRO_HOLD_MS = 3000
 
 
 class Clock:
@@ -313,11 +338,13 @@ async def action_highlight_target(page, event, target):
     draws a pixel-accurate overlay around it, and holds briefly before
     returning. Does NOT remove the overlay, it stays up through this
     event's narrated pause, cleared by the commit event that follows
-    (see module docstring)."""
+    (see module docstring). `lead_ms` on the event overrides the default
+    HIGHLIGHT_LEAD_MS -- see CONCEPT_INTRO_HOLD_MS's comment for when a
+    lesson script should set this explicitly."""
     await _run_pre_actions(page, event.get("pre_actions"))
     locator = _resolve_locator(page, event["locator"])
     await _draw_highlight_box(page, locator)
-    await page.wait_for_timeout(HIGHLIGHT_LEAD_MS)
+    await page.wait_for_timeout(event.get("lead_ms", HIGHLIGHT_LEAD_MS))
 
 
 async def action_highlight_targets(page, event, target):
@@ -328,7 +355,7 @@ async def action_highlight_targets(page, event, target):
     for User ID, Product ID, and Total") must have all of them visible
     and highlighted at once, not just one, and not just a generic region
     around the table. Runs pre_actions first for the same reason
-    action_highlight_target does."""
+    action_highlight_target does. Also honors `lead_ms`."""
     await _run_pre_actions(page, event.get("pre_actions"))
     await _clear_highlight(page)
     for i, spec in enumerate(event["locators"]):
@@ -337,7 +364,7 @@ async def action_highlight_targets(page, event, target):
             page, locator, clear_existing=False,
             box_id=f"{HIGHLIGHT_OVERLAY_CLASS}_{i}",
         )
-    await page.wait_for_timeout(HIGHLIGHT_LEAD_MS)
+    await page.wait_for_timeout(event.get("lead_ms", HIGHLIGHT_LEAD_MS))
 
 
 async def action_clear_highlight(page, event, target):
@@ -349,7 +376,7 @@ async def action_click_new_question(page, event, target):
     await page.wait_for_timeout(400)
     await page.get_by_text("Question", exact=True).click()
     await page.wait_for_timeout(800)
-    await page.wait_for_timeout(POST_ACTION_HOLD_MS)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
 
 
@@ -361,7 +388,7 @@ async def action_select_database(page, event, target):
 async def action_select_table(page, event, target):
     await page.get_by_text(event["table"], exact=True).click()
     await page.wait_for_timeout(800)
-    await page.wait_for_timeout(POST_ACTION_HOLD_MS)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
 
 
@@ -376,7 +403,7 @@ async def action_add_filter(page, event, target):
     depends on)."""
     await page.get_by_role("button", name="Add filter").click()
     await page.wait_for_timeout(400)
-    await page.wait_for_timeout(POST_ACTION_HOLD_MS)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
 
 
@@ -401,6 +428,13 @@ async def action_show_result(page, event, target):
 
 
 async def action_save_question(page, event, target):
+    """Saves the current query as a question. This is a first-time
+    concept introduction (what a "saved question" even is), not a
+    repeated action type, so lesson scripts should set
+    `post_hold_ms: CONCEPT_INTRO_HOLD_MS` on this event (see that
+    constant's comment) -- the default POST_ACTION_HOLD_MS is tuned for
+    a click the learner has already seen this lesson, not for giving
+    them time to register a brand-new object type."""
     await page.get_by_test_id("qb-save-button").click()
     await page.wait_for_timeout(500)
     await page.get_by_label("Name").fill(event["question_name"])
@@ -425,11 +459,16 @@ async def action_save_question(page, event, target):
     # clear the Save-button highlight drawn by the preceding
     # highlight_target event, this does not touch the toast-click timing
     # above (still zero delay between save-dialog-close and the toast).
-    await page.wait_for_timeout(POST_ACTION_HOLD_MS)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
 
 
 async def action_add_to_dashboard(page, event, target):
+    """Creates a dashboard and pins the saved question to it. Same
+    concept-introduction case as action_save_question -- "dashboard" is a
+    new object type being taught here, not a repeated click -- so lesson
+    scripts should set `post_hold_ms: CONCEPT_INTRO_HOLD_MS` on this
+    event too."""
     # picks up from the dashboard picker dialog opened at the end of
     # action_save_question (see the comment there for why)
     await page.get_by_text("New dashboard", exact=True).click()
@@ -441,7 +480,7 @@ async def action_add_to_dashboard(page, event, target):
     await page.wait_for_timeout(1200)
     await page.get_by_role("button", name="Save", exact=True).click()
     await page.wait_for_timeout(1200)
-    await page.wait_for_timeout(POST_ACTION_HOLD_MS)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
 
 

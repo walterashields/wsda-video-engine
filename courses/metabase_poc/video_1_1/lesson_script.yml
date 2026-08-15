@@ -1,4 +1,4 @@
-# Metabase Phase 2 proof-of-concept lesson script (fix pass 4, 2026-08-14).
+# Metabase Phase 2 proof-of-concept lesson script (fix pass 5, 2026-08-14).
 #
 # Consumed by automation/metabase_driver.py (records the run, writes an
 # AuditLog-shaped audit.json) and then narration/audit_narrator.py (mixes
@@ -98,6 +98,54 @@
 #      in this "chapter" to recap against or apply the skill against
 #      independently. See the standard's "Where metabase_poc still falls
 #      short" section.
+#
+# CHANGES THIS PASS (fix pass 5, umbrella "nothing assumed" rule +
+# save/dashboard pacing):
+#   1. LESSON_CONTENT_STANDARD.md gained an explicit governing principle
+#      above the five numbered rules: nothing may be assumed understood
+#      unless it's been shown and explained, silence over a visible,
+#      meaningful screen element is a content gap, not a style choice.
+#      Also gained a named corollary: a step introducing a concept for
+#      the first time needs more hold time and deeper narration than a
+#      step repeating an action type already taught earlier in the
+#      lesson.
+#   2. e08_hl/e08_commit (save) and e09_hl/e09_commit (dashboard) are the
+#      concrete fix: both now set `lead_ms: 3000` / `post_hold_ms: 3000`
+#      (automation/metabase_driver.py's CONCEPT_INTRO_HOLD_MS
+#      convention, new per-event overrides this pass), and narration now
+#      explains what the resulting object IS (a saved question can be
+#      reopened/rerun/added to a dashboard without rebuilding it; a
+#      dashboard is a page holding one or more saved questions together)
+#      and names the SPECIFIC name each is being saved/created as ("High
+#      Value Orders", "WSDA Metabase Demo Dashboard") instead of only
+#      confirming the click happened.
+#   3. Re-checked the rest of the lesson against the new governing
+#      principle. Found and flagging, not fixed this pass:
+#        - e05 (visualize) is completely silent at the exact moment the
+#          query's actual results first appear on screen -- arguably the
+#          single most important moment in the lesson (the answer to the
+#          business question appearing) has zero narration calling it
+#          out. Worth its own highlight/narration in a future pass.
+#        - e02 (select_database)'s database picker is a visible decision
+#          screen that's silently clicked through with no explanation,
+#          same shape as the gap rule 5 fixed for filters/columns, just
+#          not yet applied here.
+#        - e01_commit's New-button dropdown (Question / Dashboard / other
+#          options) is a menu that briefly appears with a choice being
+#          made silently among several options.
+#        - The save dialog's and dashboard dialog's actual NAME fields
+#          are typed inside the commit actions with no on-screen
+#          highlight of the typing (this pass only added the specific
+#          names to the NARRATION, verbally, not a live highlight of the
+#          text being entered the way the filter fix does) -- a fuller
+#          fix would give these the same pre_actions/highlight_targets
+#          treatment the filter values got in fix pass 4.
+#        - The filter step's operator dropdown (defaults to "Between")
+#          is never called out as a choice among other operators.
+#        - e07 doesn't state the actual resulting row count of the
+#          filtered results, unlike the transcript-grounded pattern
+#          documented in LESSON_CONTENT_STANDARD.md ("we have 111 rows
+#          that satisfy...").
 #
 # select_database and visualize stay un-highlighted and un-narrated:
 # they're silent, administrative clicks with nothing to teach (per
@@ -227,28 +275,38 @@ events:
   - id: "e08_hl"
     type: "highlight_target"
     locator: {"kind": "test_id", "value": "qb-save-button"}
+    lead_ms: 3000
     narration: >-
-      We'll save this as a question now, so it becomes something we can
-      come back to without rebuilding it.
+      We'll save this as a question now, and call it High Value Orders.
+      In Metabase, a saved question isn't just a one-time result, it's
+      the actual query itself, saved so we, or anyone else, can reopen
+      it, rerun it, or add it to a dashboard without rebuilding it from
+      scratch.
   - id: "e08_pause"
     type: "pause"
-    duration: 9.9
+    duration: 28.7
   - id: "e08_commit"
     type: "save_question"
     question_name: "High Value Orders"
+    post_hold_ms: 3000
 
   - id: "e09_hl"
     type: "highlight_target"
     locator: {"kind": "text", "value": "New dashboard"}
+    lead_ms: 3000
     narration: >-
-      We'll create a new dashboard, since that's where saved questions
-      live, somewhere your manager can check on her own.
+      We'll create a new dashboard now, called WSDA Metabase Demo
+      Dashboard. A dashboard in Metabase is a single page that holds one
+      or more saved questions together, so your manager can open one
+      link and see this list herself, instead of you sending her the
+      answer every time she asks.
   - id: "e09_pause"
     type: "pause"
-    duration: 9.9
+    duration: 28.7
   - id: "e09_commit"
     type: "add_to_dashboard"
     dashboard_name: "WSDA Metabase Demo Dashboard"
+    post_hold_ms: 3000
 
   - id: "e10"
     type: "show_result"
