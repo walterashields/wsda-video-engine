@@ -4,8 +4,18 @@ A scoped test, not a system. This connects exactly two existing videos
 (`courses/metabase_poc/video_1_1` and `video_1_2`) to learn what a real
 multi-video course actually requires, the same way the Metabase target
 itself was proven out as a scoped PoC before committing to building it
-out. It does not build general multi-video orchestration — see "What
-would actually be needed" below for what that would take.
+out. It does not build a general multi-video course orchestrator — see
+"What would actually be needed" below for what that would still take.
+
+**Status: the environment architecture question this document originally
+raised has been decided and implemented, not left open.** The first pass
+proved continuity manually against one continuous Metabase session; a
+second pass replaced that with API-seeded state and re-proved the same
+result — `video_1_2` recorded fully independently, `video_1_1` never
+run — against a genuinely fresh environment. Both passes are recorded
+below, in order, because the first pass's finding (continuity requires
+*some* mechanism, not independent fresh containers with no bridge at
+all) is what motivated the second pass's design.
 
 ## Method
 
@@ -27,7 +37,8 @@ textures are different:
 `video_1_1` → `video_1_2` (filter to a saved question → chart it) is a
 same-scenario capability increment, not a new topic, so the opening was
 modeled on the **light, within-chapter** pattern, not the chapter-opener
-one. The rewritten opening (`video_1_2`'s `e00_intro` only, per scope):
+one. The rewritten opening (`video_1_2`'s `e00_intro` only, per the first
+pass's scope):
 
 > Remember that High Value Orders list you saved and pinned to a
 > dashboard last time? Your manager's been checking it herself ever
@@ -40,9 +51,12 @@ one. The rewritten opening (`video_1_2`'s `e00_intro` only, per scope):
 This lines up directly with `video_1_1`'s actual closing line ("It's
 something she can check herself, anytime" → "she's been checking it
 herself ever since") — a deliberate callback, confirmed by reading both
-scripts side by side before rendering anything.
+scripts side by side before rendering anything. Unchanged by the
+architecture decision below: this narration technique doesn't care
+whether the state it describes was seeded via API or produced by an
+earlier recording, only that the state is real.
 
-## Verifying state, not just narration
+## Pass 1: proving continuity is required at all (continuous shared state)
 
 The recap names a specific artifact ("High Value Orders... pinned to a
 dashboard"). For that to be true rather than a nice-sounding fiction, it
@@ -55,122 +69,183 @@ environment repeatable for independent testing.
 
 So the two videos were recorded **back to back against one continuous
 Metabase session**, deliberately not cleaning up in between, for the
-first time this session:
+first time this session: recorded `video_1_1` fresh, confirmed via the
+API that its artifacts were live, recorded `video_1_2` immediately after
+against that real state. **This answered the central question this
+document originally posed: yes, narratively-true continuity requires
+*some* real state bridge between videos — independent fresh containers
+with no bridge at all does not work.** It did not yet answer *which*
+bridge is right; that's what pass 2 tested.
 
-1. Recorded `video_1_1` fresh.
-2. Confirmed via the API that "High Value Orders" (card 54) and "WSDA
-   Metabase Demo Dashboard" (dashboard 14) were live and active.
-3. Recorded `video_1_2` immediately after, against that real state.
+This also surfaced a real Metabase UI-branching bug that pass 2 had to
+resolve properly (see below): with zero existing dashboards,
+`action_save_question`'s post-save "Add this to a dashboard" toast opens
+a "New dashboard" creation prompt; with exactly one already present,
+Metabase can skip that prompt and merge straight into editing the
+existing dashboard instead, which `action_add_to_dashboard` wasn't
+written to handle. Reproduced twice in pass 1 and worked around (not
+fixed) by temporarily archiving the pre-existing dashboard so the
+already-working zero-dashboard path could complete — a real, honest gap
+in that pass's result, called out explicitly rather than glossed over.
 
-**This is the core finding, and it answers the task's central question
-directly: yes, this requires continuous session/database state, not
-independent fresh containers.** Every prior render this session (and the
-prior QA passes' "green" results) ran against a freshly-cleaned
-environment; the moment continuity was actually required, it had to be
-engineered by hand, once, for this one pair of videos.
+## Pass 1's verdict: continuity works manually, doesn't generalize
 
-## A real bug this surfaced, not just a state question
+29/29 (`video_1_1`) and 32/32 (`video_1_2`) events against the shared,
+continuous state, audio/duration/pacing all correct. But: "record video
+N-1, check the API by hand, don't clean up, record video N immediately
+after" is not a repeatable system. It doesn't survive re-recording video
+N-1 alone later, recording out of order, or a third video. Given how this
+session's actual workflow has gone — constant re-renders after every fix
+pass, re-tests after every standard update — that fragility is not a
+theoretical concern, it's the normal case.
 
-Recording against genuine continuity didn't just test whether an artifact
-*existed* — it changed which **UI path** Metabase itself takes, and broke
-the existing script:
+## Decision: API-seeded state, not continuous shared containers
 
-`action_save_question`'s post-save "Add this to a dashboard" toast is
-built (and was working, repeatedly, all session) against a **zero
-existing dashboards** environment, where it opens a "New dashboard"
-creation prompt. With **exactly one** dashboard already present (video
-1's), Metabase skips that prompt entirely and navigates straight into
-*editing that existing dashboard*, with the new chart already auto-placed
-on it. `e10_hl`'s highlight and `e10_commit`'s click both wait for
-"New dashboard" text that, in this branch, never appears — confirmed by
-pulling a frame at the failure point, which showed the dashboard editor
-already open with both cards present, not a picker dialog.
+Made explicitly, not inferred: **each video runs in an independent
+environment; any state it depends on from a prior video is created
+directly via Metabase's API immediately before recording, not by
+re-running the prior video's UI actions and not by relying on a
+long-lived shared container.**
 
-This reproduced identically twice in a row against real (non-duplicate)
-continuity state, so it isn't the toast-timing flakiness from stale test
-debris found earlier in the project (`QA_CHECKLIST.md` item 5's history)
-— it's a distinct, real behavioral branch in Metabase's own UI based on
-existing-dashboard count (0 vs. 1 vs. likely N+).
+### What changed
 
-**Not fixed in the driver this pass** (would mean teaching
-`action_add_to_dashboard` to detect and handle the "already merged"
-branch, real but scoped work, not orchestration). For this render, it was
-isolated instead: the "High Value Orders" *question* stayed live
-throughout (the artifact the recap narration actually names and depends
-on), while the pre-existing dashboard was temporarily archived so the
-already-working zero-dashboard path could complete. Final live state after
-this render: `High Value Orders` (video 1, untouched, id 54) and `Monthly
-Revenue Trend` (video 2, id 57) both active as separate questions, but on
-two separate dashboards (`Revenue Overview`, new) rather than one unified,
-growing one. That's the honest gap: question-level continuity is real;
-dashboard-level continuity was sidestepped, not achieved.
+- **Lesson script format** gained `requires_state`, declaring what a
+  video needs as data, not as "replay the prior video":
 
-## Verified end to end
+  ```yaml
+  requires_state:
+    - type: "question"
+      name: "High Value Orders"
+      database: "Sample Database"
+      table: "Orders"
+      display: "table"
+      filter:
+        field: "Total"
+        operator: "between"
+        min: 50
+        max: 1000
+    - type: "dashboard"
+      name: "WSDA Metabase Demo Dashboard"
+      contains: ["High Value Orders"]
+  ```
 
-29/29 (`video_1_1`) and 32/32 (`video_1_2`) events, both against the
-shared, continuous state. `video_1_2`'s render: mp4 duration matches the
-real 308.5s recording, audio present and audible throughout (opening
-recap segment and closing both checked directly), pacing unregressed. The
-opening was extracted and watched at the frame level; Metabase's own home
-screen even greeted the returning session differently ("Good to see you,
-WSDA" vs. the first-run "Howdy, WSDA") — a small, unplanned, genuinely
-nice reinforcement of continuity, not something engineered.
+- **`automation/state_seed.py`** (new) resolves this against the live
+  Metabase instance and creates whatever's missing via direct API calls
+  — real MBQL queries against resolved table/field ids, not simulated
+  clicks. Idempotent by name: an already-existing active question or
+  dashboard is reused, not duplicated, which matters given how much of
+  this session's own testing has produced duplicate "High Value Orders"
+  cards from repeated runs. Verified idempotent directly: running it
+  twice in a row against the same state produced "already exists,
+  reusing" both times, no duplication.
+- **`run_lesson()`** calls the seeding step first, before Playwright even
+  starts — pure HTTP, no browser, never in the recorded footage, the same
+  treatment login/account setup already got.
+
+### Re-proving the result against a genuinely fresh environment
+
+Every existing artifact ("High Value Orders", "WSDA Metabase Demo
+Dashboard", and everything from pass 1) was archived — a real clean
+slate, confirmed via the API before proceeding. `video_1_2` was then
+recorded **directly, without running `video_1_1` at all this pass**. The
+driver's own seeding step created "High Value Orders" and "WSDA Metabase
+Demo Dashboard" via the API, then the recording ran against that seeded
+state: 32/32 events, mp4 duration matched the real 313s+ recording, audio
+correct, pacing correct.
+
+## A second real bug, and why the audit log alone didn't catch it
+
+Seeding a dashboard as a precondition made the branching behavior found
+in pass 1 unavoidable rather than occasional — with a dashboard always
+already present, every recording now exercises that branch. Fixing it
+properly (not working around it this time) meant handling it live, and
+doing so surfaced a *third* branch, more serious than the first because
+it fails silently:
+
+With an **API-seeded** dashboard specifically (as opposed to one created
+moments earlier by an actual UI-recorded save, as in pass 1), Metabase's
+"Add this to a dashboard" toast showed a full **picker dialog** — the
+target dashboard listed as a selectable option, *and* a "New dashboard"
+button also visible in the same dialog — rather than the direct
+auto-merge pass 1 found. The first fix attempt checked for "New
+dashboard" before checking for the named target, so it always won that
+race: it clicked "New dashboard", created a **second dashboard with the
+exact same name**, and pinned the new chart there instead of onto the
+real seeded one.
+
+**This did not raise an exception. The recording reported 32/32 events
+succeeded. It looked exactly like success.** It was only caught by
+querying Metabase's actual API state afterward and finding two active
+dashboards both named "WSDA Metabase Demo Dashboard" — one holding "High
+Value Orders" alone, the other holding "Monthly Revenue Trend" alone —
+instead of one dashboard holding both. This is precisely the class of
+failure `QA_CHECKLIST.md` was written to warn about (automated
+event-count success is not sufficient), now with a second, concrete,
+first-hand instance to point to.
+
+Fixed by checking priority correctly — the named target dashboard first,
+"New dashboard" only if no match, and a bare "Save" click only if neither
+appears (the pass-1 auto-merge case) — then **re-verified against real
+API state, not the audit log**: re-ran, confirmed via `GET
+/api/dashboard/17` that it contains both `High Value Orders` and `Monthly
+Revenue Trend` on the one real dashboard, no duplicate created.
 
 ## Does this generalize, or was it special-cased?
 
-**The narration technique generalizes cleanly.** Recapping the prior
-video's concrete outcome, naming the specific saved artifact, and framing
-the new material as the stakeholder's next ask (rather than reciting
-pedagogy) is a content pattern, grounded directly in the transcripts, that
-any video N can apply against video N-1. Nothing about the wording
-approach was specific to these two videos.
+**Both the narration technique and the state mechanism generalize now.**
+The recap technique was already content, not code, and never depended on
+which state-bridging approach was used. The state mechanism, after this
+pass, is genuinely reusable: `requires_state` is plain data any future
+lesson script can declare, `state_seed.py`'s seeding functions are
+generic (resolve any table/field by name, build a `between` filter,
+create/reuse a card, create/reuse a dashboard, attach cards to it) rather
+than hardcoded to this specific pair of videos, and `action_add_to_dashboard`
+now handles all three real UI branches found rather than assuming one.
 
-**The state mechanism does not generalize — it was manual, once.**
-"Record video N-1, check the API by hand, don't clean up, record video N
-immediately after" is not a repeatable system. It doesn't survive:
-re-recording video N-1 alone later (would need to redo N too, or state
-drifts), recording videos out of order, or more than two videos (state
-complexity compounds, and so does the UI-branching risk found above — a
-third video would hit a *different* Metabase branch again, e.g. two
-existing dashboards instead of one).
+What's still true and worth restating: this proves the *mechanism* on one
+pair of videos, not a general orchestrator across an arbitrary N. See
+below for what scaling past that would still need.
 
 ## What would actually be needed for a real multi-video course
 
-1. **Lesson script format**: an explicit `continues_from: video_1_1`
-   (or similar) field, naming which prior lesson a video depends on and,
-   ideally, which specific artifacts (question/dashboard names) it
-   assumes exist — so this dependency is declared and checkable, not
-   discovered by hand-querying the API the way this test did.
-2. **Driver state-awareness**: actions like `add_to_dashboard` need to
-   detect which UI branch they're actually in (0 / 1 / N existing
-   dashboards) rather than assume one fixed path — the exact bug found
-   here. Likely more such branches exist and haven't been hit yet because
-   nothing has run against accumulated state before now.
-3. **Environment architecture** (the question this task asked to flag,
-   not resolve): does a course run against one long-lived, continuously
-   accumulating Metabase instance, or does each recording session
-   reconstruct the required prior state via direct API calls (fast,
-   deterministic, decoupled from having to actually re-record prior
-   videos) before recording video N? The second is very likely the right
-   answer for a real system — it would let any single video be
-   re-recorded or edited independently without cascading re-recording of
-   everything after it — but it's a real architectural decision with
-   real tradeoffs (API-seeded state might not perfectly match what an
-   actual recorded run produces), not something to decide unilaterally
-   here.
-4. **QA**: a new checklist-style check (companion to `QA_CHECKLIST.md`,
-   not added there yet since it doesn't apply to any single-video render)
-   -- "does every artifact video N's narration references provably exist
-   in the environment at record time" -- automatable via the same API
-   query used by hand in this test.
+1. **Lesson script format** — done for the one relationship type tested
+   (`requires_state` naming questions/dashboards and how they're built).
+   Not yet covering every artifact type Metabase has (models, metrics,
+   collections) or richer query shapes (joins, multiple filters,
+   aggregations beyond a single `between`) — extend
+   `state_seed.py`'s dispatch as real lesson scripts need them, not
+   speculatively ahead of that, same discipline as everything else this
+   session.
+2. **Driver state-awareness** — done for `add_to_dashboard`'s three
+   branches. Other actions that could plausibly hit similar
+   already-exists branches (`save_question` itself, if a question with
+   the same name already exists) haven't been tested against that
+   condition yet, because nothing has forced it yet.
+3. **Environment architecture** — decided: API-seeded state per
+   recording, not a long-lived shared instance. Any single video can now
+   be re-recorded, edited, or recorded out of order independently,
+   without cascading re-recording of everything before or after it.
+4. **QA** — a `requires_state`-aware check now belongs in
+   `QA_CHECKLIST.md` proper (not added yet, since this is the first
+   lesson to use the field): confirm, before recording, that everything
+   `requires_state` declares either already exists or was just seeded,
+   by the same API query `state_seed.py` already performs.
+5. **Not yet built**: anything that orchestrates *which* videos need
+   seeding for a given course, in what order, or manages a real N-video
+   dependency graph. This pass hand-wrote `requires_state` for one known
+   pair; a real system would need lesson generation (or authoring
+   tooling) to produce it automatically from a course outline.
 
 ## Bottom line
 
-Two videos can genuinely read as one progressing course — the recap
-technique is sound and reusable. Getting there required stepping outside
-this session's normal (correct, for single-video QA) habit of resetting
-the environment between tests, and doing so immediately surfaced a real
-UI-automation bug that no amount of single-video testing would ever have
-found. That's the actual proof-of-concept result: continuity is a real,
-different failure mode from anything tested so far, worth the
-architecture investment above before attempting a third video.
+Two videos read as one progressing course, and now do so from
+independent, fully rebuildable state rather than a fragile continuous
+session. Getting there took two real passes: the first proved continuity
+was necessary and found one UI-branching bug by brute force; the second
+implemented the actual architecture, and in doing so found a *second*,
+more dangerous bug — a silent wrong-click that reported success while
+producing the wrong result — which only real-state verification (not
+trusting "N/N events succeeded") caught. That second finding is arguably
+the more important one: it's a direct, first-hand demonstration of why
+`QA_CHECKLIST.md` insists automated pass/fail is not sufficient on its
+own, from inside the very work meant to make this system more reliable.

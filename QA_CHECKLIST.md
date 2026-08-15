@@ -222,6 +222,34 @@ saved question or dashboard actually is. Fixed with per-event
 
 ---
 
+### 9. Any artifact a lesson's `requires_state` declares actually matches reality after recording
+
+**Check:** For a lesson with a `requires_state` block (see
+`automation/state_seed.py`), does the declared artifact (a named
+question, a named dashboard, what it should contain) actually exist in
+that real shape in Metabase after recording — not just that the driver
+reported success?
+
+**Automated**, and the most important item to actually run, not skip,
+on any lesson using `requires_state`: query the same artifacts by name
+via Metabase's API (the same calls `state_seed.py` itself makes) and
+check the real result, e.g. `GET /api/dashboard/:id` and confirm its
+`dashcards` actually contain the expected card names.
+
+**Be honest about this one too — it's the most direct proof yet that
+"the driver didn't raise an exception" and "the audit log says N/N
+events succeeded" are not the same claim as "the result is correct."**
+Multi-video continuity work found a click that picked the wrong option
+in a dashboard picker (clicked "New dashboard" instead of selecting the
+already-seeded target with the same name) and silently created a
+duplicate dashboard with an orphaned card on it. No exception. No failed
+event. The audit log reported a clean 32/32. The only way this was ever
+caught was querying the actual Metabase state afterward and finding two
+active dashboards with the same name instead of one — exactly the
+discipline this item exists to make routine rather than incidental.
+
+---
+
 ## What this checklist does not cover
 
 This list is delivery/content-defect verification for a single rendered

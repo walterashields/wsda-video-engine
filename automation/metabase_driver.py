@@ -109,7 +109,10 @@ from pathlib import Path
 
 import requests
 import yaml
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
+
+import state_seed
 
 ROOT = Path(__file__).parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "output"
@@ -497,20 +500,62 @@ async def action_save_question(page, event, target):
 
 
 async def action_add_to_dashboard(page, event, target):
-    """Creates a dashboard and pins the saved question to it. Same
+    """Creates a dashboard and pins the saved question to it, OR, if a
+    dashboard already exists, finishes pinning it to that one. Same
     concept-introduction case as action_save_question -- "dashboard" is a
     new object type being taught here, not a repeated click -- so lesson
     scripts should set `post_hold_ms: CONCEPT_INTRO_HOLD_MS` on this
-    event too."""
+    event too.
+
+    Confirmed live (2026-08-15, multi-video continuity work) that this
+    branches THREE ways, not two, and getting the order of preference
+    wrong is a real, silent-looking failure: the first fix attempt here
+    checked for "New dashboard" first, which is also present as a button
+    inside the picker dialog's OWN branch (see below), so it always won
+    that race and created a duplicate dashboard instead of selecting the
+    real target -- no exception was raised, the run reported success, and
+    the only way this was caught was checking the actual resulting
+    Metabase state afterward, not the audit log. The three branches,
+    checked in this priority order:
+      1. A picker dialog is showing AND it lists `dashboard_name` as an
+         existing option -- click that named item, then "Select". This
+         must be checked before "New dashboard" specifically because
+         both can be visible in the same dialog at once.
+      2. A picker dialog is showing but no existing dashboard matches --
+         click "New dashboard", name it, "Create", "Select".
+      3. No picker at all -- confirmed live separately that with exactly
+         one dashboard already present, Metabase sometimes skips the
+         picker entirely and opens straight into editing that dashboard
+         with the card already auto-placed on it. Nothing to do but save.
+    Now that API-seeded state (see automation/state_seed.py) means a
+    lesson can deliberately start with a dashboard already in place, none
+    of these are edge cases to special-case away, they're the normal
+    space of outcomes for any video after the first in a sequence."""
     # picks up from the dashboard picker dialog opened at the end of
     # action_save_question (see the comment there for why)
-    await page.get_by_text("New dashboard", exact=True).click()
-    await page.wait_for_timeout(500)
-    await page.get_by_placeholder("My new dashboard").fill(event["dashboard_name"])
-    await page.get_by_role("button", name="Create", exact=True).click()
-    await page.wait_for_timeout(1200)
-    await page.get_by_role("button", name="Select", exact=True).click()
-    await page.wait_for_timeout(1200)
+    dashboard_name = event["dashboard_name"]
+    named_option = page.get_by_text(dashboard_name, exact=True).first
+    new_dashboard_option = page.get_by_text("New dashboard", exact=True)
+    try:
+        await named_option.wait_for(state="visible", timeout=5000)
+        await named_option.click()
+        await page.wait_for_timeout(500)
+        await page.get_by_role("button", name="Select", exact=True).click()
+        await page.wait_for_timeout(1200)
+    except PlaywrightTimeoutError:
+        try:
+            await new_dashboard_option.wait_for(state="visible", timeout=3000)
+            await new_dashboard_option.click()
+            await page.wait_for_timeout(500)
+            await page.get_by_placeholder("My new dashboard").fill(dashboard_name)
+            await page.get_by_role("button", name="Create", exact=True).click()
+            await page.wait_for_timeout(1200)
+            await page.get_by_role("button", name="Select", exact=True).click()
+            await page.wait_for_timeout(1200)
+        except PlaywrightTimeoutError:
+            # No picker at all; already merged into the sole existing
+            # dashboard. Nothing left to do but save the edit.
+            pass
     await page.get_by_role("button", name="Save", exact=True).click()
     await page.wait_for_timeout(1200)
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
@@ -609,6 +654,19 @@ async def run_lesson(card_path, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     video_dir = output_dir / f"{lesson_id}_raw"
     video_dir.mkdir(parents=True, exist_ok=True)
+
+    # State this lesson depends on (a prior video's saved question,
+    # dashboard, ...) is seeded via Metabase's API before anything else,
+    # not by having actually just run that prior video's recording. See
+    # automation/state_seed.py's module docstring and
+    # MULTI_VIDEO_PROGRESSION_FINDINGS.md. Pure HTTP, no browser -- runs
+    # before Playwright even starts, and (like login) never appears in
+    # the recorded footage.
+    requires_state = card.get("requires_state")
+    if requires_state:
+        state_seed.seed_required_state(
+            target["base_url"], target["admin_email"], target["admin_password"], requires_state
+        )
 
     audit_events = []
 

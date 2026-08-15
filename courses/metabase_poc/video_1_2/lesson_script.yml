@@ -66,22 +66,42 @@
 # asked for and got, now asking for more) rather than reciting pedagogy
 # ("in the last video you learned to filter").
 #
-# This required actually recording video_1_1 and video_1_2 back to back
-# against the SAME Metabase demo state, without archiving video_1_1's
-# artifacts in between, unlike every prior test run this session (which
-# always cleaned up afterward to keep the environment repeatable). The
-# recap narration names a specific artifact ("High Value Orders... pinned
-# to a dashboard"); for that to be true rather than a nice-sounding
-# fiction, the referenced question and dashboard need to actually exist
-# when this video records. Doing so surfaced a real Metabase UI-branching
-# bug in action_add_to_dashboard (it assumes zero existing dashboards;
-# with exactly one already present, Metabase skips the "New dashboard"
-# prompt this action waits for and merges straight into editing it
-# instead) -- worked around for this one render, not fixed, since fixing
-# it is real driver work, not part of this scoped test. See
-# MULTI_VIDEO_PROGRESSION_FINDINGS.md (repo root) for the full write-up:
-# what worked, what broke, and what a real multi-video system would
-# need.
+# CHANGES THIS PASS (2026-08-15): the architecture question the previous
+# pass flagged -- continuous shared Metabase state vs. API-seeded state
+# -- has been decided and implemented. This video no longer depends on
+# video_1_1 having actually just run. Its recap narration names a
+# specific artifact ("High Value Orders... pinned to a dashboard"); for
+# that to be true rather than a nice-sounding fiction, `requires_state`
+# below declares what must exist (the question and the dashboard
+# containing it) as DATA, and automation/state_seed.py creates it
+# directly via Metabase's API, idempotently, before recording starts --
+# not by replaying video_1_1's UI actions and not by relying on a
+# long-lived shared container. See MULTI_VIDEO_PROGRESSION_FINDINGS.md
+# for the full decision and why (continuous shared state, proven to work
+# manually in the prior pass, doesn't survive re-recording a single
+# video, out-of-order recording, or a third video).
+#
+# Seeding a dashboard as a precondition made the add_to_dashboard UI
+# branching bug found in the prior pass unavoidable (deterministic, not
+# an edge case) rather than optional to fix. Took two real fix attempts,
+# not one: the first checked for "New dashboard" before checking for the
+# actual named target, and against an API-seeded dashboard specifically,
+# Metabase shows a real picker with BOTH options visible at once -- so
+# the first attempt always won that race, clicked "New dashboard", and
+# silently created a SECOND dashboard with the identical name, pinning
+# the new chart there instead of the real one. No exception, no failed
+# event, audit log reported a clean 32/32 -- only caught by querying
+# Metabase's actual API state afterward and finding two active
+# dashboards with the same name. automation/metabase_driver.py's
+# action_add_to_dashboard now checks the named target first, "New
+# dashboard" second, and a bare Save third (three real branches, not
+# two), re-verified against real API state after fixing it, not just the
+# audit log. e10_hl/e10_commit below describe what actually happens --
+# pinning onto the SAME dashboard from video_1_1, not creating a new
+# "Revenue Overview" -- which reads as a better ending than the prior
+# pass's version: by the end of this video, both questions live on one
+# dashboard together. See QA_CHECKLIST.md item 9 and
+# MULTI_VIDEO_PROGRESSION_FINDINGS.md for the full account of both bugs.
 #
 # Pause durations, two buffers depending on narration length:
 #   short narration: duration = (word_count / 145) * 60 + 2.0s
@@ -99,6 +119,30 @@ target:
   admin_first_name: "WSDA"
   admin_last_name: "Admin"
   site_name: "WSDA Metabase Demo"
+
+# State this video's recap narration depends on (video_1_1's saved
+# question and dashboard), declared as data and seeded directly via
+# Metabase's API by automation/state_seed.py before recording starts --
+# not by actually running video_1_1's recording first. See
+# MULTI_VIDEO_PROGRESSION_FINDINGS.md for why (continuous shared state
+# was proven to work but doesn't survive re-recording a single video,
+# out-of-order recording, or scaling past two videos). Idempotent: if
+# these already exist (e.g. from a real video_1_1 run), seeding reuses
+# them rather than creating duplicates.
+requires_state:
+  - type: "question"
+    name: "High Value Orders"
+    database: "Sample Database"
+    table: "Orders"
+    display: "table"
+    filter:
+      field: "Total"
+      operator: "between"
+      min: 50
+      max: 1000
+  - type: "dashboard"
+    name: "WSDA Metabase Demo Dashboard"
+    contains: ["High Value Orders"]
 
 events:
   - id: "e00_intro"
@@ -253,18 +297,18 @@ events:
 
   - id: "e10_hl"
     type: "highlight_target"
-    locator: {"kind": "text", "value": "New dashboard"}
+    locator: {"kind": "text", "value": "WSDA Metabase Demo Dashboard"}
     lead_ms: 3000
     narration: >-
-      We'll pin it to a new dashboard too, called Revenue Overview, a
-      page she can bookmark once and never need to ask you for this
-      again.
+      We'll pin it to that same dashboard from before, not a new one, so
+      both answers live in one place your manager already knows to
+      check, instead of her needing to remember two different links.
   - id: "e10_pause"
     type: "pause"
-    duration: 18.8
+    duration: 22.5
   - id: "e10_commit"
     type: "add_to_dashboard"
-    dashboard_name: "Revenue Overview"
+    dashboard_name: "WSDA Metabase Demo Dashboard"
     post_hold_ms: 3000
 
   - id: "e11"
