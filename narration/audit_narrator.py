@@ -349,12 +349,45 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     console.print(f"\n[bold]Synthesizing {len(schedule)} clips...[/bold]")
     synth_failures = []
     tier_counts = {"elevenlabs": 0, "edge-tts": 0, "say": 0}
-    for i, entry in enumerate(schedule):
+
+    # Parallelized 2026-08-16 (real bottleneck, confirmed by measuring a
+    # real render's timing breakdown, not guessed): each clip's synthesis
+    # is a blocking network call to ElevenLabs/edge-tts/say, and clips are
+    # fully independent of each other -- text and target wav path are
+    # per-clip, nothing shared. Running them one at a time in a for loop
+    # meant total synthesis time was the SUM of every clip's network
+    # latency; a thread pool (these are I/O-bound calls, not CPU-bound)
+    # cuts that to roughly the slowest clip plus overhead. Capped at 4
+    # concurrent workers deliberately, not unbounded -- firing 10+
+    # simultaneous requests at ElevenLabs risks tripping a rate limit
+    # that firing them one at a time never would, and this is a real
+    # speedup either way. Results are collected keyed by index and
+    # printed back out in original schedule order afterward, so the
+    # console output and tier-usage summary are unchanged in shape from
+    # the sequential version -- only the wall-clock time changes.
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _synth_one(i, entry):
         wav = work_dir / f"clip_{i:03d}_{entry['event_id']}.wav"
-        try:
-            tier = synthesize(entry["text"], wav, voice, rate,
-                               el_key=_el_key if use_el else None,
-                               el_voice=_el_voice if use_el else None)
+        tier = synthesize(entry["text"], wav, voice, rate,
+                           el_key=_el_key if use_el else None,
+                           el_voice=_el_voice if use_el else None)
+        return i, wav, tier
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = {pool.submit(_synth_one, i, entry): (i, entry) for i, entry in enumerate(schedule)}
+        for future in as_completed(futures):
+            i, entry = futures[future]
+            try:
+                _, wav, tier = future.result()
+                results[i] = (wav, tier, None)
+            except Exception as e:
+                results[i] = (None, None, e)
+
+    for i, entry in enumerate(schedule):
+        wav, tier, error = results[i]
+        if error is None:
             tier_counts[tier] += 1
             entry["wav_path"] = str(wav)
             entry["tier"] = tier
@@ -364,9 +397,9 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
                 f"  {entry['start_s']:5.1f}s  {dur:.1f}s  "
                 f"[dim]{words}w[/dim]  [cyan]{tier:>10}[/cyan]  {entry['text'][:45]}"
             )
-        except Exception as e:
-            console.print(f"  [red]Failed {entry['event_id']}: {e}[/red]")
-            synth_failures.append((entry['event_id'], str(e)))
+        else:
+            console.print(f"  [red]Failed {entry['event_id']}: {error}[/red]")
+            synth_failures.append((entry['event_id'], str(error)))
 
     # Which tier actually produced this run's audio, not just which one was
     # requested -- ElevenLabs being configured doesn't mean it's the tier
