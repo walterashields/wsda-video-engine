@@ -25,6 +25,34 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 console = Console()
 SAMPLE_RATE = 44100
 
+ELEVENLABS_CONFIG_PATH = Path(__file__).parent.parent / "config" / "elevenlabs.yml"
+
+
+def _load_elevenlabs_config() -> dict:
+    """Root-caused 2026-08-16: a render fell back to edge-tts even though
+    ElevenLabs was "configured" -- the ELEVENLABS_API_KEY environment
+    variable held a stale/invalid key (confirmed directly against
+    ElevenLabs' own API: 401 Unauthorized, "Invalid API key"), while
+    config/elevenlabs.yml -- a file that already exists in this repo,
+    with a header comment stating it's specifically "for narration" --
+    held a DIFFERENT, currently-valid key the whole time, confirmed live
+    with a real 200 response and real audio bytes back. The code never
+    actually read this file; only the environment variable (or an
+    explicit CLI flag) was ever checked, so a correct, working credential
+    sitting right there in the repo was silently ignored in favor of
+    whatever the shell environment happened to hold. This is the reason
+    the file exists at all -- wiring it up here, not just fixing the one
+    stale env var for this one shell session, so the same drift (a
+    correct key in the file, a stale one in whatever environment
+    actually runs this) doesn't silently recur the next time the
+    environment differs from the file."""
+    if not ELEVENLABS_CONFIG_PATH.exists():
+        return {}
+    try:
+        return yaml.safe_load(ELEVENLABS_CONFIG_PATH.read_text()) or {}
+    except yaml.YAMLError:
+        return {}
+
 
 def get_video_duration(path: Path) -> float:
     r = subprocess.run(
@@ -294,10 +322,16 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     duration = get_video_duration(video_path)
 
     import os as _os
-    _el_key   = el_key   or _os.environ.get("ELEVENLABS_API_KEY")
-    _el_voice = el_voice or _os.environ.get("ELEVENLABS_VOICE_ID")
+    # Priority: explicit CLI flag, then config/elevenlabs.yml (this
+    # project's own dedicated credential file -- see
+    # _load_elevenlabs_config's docstring for why this is checked before
+    # the environment), then the environment variables as a last resort.
+    _el_config = _load_elevenlabs_config()
+    _el_key   = el_key   or _el_config.get("api_key")   or _os.environ.get("ELEVENLABS_API_KEY")
+    _el_voice = el_voice or _el_config.get("voice_id")  or _os.environ.get("ELEVENLABS_VOICE_ID")
     if elevenlabs and not (_el_key and _el_voice):
-        console.print("[red]--elevenlabs requires ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID[/red]")
+        console.print("[red]--elevenlabs requires an API key and voice ID, from --el-key/--el-voice, "
+                       f"{ELEVENLABS_CONFIG_PATH}, or ELEVENLABS_API_KEY/ELEVENLABS_VOICE_ID[/red]")
         return
     use_el = elevenlabs and _el_key and _el_voice
     voice_label = f"ElevenLabs ({_el_voice[:8]}…)" if use_el else f"{voice} @ {rate}wpm"
