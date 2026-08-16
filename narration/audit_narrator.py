@@ -390,13 +390,28 @@ def cli(video_path, audit_path, card_path, output, voice, rate, lead, elevenlabs
     ])
     console.print(qa_result.output)
 
-    # Check if QA found CRITICAL timing issues (>5s overrun)
-    # Minor overruns (<5s) are allowed - audio will overlap slightly but remain usable
+    # Check if QA found CRITICAL timing issues.
+    # Minor overruns (<5s) on a MID-lesson event are allowed -- the audio
+    # bleeds slightly into the following event's own dead air, which is
+    # recoverable. That tolerance does NOT apply to the lesson's last
+    # narrated event (root-caused 2026-08-16, "video cut off at the end"):
+    # there is no following dead air to bleed into there, only the actual
+    # end of the recorded video -- render()'s ffmpeg call hard-caps
+    # output length to the raw recording's real duration, so ANY overrun
+    # on the closing line gets silently sliced off mid-sentence rather
+    # than "mostly working." Confirmed live: a 1.7s overrun (well under
+    # the general 5s tolerance) on a lesson's closing clip still produced
+    # a video that stopped before the lesson's actual ending, with no
+    # warning at all under the old blanket 5s rule.
+    last_narrated_id = next(
+        (e.get("id") for e in reversed(card_events) if (e.get("narration") or "").strip()),
+        None,
+    )
     import re as _re
     critical = False
-    for m in _re.finditer(r'by ([\d.]+)s', qa_result.output):
-        overrun = float(m.group(1))
-        if overrun > 5.0:
+    for m in _re.finditer(r'\[TIMING\] (\S+)\s*\n\s*Problem: .*? by ([\d.]+)s', qa_result.output):
+        event_id, overrun = m.group(1), float(m.group(2))
+        if overrun > 5.0 or (event_id == last_narrated_id and overrun > 0):
             critical = True
             break
 

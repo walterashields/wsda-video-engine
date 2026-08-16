@@ -38,6 +38,26 @@ MAX_PAUSE_SECONDS = {
     "course": 10.0,
 }
 
+# The LAST pause in a lesson is exempt from the format's normal cap
+# (added 2026-08-16, root-caused a real "video cut off at the end" defect):
+# every mid-lesson pause's cap exists to keep pacing snappy for whatever
+# comes NEXT, but the closing pause has nothing after it to protect --
+# capping it the same as a mid-lesson pause only risks truncating the
+# video's actual ending, which is strictly worse than a slightly longer
+# wrap-up. Confirmed live: a closing clip measured 9.456s against an
+# 8.0s-capped closing pause; audio_narrator.py's render() step hard-caps
+# the whole output to the RAW recorded video's length
+# (get_video_duration() on the silent recording, via ffmpeg's `-t`), so
+# the last ~2.65s of the closing line was silently sliced off mid-
+# sentence by build_track()'s buffer boundary -- the video and its
+# narration both just stopped before the lesson's real ending. Auto-
+# fixing that pause could never actually resolve it while still capped
+# at the same 8.0s the recording already used, since re-recording with
+# an unchanged pause duration reproduces the exact same shortfall --
+# confirmed by watching a real re-record attempt converge to the
+# identical overage every time.
+CLOSING_PAUSE_MAX_S = 20.0
+
 
 def wav_duration_s(path: Path) -> float:
     if not path.exists():
@@ -247,6 +267,12 @@ def qa(audit_path, card_path, work_dir, fix, db, fmt):
 
     # Build card event list
     card_events = card.get('events', [])
+    # The last pause event in the whole lesson -- see CLOSING_PAUSE_MAX_S's
+    # comment for why this one gets a materially higher cap than every
+    # other pause.
+    last_pause_id = next(
+        (e.get('id') for e in reversed(card_events) if e.get('type') == 'pause'), None
+    )
 
     # Load actual query results
     db_path = Path(db) if db else lesson_dir / "assets" / "novabridge.db"
@@ -332,10 +358,16 @@ def qa(audit_path, card_path, work_dir, fix, db, fmt):
             if clip_dur > window * 0.97:  # 3% buffer
                 overage = clip_dur - window
                 # Request enough room for the clip plus a small buffer, but never
-                # exceed the format's per-pause cap. If the clip is longer than
-                # the cap, the script must be shortened, not the pause stretched.
-                needed = min(clip_dur + 1.5, max_pause_s)
-                capped = needed >= max_pause_s
+                # exceed the format's per-pause cap -- EXCEPT the lesson's final
+                # pause, which uses CLOSING_PAUSE_MAX_S instead (see that
+                # constant's comment: nothing downstream needs protecting from
+                # a longer closing beat, and capping it the same as a mid-
+                # lesson pause is what let a real render's ending get silently
+                # truncated). If the clip is longer than its actual cap, the
+                # script must be shortened, not the pause stretched further.
+                effective_cap = CLOSING_PAUSE_MAX_S if pause_id == last_pause_id else max_pause_s
+                needed = min(clip_dur + 1.5, effective_cap)
+                capped = needed >= effective_cap
                 issues.append({
                     'type':    'TIMING',
                     'event':   eid,

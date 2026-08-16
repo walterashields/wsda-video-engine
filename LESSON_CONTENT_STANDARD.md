@@ -49,17 +49,45 @@ principle directly: is there anything on screen right now that the
 narration is silent about, or that the learner is expected to already
 understand without having been told?
 
-### Corollary: first-time concepts need more time than repeated actions
+### Corollary: no click is fast just because it isn't new
+
+Revised 2026-08-16 (fix pass 7) after direct feedback on real rendered
+video: an earlier version of this corollary only established that
+first-time concepts need MORE time than repeated actions. That's still
+true (see below), but it was being read — correctly, given how it was
+written — as license to make every *other* click fast, since the only
+named requirement was for the new-concept case. Watching real renders
+showed clicks moving faster than a first-time learner could actually
+track and understand, on actions that had already been taught earlier
+in the same lesson, not just on brand-new ones. That's a real defect,
+not a stylistic nitpick: a learner who can't visually register that a
+click happened, or hear it explained before it fires, isn't following
+the lesson at that moment, regardless of whether the concept itself was
+new.
+
+The corrected rule: **every click action gets a real, watchable pause —
+long enough for a first-time learner to see the highlight, hear it
+explained, watch the click happen, and register the result — with no
+tier fast simply because the action repeats something taught earlier.**
+First-time concepts still get *more* than this floor (see below); they
+never get *less* than what every other action already gets.
+`automation/metabase_driver.py`'s module defaults (`HIGHLIGHT_LEAD_MS`,
+`POST_ACTION_HOLD_MS`) are that floor, applied to every highlight/commit
+pair whether or not the event opts into the longer concept-intro
+treatment — there is no longer a separate "fast, because not new" path
+in the driver's defaults.
+
+### Corollary: first-time concepts need even more time than that floor
 
 The governing principle has a pacing consequence, not just a narration-
 content one. A step that introduces a brand-new concept for the first
 time — what a "saved question" is, what a "dashboard" is, the first time
 any tool-specific object type appears — is not the same kind of moment as
 a step that repeats an action type the learner has already seen earlier
-in the same lesson. Giving both the same brief hold time and the same
-depth of narration under-serves the first-time concept: the learner needs
-real time to register a new idea, not the glance-length treatment
-appropriate for a click they've already watched happen twice before.
+in the same lesson. Giving both the same hold time and the same depth of
+narration under-serves the first-time concept: the learner needs real
+time to register a new idea, more than the watchable floor every other
+click already gets.
 
 Concretely: a step introducing a new concept for the first time should
 get (a) longer on-screen hold/highlight time than a repeated action, and
@@ -68,14 +96,18 @@ matters*, not just that the action completed. "Now we save this" confirms
 a click happened. "This saves it as a question, which we can reopen,
 rerun, or add to a dashboard without rebuilding it" teaches what a saved
 question actually is. The first sentence is fine for the second or third
-time a familiar action repeats; it fails this standard the first time a
-genuinely new concept is introduced.
+time a familiar action repeats — REPEATS, not RUSHES — it fails this
+standard the first time a genuinely new concept is introduced.
 
 `automation/metabase_driver.py` supports this with per-event `lead_ms`
 (on a highlight event) and `post_hold_ms` (on a commit action) overrides
 — see that module's `CONCEPT_INTRO_HOLD_MS` — but the driver has no way
 to know which concepts are new for a given lesson; a script author has to
-recognize a first-time concept and opt it into the longer treatment.
+recognize a first-time concept and opt it into the longer treatment. The
+module defaults these override are no longer a fast tier (see the
+corollary above) — an event that doesn't opt in still gets the same
+watchable floor every other action gets, just not the extra length a
+first-time concept earns on top of it.
 
 ## The five rules
 

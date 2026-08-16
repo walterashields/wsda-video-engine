@@ -55,17 +55,25 @@ highlights several elements at once -- e.g. several named columns -- for
 narration that references more than one structure in the same breath,
 since a single highlight_target can only anchor to one.
 
-Concept-introduction pacing (added 2026-08-14, fix pass 5, see
-LESSON_CONTENT_STANDARD.md): a step that introduces a brand-new concept
-for the first time (what a "question" is, what a "dashboard" is) needs
-more on-screen time than a step that repeats an action type the learner
-has already seen this lesson. Any highlight_target(s) event accepts
-`lead_ms` and any commit action accepts `post_hold_ms` on the event to
-override the module defaults (HIGHLIGHT_LEAD_MS / POST_ACTION_HOLD_MS);
-see CONCEPT_INTRO_HOLD_MS for the recommended value for a first-time
-concept. This is opt-in per event, not automatic -- the driver has no way
-to know which concepts are "new" for a given lesson, only the lesson
-script author does.
+Concept-introduction pacing (added 2026-08-14, fix pass 5; broadened
+2026-08-16, fix pass 7 -- see LESSON_CONTENT_STANDARD.md): a step that
+introduces a brand-new concept for the first time (what a "question" is,
+what a "dashboard" is) needs more on-screen time than a step that
+repeats an action type the learner has already seen this lesson -- but
+"repeated" is not the same as "fast." Every click, first-time or
+repeated, gets a real, watchable pause; the difference between the two
+is how long, not whether. The module defaults (HIGHLIGHT_LEAD_MS /
+POST_ACTION_HOLD_MS) are now that watchable floor for every action, not
+a fast default reserved for whatever isn't a new concept -- direct
+feedback after watching real renders (fix pass 7) was that clicks were
+outrunning a first-time learner's ability to track them even for
+already-taught actions. Any highlight_target(s) event accepts `lead_ms`
+and any commit action accepts `post_hold_ms` on the event to raise those
+floors further; see CONCEPT_INTRO_HOLD_MS for the recommended value for
+a first-time concept. This override is opt-in per event, not automatic
+-- the driver has no way to know which concepts are "new" for a given
+lesson, only the lesson script author does -- but the un-overridden
+defaults are no longer a "make it fast" tier either.
 
 Login/account setup is handled separately, before recording starts (see
 run_lesson): it's pure demo-environment provisioning, not a teaching
@@ -121,8 +129,28 @@ import state_seed
 ROOT = Path(__file__).parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "output"
 VIEWPORT = {"width": 1920, "height": 1080}
-HIGHLIGHT_COLOR = "#06c015"  # WSDA brand green
+# Changed from the original WSDA-brand green (#06c015) 2026-08-16: found
+# live, via real extracted frames, that Metabase's own UI uses a near-
+# identical muted green for parts of its own chrome (the Summarize
+# section's "pick a function" / "pick a column" controls render in a
+# sage/olive green) and its default chart palette also includes green
+# bars -- a green highlight box risks visually blending into the exact
+# app it's supposed to be calling attention to. Magenta doesn't appear
+# anywhere in Metabase's own UI (light-gray/white surfaces, blue primary
+# buttons, purple/lavender filter chips, muted-green Summarize chrome),
+# so it holds contrast against all of them. Confirmed by extracting real
+# frames after this change, not assumed from the hex value alone.
+HIGHLIGHT_COLOR = "#FF2D95"
 HIGHLIGHT_OVERLAY_CLASS = "__wsda_highlight__"
+# How far the overlay extends past the target element's real edges on
+# every side (added 2026-08-16): the overlay used to be sized to exactly
+# match the element's bounding_box(), so the border line hugged the
+# element with no breathing room -- confirmed live via extracted frames
+# that this reads as a thin outline easy to miss, not a distinct,
+# attention-grabbing box. A real margin around the element makes the
+# highlight read as its own visual object, not a trace of the button's
+# own border.
+HIGHLIGHT_PADDING_PX = 10
 # how long the highlight sits alone on screen before its narrated pause
 # starts, so the eye finds it before anything else happens. Raised from
 # 700ms (2026-08-14, fix pass 3): a first-time-learner pacing pass found
@@ -135,9 +163,19 @@ HIGHLIGHT_OVERLAY_CLASS = "__wsda_highlight__"
 # just trusted as configured (see courses/metabase_poc/video_1_1's
 # lesson_script.yml changelog for the verification numbers).
 HIGHLIGHT_LEAD_MS = 1500
-# how long the highlight stays up after a commit action's click(s), so the
-# result of the click is visible before the highlight disappears
-POST_ACTION_HOLD_MS = 700
+# How long a REPEATED (already-taught) action holds after its click,
+# so the result is visible before moving on. Raised from 700ms
+# (2026-08-16, fix pass 7): the earlier value was calibrated only
+# against "does the highlight get enough lead time before the click,"
+# not "is the post-click hold itself watchable" -- direct feedback
+# after watching real renders was that clicks were moving faster than a
+# first-time learner could track, even for actions already taught
+# earlier in the same lesson. This project no longer has a tier that's
+# fast just because it's not a new concept: every click gets a real,
+# watchable hold, CONCEPT_INTRO_HOLD_MS is simply longer than this one,
+# not the only tier with real pacing. See
+# LESSON_CONTENT_STANDARD.md's pacing corollary, updated to match.
+POST_ACTION_HOLD_MS = 1500
 # Recommended lead/hold value for a step that introduces a brand-new
 # concept for the first time (added 2026-08-14, fix pass 5, see
 # LESSON_CONTENT_STANDARD.md's "first-time concept vs. repeated action"
@@ -255,7 +293,7 @@ async def _draw_highlight_box(page, locator, clear_existing=True, box_id=None):
         print("[metabase_driver] highlight target not visible, skipping overlay")
         return None
     await page.evaluate(
-        """({box, color, id, cls}) => {
+        """({box, color, id, cls, padding}) => {
             if (id) {
                 const existing = document.getElementById(id);
                 if (existing) existing.remove();
@@ -264,18 +302,19 @@ async def _draw_highlight_box(page, locator, clear_existing=True, box_id=None):
             if (id) el.id = id;
             el.className = cls;
             el.style.position = 'fixed';
-            el.style.left = box.x + 'px';
-            el.style.top = box.y + 'px';
-            el.style.width = box.width + 'px';
-            el.style.height = box.height + 'px';
-            el.style.border = '3px solid ' + color;
-            el.style.borderRadius = '4px';
-            el.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.15)';
+            el.style.left = (box.x - padding) + 'px';
+            el.style.top = (box.y - padding) + 'px';
+            el.style.width = (box.width + padding * 2) + 'px';
+            el.style.height = (box.height + padding * 2) + 'px';
+            el.style.border = '4px solid ' + color;
+            el.style.borderRadius = '6px';
+            el.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.15), 0 0 12px 2px ' + color;
             el.style.zIndex = '2147483647';
             el.style.pointerEvents = 'none';
             document.body.appendChild(el);
         }""",
-        {"box": box, "color": HIGHLIGHT_COLOR, "id": box_id, "cls": HIGHLIGHT_OVERLAY_CLASS},
+        {"box": box, "color": HIGHLIGHT_COLOR, "id": box_id, "cls": HIGHLIGHT_OVERLAY_CLASS,
+         "padding": HIGHLIGHT_PADDING_PX},
     )
     return box
 
@@ -405,12 +444,24 @@ async def action_clear_highlight(page, event, target):
 
 
 async def action_click_new_question(page, event, target):
+    """The highlight from the preceding highlight_target is drawn around
+    the "New" button. Clicking it just opens a same-screen dropdown (New
+    is still visible, still relevant), so the highlight stays up through
+    that click -- but clicking "Question" navigates to an entirely
+    different screen (the query editor), so the highlight is cleared
+    right there, not held through the new screen's own settle time.
+    Root-caused live (2026-08-16, fix pass 7): a highlight held past a
+    navigating click is a `position: fixed` overlay stuck at the OLD
+    element's screen coordinates while a completely different screen
+    renders underneath/around it -- confirmed by extracting a real frame
+    during exactly this window and finding "New" still boxed while the
+    database picker was already on screen."""
     await page.get_by_test_id("app-bar").get_by_role("button", name="New").click()
     await page.wait_for_timeout(400)
     await page.get_by_text("Question", exact=True).click()
+    await _clear_highlight(page)
     await page.wait_for_timeout(800)
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
-    await _clear_highlight(page)
 
 
 async def action_select_database(page, event, target):
@@ -437,10 +488,16 @@ async def action_open_saved_item(page, event, target):
 
 
 async def action_select_table(page, event, target):
+    """Clicking the table name navigates from the data-picker screen to
+    the query editor -- a full screen change, so the highlight (drawn on
+    the now-gone picker) is cleared right after this click, not held
+    through the new editor screen's settle time (see
+    action_click_new_question's docstring for the general principle and
+    the live evidence behind it)."""
     await page.get_by_text(event["table"], exact=True).click()
+    await _clear_highlight(page)
     await page.wait_for_timeout(800)
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
-    await _clear_highlight(page)
 
 
 async def action_add_filter(page, event, target):
@@ -451,11 +508,13 @@ async def action_add_filter(page, event, target):
     pause -- not typed for the first time down here, after the pause has
     already played (see LESSON_CONTENT_STANDARD.md's data-capture rule
     and metabase_poc's lesson_script.yml for the pre_actions this
-    depends on)."""
+    depends on). This click closes the filter picker itself (the
+    highlighted Min/Max inputs disappear with it), so the highlight is
+    cleared right after, not held through the post-submit settle wait."""
     await page.get_by_role("button", name="Add filter").click()
+    await _clear_highlight(page)
     await page.wait_for_timeout(400)
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
-    await _clear_highlight(page)
 
 
 async def action_click_option(page, event, target):
@@ -466,11 +525,15 @@ async def action_click_option(page, event, target):
     action function -- that shape (open a picker, highlight the option
     about to be chosen, click it) is generic across Metabase's various
     pickers (Summarize's function list, its group-by column list, ...)
-    and likely any future platform's equivalent pickers too."""
+    and likely any future platform's equivalent pickers too. Clearing
+    happens right after the click: the highlighted picker option
+    generally disappears or the picker itself closes as a direct result
+    of this click, so nothing is served by holding the highlight through
+    the post-click settle wait on whatever comes next."""
     locator = _resolve_locator(page, event["locator"])
     await locator.click()
-    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
     await _clear_highlight(page)
+    await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
 
 
 async def action_visualize(page, event, target):
@@ -501,8 +564,16 @@ async def action_save_question(page, event, target):
     `post_hold_ms: CONCEPT_INTRO_HOLD_MS` on this event (see that
     constant's comment) -- the default POST_ACTION_HOLD_MS is tuned for
     a click the learner has already seen this lesson, not for giving
-    them time to register a brand-new object type."""
+    them time to register a brand-new object type. The highlight is
+    cleared right after the FIRST click: it's drawn around the Save
+    button, and that click immediately opens a modal dialog directly
+    over it, so holding the highlight through the rest of this
+    multi-step save/toast/dashboard-picker sequence would just leave a
+    stale box sitting under/behind dialogs that have nothing to do with
+    it (see action_click_new_question's docstring for the general
+    principle)."""
     await page.get_by_test_id("qb-save-button").click()
+    await _clear_highlight(page)
     await page.wait_for_timeout(500)
     await page.get_by_label("Name").fill(event["question_name"])
     save_button = page.get_by_test_id("save-question-button")
@@ -521,13 +592,7 @@ async def action_save_question(page, event, target):
     # the time the pause/narration for this event plays.
     await page.get_by_text("Add this to a dashboard", exact=True).click()
     await page.wait_for_timeout(500)
-
-    # only now, after the toast click and its own settle wait, hold and
-    # clear the Save-button highlight drawn by the preceding
-    # highlight_target event, this does not touch the toast-click timing
-    # above (still zero delay between save-dialog-close and the toast).
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
-    await _clear_highlight(page)
 
 
 async def action_add_to_dashboard(page, event, target):
@@ -563,13 +628,23 @@ async def action_add_to_dashboard(page, event, target):
     of these are edge cases to special-case away, they're the normal
     space of outcomes for any video after the first in a sequence."""
     # picks up from the dashboard picker dialog opened at the end of
-    # action_save_question (see the comment there for why)
+    # action_save_question (see the comment there for why). The
+    # preceding highlight_target event highlighted whichever option in
+    # THIS picker the script named (the real dashboard's name, or "New
+    # dashboard") -- cleared right after that specific option is
+    # clicked, in each branch, since that click is what makes the
+    # highlighted element disappear/change (see
+    # action_click_new_question's docstring for the general principle).
+    # Branch 3 (no picker at all) never had anything drawn to clear --
+    # the preceding highlight_target's own locator wouldn't have
+    # resolved to anything visible -- but the call is harmless either way.
     dashboard_name = event["dashboard_name"]
     named_option = page.get_by_text(dashboard_name, exact=True).first
     new_dashboard_option = page.get_by_text("New dashboard", exact=True)
     try:
         await named_option.wait_for(state="visible", timeout=5000)
         await named_option.click()
+        await _clear_highlight(page)
         await page.wait_for_timeout(500)
         await page.get_by_role("button", name="Select", exact=True).click()
         await page.wait_for_timeout(1200)
@@ -577,6 +652,7 @@ async def action_add_to_dashboard(page, event, target):
         try:
             await new_dashboard_option.wait_for(state="visible", timeout=3000)
             await new_dashboard_option.click()
+            await _clear_highlight(page)
             await page.wait_for_timeout(500)
             await page.get_by_placeholder("My new dashboard").fill(dashboard_name)
             await page.get_by_role("button", name="Create", exact=True).click()
@@ -586,11 +662,10 @@ async def action_add_to_dashboard(page, event, target):
         except PlaywrightTimeoutError:
             # No picker at all; already merged into the sole existing
             # dashboard. Nothing left to do but save the edit.
-            pass
+            await _clear_highlight(page)
     await page.get_by_role("button", name="Save", exact=True).click()
     await page.wait_for_timeout(1200)
     await page.wait_for_timeout(event.get("post_hold_ms", POST_ACTION_HOLD_MS))
-    await _clear_highlight(page)
 
 
 async def action_pause(page, event, target):
