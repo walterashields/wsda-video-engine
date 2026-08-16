@@ -21,6 +21,10 @@ hypothetical.
 
 ## How to run this
 
+0. **Before rendering anything**, run item 10 — the one pre-render item
+   on this list. Everything else below assumes a rendered video already
+   exists to check; item 10 exists specifically to stop a lesson with a
+   real data-correctness defect from ever getting that far.
 1. Render the lesson (`automation/metabase_driver.py`, then
    `narration/audit_narrator.py`).
 2. Run every item marked **Automated** below against the output files —
@@ -247,6 +251,57 @@ event. The audit log reported a clean 32/32. The only way this was ever
 caught was querying the actual Metabase state afterward and finding two
 active dashboards with the same name instead of one — exactly the
 discipline this item exists to make routine rather than incidental.
+
+---
+
+### 10. Every filter/aggregation a lesson performs actually produces a real, non-empty result — checked BEFORE render, not after
+
+**This item is different from every one above it: it is a pre-render
+gate, not a post-render check.** Items 1 through 9 all verify something
+against a rendered video that already exists — this one exists
+specifically so a video with this defect never gets rendered in the
+first place. Run it as step 0, before `automation/metabase_driver.py`
+ever starts recording, not as one more thing to check afterward.
+
+**Check:** For every filter, aggregation, or other data-producing step a
+lesson script performs, does the equivalent query — run live against
+Metabase's real `/api/dataset`, against whatever state will actually be
+seeded for the real recording — return a real, meaningful, non-empty
+result? A pure aggregation with no breakout (e.g. a bare `count`/`sum`)
+additionally must not return a zero/null value when the narration
+implies a real, non-trivial number.
+
+**Automated, and a hard gate, not a soft warning: a lesson that fails
+this must not proceed to render.** Either it's corrected (regenerated
+with real data-grounded values, or hand-edited) and re-checked, or it's
+blocked outright — never rendered with the defect still present, and
+never silently downgraded to a post-render note for a human to notice
+later. The whole point of running this before rendering is that a
+video with this defect showing up in the final output is not an
+acceptable outcome to catch after the fact.
+
+**History:** the most serious defect found on this project so far. A
+generated lesson filtered `Orders.Total` to a `$500–$5000` range —
+Metabase's real data for that field tops out at `$159.35`. The query
+returned zero rows, always. The video recorded anyway: a long dead-air
+gap where the result should have been, while the narration continued
+describing the (nonexistent) results as if they were on screen. Every
+earlier item on this list checks for an *omission* — something true
+that wasn't shown or said. This is the system stating something
+**false**, in the course's own teaching voice, about data it never
+actually checked. Confirmed reproducible directly: POSTing that exact
+filter to Metabase's own `/api/dataset` returns 0 rows immediately, no
+ambiguity — there was nothing subtle to have caught here, only nobody
+had checked before rendering. Fixed in `wsda-pipeline-console` (the
+separate console UI that drives this pipeline's generation): every
+generated script now declares a `validations` block describing its own
+filter/aggregation as a structured query, `console/validator.py` runs
+each one live before a render is ever offered, and a script that fails
+gets one automatic corrected-regeneration attempt before being blocked
+outright. Real per-field data ranges are now also given to the
+generator up front (`console/metabase_schema.py`), so a plausible-
+sounding but physically-impossible value is less likely to be chosen in
+the first place — the gate is the hard backstop, not the only defense.
 
 ---
 
