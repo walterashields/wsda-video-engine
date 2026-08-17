@@ -169,6 +169,33 @@ target:
   admin_last_name: "Admin"
   site_name: "WSDA Metabase Demo"
 
+# Added 2026-08-17, root-causing a real generation-reliability defect in
+# wsda-pipeline-console's script generator: the console's prompt tells
+# the model this block is "REQUIRED whenever a video filters or
+# aggregates," but this script (and video_1_3's) predate the
+# validation-gate fix pass and were being shown to the model as
+# "priority 1, dominant" worked examples that directly contradicted that
+# rule -- a real generation correctly filtered Orders.Total but omitted
+# its own validations block, most likely because the two examples it was
+# told to treat as the dominant source did the same. Added here purely
+# additively: automation/metabase_driver.py does not read this key at
+# all, so this has zero effect on the actual recording, only on future
+# few-shot generation and on this script's own compliance with
+# QA_CHECKLIST.md item 10, which every filtering lesson should meet
+# regardless of whether it was hand-authored or generated.
+validations:
+  - event_id: "e04_commit"
+    query:
+      database: "Sample Database"
+      table: "Orders"
+      filter:
+        field: "Total"
+        operator: "between"
+        min: 50
+        max: 1000
+    expect:
+      min_rows: 1
+
 events:
   - id: "e00_intro"
     type: "narrate"
